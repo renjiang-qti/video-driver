@@ -77,6 +77,11 @@ static inline bool is_early_notify_enabled(struct msm_vidc_inst *inst)
 	return !!(inst->capabilities[EARLY_NOTIFY_ENABLE].value);
 }
 
+static inline bool is_slice_decode_enabled(struct msm_vidc_inst *inst)
+{
+	return !!(inst->capabilities[SLICE_DECODE].value);
+}
+
 static inline bool is_ts_reorder_allowed(struct msm_vidc_inst *inst)
 {
 	return !!(inst->capabilities[TS_REORDER].value &&
@@ -684,7 +689,7 @@ bool is_hevc_10bit_decode_session(struct msm_vidc_inst *inst);
 int signal_session_msg_receipt(struct msm_vidc_inst *inst,
 			       enum signal_session_response cmd);
 int msm_vidc_get_properties(struct msm_vidc_inst *inst);
-int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, u64 time_us);
+int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, struct vb2_buffer *vb2, u64 time_us);
 int msm_vidc_add_buffer_stats(struct msm_vidc_inst *inst,
 			      struct msm_vidc_buffer *buf, u64 timestamp);
 int msm_vidc_remove_buffer_stats(struct msm_vidc_inst *inst,
