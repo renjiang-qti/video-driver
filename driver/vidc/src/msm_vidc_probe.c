@@ -27,6 +27,7 @@
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
 #include "resources.h"
+#include "msm_vidc_hw_virt.h"
 
 #define BASE_DEVICE_NUMBER 32
 
@@ -646,6 +647,11 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
 
+
+	/* set gvm deinit flag. */
+	if (core->full_virtualization_data.virtualization_en)
+		core->full_virtualization_data.gvm_deinit = 1;
+
 	msm_vidc_core_deinit(core, true);
 	/**
 	 * Sometimes reverse(irq) thread will be running at this point,
@@ -765,6 +771,17 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 
 	core->pdev = pdev;
 	dev_set_drvdata(&pdev->dev, core);
+
+	/* Read and store virtualization_en flag, vmid */
+	if (of_property_read_u32(pdev->dev.of_node, "vmid",
+			&core->full_virtualization_data.vmid)) {
+		d_vpr_h("Failed to read vmid. Defaulting to 0\n");
+		core->full_virtualization_data.vmid = 0;
+	} else {
+		/* If gvm, set hw virtualization flag */
+		if (core->full_virtualization_data.vmid != 0)
+			core->full_virtualization_data.virtualization_en = 1;
+	}
 
 	core->debugfs_parent = msm_vidc_devm_debugfs_get(&pdev->dev);
 	if (!core->debugfs_parent)
