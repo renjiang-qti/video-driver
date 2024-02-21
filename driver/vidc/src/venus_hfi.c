@@ -1275,6 +1275,12 @@ int venus_hfi_reserve_hardware(struct msm_vidc_inst *inst, u32 duration)
 int venus_hfi_session_open_locked(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
+	struct msm_vidc_core *core = inst->core;
+
+	if (core->full_virtualization_data.virtualization_en) {
+		return virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
+			&inst->session_id);
+	}
 
 	__sys_set_debug(inst->core,
 		(msm_fw_debug & FW_LOGMASK) >> FW_LOGSHIFT);
