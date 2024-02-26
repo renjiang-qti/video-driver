@@ -4356,6 +4356,33 @@ unlock:
 	return rc;
 }
 
+/* Handle events received from PVM through FE */
+int msm_vidc_pvm_event_handler(void *p)
+{
+	struct msm_vidc_core *core = p;
+	struct virtio_video_msm_hw_event evt = {0};
+
+	while (core->full_virtualization_data.is_gvm_open) {
+		if (!virtio_video_queue_event_wait(&evt)) {
+			switch (evt.event_type) {
+			case GVM_SSR:
+				core->ssr_dev = *(uint32_t *)evt.payload;
+				schedule_work(&core->full_virt_ssr_work);
+				break;
+			default:
+				d_vpr_e("%s: Unrecognized event %x\n",
+					__func__, evt.event_type);
+
+			};
+		} else {
+			d_vpr_e("Queue event wait failed. Exiting\n");
+			break;
+		}
+	}
+
+	return 0;
+}
+
 int msm_vidc_core_init(struct msm_vidc_core *core)
 {
 	enum msm_vidc_allow allow;
@@ -4702,6 +4729,27 @@ int msm_vidc_set_crc(struct msm_vidc_core *core)
 unlock:
 	core_unlock(core, __func__);
 	return rc;
+}
+
+void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
+{
+	struct msm_vidc_core *core = NULL;
+	struct hfi_packet pkt = {};
+
+	core = container_of(work, struct msm_vidc_core, full_virt_ssr_work);
+	if (!core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, core);
+		return;
+	}
+
+	/* set gvm deinit flag for special case where PVM driver failed */
+	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER)
+		core->full_virtualization_data.gvm_deinit = 1;
+
+	/* prepare dummy packet for system error handler */
+	pkt.type = HFI_SYS_ERROR_FATAL;
+
+	handle_system_error(core, &pkt);
 }
 
 void msm_vidc_ssr_handler(struct work_struct *work)

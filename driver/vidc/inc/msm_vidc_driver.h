@@ -551,6 +551,7 @@ int msm_vidc_smmu_fault_handler(struct iommu_domain *domain,
 int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 			 u64 trigger_ssr_val);
 void msm_vidc_ssr_handler(struct work_struct *work);
+void msm_vidc_hw_virt_ssr_handler(struct work_struct *work);
 int msm_vidc_trigger_stability(struct msm_vidc_core *core,
 			       u64 trigger_stability_val);
 void msm_vidc_stability_handler(struct work_struct *work);
@@ -704,6 +705,7 @@ struct context_bank_info
 struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
 bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
+int msm_vidc_pvm_event_handler(void *p);
 
 #endif // _MSM_VIDC_DRIVER_H_
 

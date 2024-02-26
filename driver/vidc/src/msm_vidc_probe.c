@@ -459,6 +459,7 @@ static int msm_vidc_initialize_core(struct msm_vidc_core *core)
 	INIT_DELAYED_WORK(&core->pm_work, venus_hfi_pm_work_handler);
 	INIT_DELAYED_WORK(&core->fw_unload_work, msm_vidc_fw_unload_handler);
 	INIT_WORK(&core->ssr_work, msm_vidc_ssr_handler);
+	INIT_WORK(&core->full_virt_ssr_work, msm_vidc_hw_virt_ssr_handler);
 
 	return 0;
 exit:
