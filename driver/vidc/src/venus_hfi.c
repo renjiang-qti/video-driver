@@ -484,6 +484,14 @@ static int __suspend(struct msm_vidc_core *core)
 
 	d_vpr_h("Entering suspend\n");
 
+	/*
+	 * please note, suspend/resume is handled differently when full
+	 * virtualization is enabled, and fw code is skipped. please do not
+	 * add new suspend code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		return rc;
+
 	rc = fw_suspend(core);
 	if (rc) {
 		d_vpr_e("Failed to suspend video core %d\n", rc);
@@ -516,6 +524,15 @@ static int __resume(struct msm_vidc_core *core)
 		return rc;
 
 	d_vpr_h("Resuming from power collapse\n");
+
+	/*
+	 * please note, suspend/resume is handled differently when full
+	 * virtualization is enabled, and fw code is skipped. please do not
+	 * add new resume code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		return rc;
+
 	/* reset handoff done from core sub_state */
 	rc = msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
 	if (rc)
@@ -896,7 +913,11 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 	if (rc)
 		goto error;
 
-	/* open gvm */
+	/*
+	 * please note, when full virtualization is enabled, most of the init
+	 * code is skipped using the conditional block below. please do not
+	 * add any new initialization code above this.
+	 */
 	if (core->full_virtualization_data.virtualization_en) {
 		if (!core->full_virtualization_data.is_gvm_open) {
 			d_vpr_h("%s: Hardware virtualization enabled.\n"
@@ -979,6 +1000,11 @@ int venus_hfi_core_deinit(struct msm_vidc_core *core, bool force)
 	if (is_core_state(core, MSM_VIDC_CORE_DEINIT))
 		return 0;
 
+	/*
+	 * please note, when full virtualization is enabled, most of the init
+	 * code is skipped using the conditional block below. please do not
+	 * add any new deinit code above this.
+	 */
 	if (core->full_virtualization_data.virtualization_en) {
 		if (core->full_virtualization_data.is_gvm_open &&
 			core->full_virtualization_data.gvm_deinit) {
@@ -1144,6 +1170,10 @@ int venus_hfi_trigger_ssr(struct msm_vidc_core *core, u32 type,
 {
 	int rc = 0;
 	u32 payload[2];
+
+	/* If hw virtualization is enabled, skip this. */
+	if (core->full_virtualization_data.virtualization_en)
+		return 0;
 
 	/*
 	 * call resume before preparing ssr hfi packet in core->packet

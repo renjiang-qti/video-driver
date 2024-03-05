@@ -2610,6 +2610,7 @@ int msm_vidc_get_platform_data_nordau(struct msm_vidc_core *core)
 int msm_vidc_init_platform_nordau(struct msm_vidc_core *core)
 {
 	int rc = 0;
+	static struct msm_vidc_resources_ops nord_res_ops = {0};
 
 	d_vpr_h("%s: initialize nordau ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
@@ -2622,6 +2623,12 @@ int msm_vidc_init_platform_nordau(struct msm_vidc_core *core)
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
 	}
+	/* If hw virtualization enabled, disable all resource ops except init.*/
+	if (core->full_virtualization_data.virtualization_en) {
+		nord_res_ops.init = core->res_ops->init;
+		core->res_ops = &nord_res_ops;
+	}
+
 	rc = msm_vidc_nordau_check_ddr_type();
 	if (rc)
 		return rc;
