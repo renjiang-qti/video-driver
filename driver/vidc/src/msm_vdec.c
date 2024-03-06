@@ -134,7 +134,11 @@ static int msm_vdec_set_linear_stride_scanline(struct msm_vidc_inst *inst)
 	stride_y = inst->fmts[OUTPUT_PORT].fmt.pix_mp.width;
 	scanline_y = inst->fmts[OUTPUT_PORT].fmt.pix_mp.height;
 	stride_uv = stride_y;
-	scanline_uv = scanline_y / 2;
+
+	if (colorformat == MSM_VIDC_FMT_P210)
+		scanline_uv = scanline_y;
+	else
+		scanline_uv = scanline_y / 2;
 
 	payload[0] = stride_y << 16 | scanline_y;
 	payload[1] = stride_uv << 16 | scanline_uv;

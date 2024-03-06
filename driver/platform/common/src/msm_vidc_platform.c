@@ -46,6 +46,10 @@
 #include "msm_vidc_seraph.h"
 #include "msm_vidc_iris4.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+#include "msm_vidc_nordau.h"
+#include "msm_vidc_iris33_au.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -276,6 +280,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_seraph,
 		.init_platform              = msm_vidc_init_platform_seraph,
 		.init_iris                  = msm_vidc_init_iris4,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	{
+		.compat                     = "qcom,sm8797-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_nordau,
+		.init_platform              = msm_vidc_init_platform_nordau,
+		.init_iris                  = msm_vidc_init_iris33_au,
 	},
 #endif
 };

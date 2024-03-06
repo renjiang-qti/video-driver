@@ -1366,6 +1366,12 @@ int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
 	work_mode = MSM_VIDC_STAGE_2;
 	inp_f = &inst->fmts[INPUT_PORT];
 
+	/* APV codec is only one stage for Canoe */
+	if (inst->codec == MSM_VIDC_APV) {
+		work_mode = MSM_VIDC_STAGE_1;
+		goto exit;
+	}
+
 	if (is_image_decode_session(inst))
 		work_mode = MSM_VIDC_STAGE_1;
 
@@ -1420,6 +1426,12 @@ int msm_vidc_decide_work_route_iris4(struct msm_vidc_inst *inst)
 
 	core = inst->core;
 	work_route = core->capabilities[NUM_VPP_PIPE].value;
+
+	/* APV codec is only one pipe for Canoe */
+	if (inst->codec == MSM_VIDC_APV) {
+		work_route = MSM_VIDC_PIPE_1;
+		goto exit;
+	}
 
 	if (is_image_session(inst))
 		goto exit;
