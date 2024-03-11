@@ -74,6 +74,7 @@ enum chipset_generation {
 	MSM_PINEAPPLE,
 	MSM_SUN,
 	MSM_CANOE,
+	MSM_NORDAU,
 	MSM_MAX,
 };
 

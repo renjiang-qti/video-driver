@@ -12,6 +12,7 @@
 #include "msm_vidc_internal.h"
 #include "msm_vidc_state.h"
 #include "venus_hfi_queue.h"
+#include "msm_vidc_hw_virt.h"
 
 #define MAX_EVENTS   30
 
@@ -90,6 +91,7 @@ struct msm_vidc_core {
 	u32                                    enc_codecs_count;
 	u32                                    dec_codecs_count;
 	struct msm_vidc_core_capability        capabilities[CORE_CAP_MAX + 1];
+	struct msm_vidc_full_virtualization    full_virtualization_data;
 	struct msm_vidc_inst_capability       *inst_caps;
 	struct msm_vidc_mem_addr               sfr;
 	struct msm_vidc_mem_addr               iface_q_table;
