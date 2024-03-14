@@ -4,9 +4,9 @@
  * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <media/v4l2-ioctl.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/videobuf2-core.h>
+#include <media/v4l2_vidc_extensions.h>
 
 #include "msm_vidc_platform.h"
 #include "msm_vidc_v4l2.h"
@@ -41,6 +41,7 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_CANOE)
 #include "msm_vidc_canoe.h"
+#include "msm_vidc_alor.h"
 #include "msm_vidc_iris4.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
@@ -92,134 +93,6 @@ u32 vpe_csc_custom_bias_coeff[MAX_BIAS_COEFFS] = {
 /* clamping value for Y/U/V([min,max] for Y/U/V) */
 u32 vpe_csc_custom_limit_coeff[MAX_LIMIT_COEFFS] = {
 	16, 235, 16, 240, 16, 240
-};
-
-static struct v4l2_file_operations msm_v4l2_file_operations = {
-	.owner                          = THIS_MODULE,
-	.open                           = msm_v4l2_open,
-	.release                        = msm_v4l2_close,
-	.unlocked_ioctl                 = video_ioctl2,
-	.poll                           = msm_v4l2_poll,
-};
-
-static struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_enc = {
-	.vidioc_querycap                = msm_v4l2_querycap,
-	.vidioc_enum_fmt_vid_cap        = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_vid_out        = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_meta_cap       = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_meta_out       = msm_v4l2_enum_fmt,
-	.vidioc_enum_framesizes         = msm_v4l2_enum_framesizes,
-	.vidioc_enum_frameintervals     = msm_v4l2_enum_frameintervals,
-	.vidioc_try_fmt_vid_cap_mplane  = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_vid_out_mplane  = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_meta_cap        = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_meta_out        = msm_v4l2_try_fmt,
-	.vidioc_s_fmt_vid_cap           = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_out           = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_cap_mplane    = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_out_mplane    = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_meta_out          = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_meta_cap          = msm_v4l2_s_fmt,
-	.vidioc_g_fmt_vid_cap           = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_out           = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_cap_mplane    = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_out_mplane    = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_meta_out          = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_meta_cap          = msm_v4l2_g_fmt,
-	.vidioc_g_selection             = msm_v4l2_g_selection,
-	.vidioc_s_selection             = msm_v4l2_s_selection,
-	.vidioc_s_parm                  = msm_v4l2_s_parm,
-	.vidioc_g_parm                  = msm_v4l2_g_parm,
-	.vidioc_reqbufs                 = msm_v4l2_reqbufs,
-	.vidioc_querybuf                = msm_v4l2_querybuf,
-	.vidioc_create_bufs             = msm_v4l2_create_bufs,
-	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
-	.vidioc_qbuf                    = msm_v4l2_qbuf,
-	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
-	.vidioc_streamon                = msm_v4l2_streamon,
-	.vidioc_streamoff               = msm_v4l2_streamoff,
-	.vidioc_queryctrl               = msm_v4l2_queryctrl,
-	.vidioc_querymenu               = msm_v4l2_querymenu,
-	.vidioc_subscribe_event         = msm_v4l2_subscribe_event,
-	.vidioc_unsubscribe_event       = msm_v4l2_unsubscribe_event,
-	.vidioc_try_encoder_cmd         = msm_v4l2_try_encoder_cmd,
-	.vidioc_encoder_cmd             = msm_v4l2_encoder_cmd,
-};
-
-static struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_dec = {
-	.vidioc_querycap                = msm_v4l2_querycap,
-	.vidioc_enum_fmt_vid_cap        = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_vid_out        = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_meta_cap       = msm_v4l2_enum_fmt,
-	.vidioc_enum_fmt_meta_out       = msm_v4l2_enum_fmt,
-	.vidioc_enum_framesizes         = msm_v4l2_enum_framesizes,
-	.vidioc_enum_frameintervals     = msm_v4l2_enum_frameintervals,
-	.vidioc_try_fmt_vid_cap_mplane  = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_vid_out_mplane  = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_meta_cap        = msm_v4l2_try_fmt,
-	.vidioc_try_fmt_meta_out        = msm_v4l2_try_fmt,
-	.vidioc_s_fmt_vid_cap           = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_out           = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_cap_mplane    = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_vid_out_mplane    = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_meta_out          = msm_v4l2_s_fmt,
-	.vidioc_s_fmt_meta_cap          = msm_v4l2_s_fmt,
-	.vidioc_g_fmt_vid_cap           = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_out           = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_cap_mplane    = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_vid_out_mplane    = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_meta_out          = msm_v4l2_g_fmt,
-	.vidioc_g_fmt_meta_cap          = msm_v4l2_g_fmt,
-	.vidioc_g_selection             = msm_v4l2_g_selection,
-	.vidioc_s_selection             = msm_v4l2_s_selection,
-	.vidioc_reqbufs                 = msm_v4l2_reqbufs,
-	.vidioc_querybuf                = msm_v4l2_querybuf,
-	.vidioc_create_bufs             = msm_v4l2_create_bufs,
-	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
-	.vidioc_qbuf                    = msm_v4l2_qbuf,
-	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
-	.vidioc_streamon                = msm_v4l2_streamon,
-	.vidioc_streamoff               = msm_v4l2_streamoff,
-	.vidioc_queryctrl               = msm_v4l2_queryctrl,
-	.vidioc_querymenu               = msm_v4l2_querymenu,
-	.vidioc_subscribe_event         = msm_v4l2_subscribe_event,
-	.vidioc_unsubscribe_event       = msm_v4l2_unsubscribe_event,
-	.vidioc_try_decoder_cmd         = msm_v4l2_try_decoder_cmd,
-	.vidioc_decoder_cmd             = msm_v4l2_decoder_cmd,
-};
-
-static struct v4l2_ctrl_ops msm_v4l2_ctrl_ops = {
-	.s_ctrl                         = msm_v4l2_op_s_ctrl,
-	.g_volatile_ctrl                = msm_v4l2_op_g_volatile_ctrl,
-};
-
-static struct vb2_ops msm_vb2_ops = {
-	.queue_setup                    = msm_vb2_queue_setup,
-	.start_streaming                = msm_vb2_start_streaming,
-	.buf_queue                      = msm_vb2_buf_queue,
-	.stop_streaming                 = msm_vb2_stop_streaming,
-	.buf_out_validate               = msm_vb2_buf_out_validate,
-	.buf_request_complete           = msm_vb2_request_complete,
-};
-
-static struct vb2_mem_ops msm_vb2_mem_ops = {
-	.alloc                          = msm_vb2_alloc,
-	.put                            = msm_vb2_put,
-	.mmap                           = msm_vb2_mmap,
-	.attach_dmabuf                  = msm_vb2_attach_dmabuf,
-	.detach_dmabuf                  = msm_vb2_detach_dmabuf,
-	.map_dmabuf                     = msm_vb2_map_dmabuf,
-	.unmap_dmabuf                   = msm_vb2_unmap_dmabuf,
-};
-
-static struct media_device_ops msm_v4l2_media_ops = {
-	.req_validate                   = msm_v4l2_request_validate,
-	.req_queue                      = msm_v4l2_request_queue,
-};
-
-static struct v4l2_m2m_ops msm_v4l2_m2m_ops = {
-	.device_run                     = msm_v4l2_m2m_device_run,
-	.job_abort                      = msm_v4l2_m2m_job_abort,
 };
 
 static const struct msm_vidc_compat_handle compat_handle[] = {
@@ -280,6 +153,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_platform              = msm_vidc_init_platform_canoe,
 		.init_iris                  = msm_vidc_init_iris4,
 	},
+	{
+		.compat                     = "qcom,alor-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_alor,
+		.init_platform              = msm_vidc_init_platform_alor,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
 	{
@@ -302,14 +181,9 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 static int msm_vidc_init_ops(struct msm_vidc_core *core)
 {
 	d_vpr_h("%s: initialize ops\n", __func__);
-	core->v4l2_file_ops = &msm_v4l2_file_operations;
-	core->v4l2_ioctl_ops_enc = &msm_v4l2_ioctl_ops_enc;
-	core->v4l2_ioctl_ops_dec = &msm_v4l2_ioctl_ops_dec;
-	core->v4l2_ctrl_ops = &msm_v4l2_ctrl_ops;
-	core->vb2_ops = &msm_vb2_ops;
-	core->vb2_mem_ops = &msm_vb2_mem_ops;
-	core->media_device_ops = &msm_v4l2_media_ops;
-	core->v4l2_m2m_ops = &msm_v4l2_m2m_ops;
+	msm_vidc_core_init_v4l2_ops(core);
+	msm_vidc_core_init_vb2_ops(core);
+
 	core->md_ops = get_md_ops();
 	core->mem_ops = get_mem_ops();
 	if (!core->mem_ops) {
@@ -1058,6 +932,129 @@ static s64 msm_vidc_adjust_h265_level_tier(struct msm_vidc_inst *inst, u64 frame
 	msm_vidc_update_cap_value(inst, HEVC_TIER, tier_value, __func__);
 
 	return level_table[cnt].level;
+}
+
+static u32 msm_vidc_apv_level_band_v4l2_to_hfi(s64 v4l2_level)
+{
+
+	switch (v4l2_level) {
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_0:
+		return HFI_APV_LEVEL_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_0:
+		return HFI_APV_LEVEL_2_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_0:
+		return HFI_APV_LEVEL_3_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_0:
+		return HFI_APV_LEVEL_4_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_0:
+		return HFI_APV_LEVEL_5_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_0:
+		return HFI_APV_LEVEL_6_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_0:
+		return HFI_APV_LEVEL_7_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_0:
+		return HFI_APV_LEVEL_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_0:
+		return HFI_APV_LEVEL_2_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_0:
+		return HFI_APV_LEVEL_3_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_0:
+		return HFI_APV_LEVEL_4_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_0:
+		return HFI_APV_LEVEL_5_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_0:
+		return HFI_APV_LEVEL_6_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_0:
+		return HFI_APV_LEVEL_7_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_0:
+		return HFI_APV_LEVEL_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_0:
+		return HFI_APV_LEVEL_2_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_0:
+		return HFI_APV_LEVEL_3_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_0:
+		return HFI_APV_LEVEL_4_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_0:
+		return HFI_APV_LEVEL_5_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_0:
+		return HFI_APV_LEVEL_6_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_0:
+		return HFI_APV_LEVEL_7_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_0:
+		return HFI_APV_LEVEL_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_0:
+		return HFI_APV_LEVEL_2_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_0:
+		return HFI_APV_LEVEL_3_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_0:
+		return HFI_APV_LEVEL_4_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_0:
+		return HFI_APV_LEVEL_5_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_0:
+		return HFI_APV_LEVEL_6_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_0:
+		return HFI_APV_LEVEL_7_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_3;
+	default:
+		return HFI_LEVEL_NONE;
+	}
+
+	return HFI_LEVEL_NONE;
 }
 
 int msm_vidc_adjust_level_tier(void *instance, struct v4l2_ctrl *ctrl)
@@ -3000,7 +2997,7 @@ int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ct
 	s32 value;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct v4l2_format *f;
-	u32 width, height, frame_rate;
+	u32 width = 0, height = 0, frame_rate = 0;
 	s64 hfi_rc_type = -1;
 
 	value = ctrl ? ctrl->val : inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
@@ -3917,6 +3914,23 @@ int msm_vidc_set_level(void *instance,
 	hfi_value = inst->capabilities[cap_id].value;
 
 	rc = msm_vidc_packetize_control(inst, cap_id, HFI_PAYLOAD_U32_ENUM,
+					&hfi_value, sizeof(u32), __func__);
+
+	return rc;
+}
+
+int msm_vidc_set_apv_level_band(void *instance,
+		       enum msm_vidc_inst_capability_type cap_id)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	u32 hfi_value = HFI_LEVEL_NONE;
+
+	if (inst->capabilities[LEVEL].flags & CAP_FLAG_CLIENT_SET)
+		hfi_value = msm_vidc_apv_level_band_v4l2_to_hfi(
+					inst->capabilities[LEVEL].value);
+
+	rc = msm_vidc_packetize_control(inst, LEVEL, HFI_PAYLOAD_U32_ENUM,
 					&hfi_value, sizeof(u32), __func__);
 
 	return rc;

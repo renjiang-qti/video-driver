@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/irqreturn.h>
@@ -1451,15 +1451,24 @@ static int handle_dequeue_buffers(struct msm_vidc_inst *inst)
 				if (buf->attr & MSM_VIDC_ATTR_BUFFER_DONE) {
 					print_vidc_buffer(VIDC_HIGH, "high",
 						"vb2 done already", inst, buf);
-				} else {
-					buf->attr |= MSM_VIDC_ATTR_BUFFER_DONE;
-					rc = msm_vidc_vb2_buffer_done(inst, buf);
-					if (rc) {
-						print_vidc_buffer(VIDC_HIGH, "err ",
-							"vb2 done failed", inst, buf);
-						/* ignore the error */
-						rc = 0;
-					}
+					continue;
+				}
+
+				buf->attr |= MSM_VIDC_ATTR_BUFFER_DONE;
+
+				if (buf->type == MSM_VIDC_BUF_INPUT ||
+					buf->type == MSM_VIDC_BUF_OUTPUT) {
+					rc = msm_vidc_dqbuf_cache_operation(inst, buf);
+					if (rc)
+						return rc;
+				}
+
+				rc = msm_vidc_vb2_buffer_done(inst, buf);
+				if (rc) {
+					print_vidc_buffer(VIDC_HIGH, "err ",
+						"vb2 done failed", inst, buf);
+					/* ignore the error */
+					rc = 0;
 				}
 			}
 		}
