@@ -25,7 +25,16 @@
 #define VIDEO_ARCH_LX 1
 
 #define VCODEC_BASE_OFFS_IRIS36                 0x00000000
+/*
+ * MSM_VIDC_HW_VIRT is enabled for hw virtualization only; in hw virtualization
+ * scheme, each GVM will access only CS block registers and only CS block
+ * registers are mapped and hence no need of 0x000A0000 offset.
+ */
+#ifndef MSM_VIDC_HW_VIRT
 #define VCODEC_CPU_CS_IRIS36                    0x000A0000
+#else
+#define VCODEC_CPU_CS_IRIS36                    0
+#endif
 #define AON_BASE_OFFS                           0x000E0000
 
 #define VCODEC_VPU_CPU_CS_VCICMDARG0_IRIS36                 (VCODEC_CPU_CS_IRIS36 + 0x24)
@@ -1083,6 +1092,13 @@ static int __clear_interrupt_iris36(struct msm_vidc_core *core)
 	u32 intr_status = 0, mask = 0;
 	int rc = 0;
 
+	/*
+	 * WRAPPER_INTR_STATUS_IRIS33 is not accessible in full virtualization.
+	 * skip directly to interrupt clear.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		goto soft_int_clear;
+
 	rc = __read_register(core, WRAPPER_INTR_STATUS_IRIS36, &intr_status);
 	if (rc)
 		return rc;
@@ -1100,6 +1116,7 @@ static int __clear_interrupt_iris36(struct msm_vidc_core *core)
 		core->spur_count++;
 	}
 
+soft_int_clear:
 	rc = __write_register(core, CPU_CS_A2HSOFTINTCLR_IRIS36, 1);
 	if (rc)
 		return rc;
