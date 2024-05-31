@@ -437,6 +437,7 @@ enum msm_vidc_metadata_bits {
 	CAP(OPEN_GOP)                             \
 	CAP(CAPTURE_DATA_OFFSET)                  \
 	CAP(HEIF_TILES)                           \
+	CAP(CORE_ID_MASK)                         \
 	CAP(INST_CAP_MAX)                         \
 }
 
