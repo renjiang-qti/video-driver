@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/reset.h>
-#include "msm_vidc_iris35.h"
-#include "msm_vidc_buffer_iris35.h"
-#include "msm_vidc_power_iris35.h"
+#include "msm_vidc_iris4.h"
+#include "msm_vidc_buffer_iris4.h"
+#include "msm_vidc_power_iris4.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_driver.h"
@@ -26,26 +26,26 @@
  * MODULE: VCODEC_CPU_CS
  * --------------------------------------------------------------------------
  */
-#define VCODEC_CPU_CS_IRIS35                          0x000A0000
-#define CPU_CS_A2HSOFTINTCLR_IRIS35                   (VCODEC_CPU_CS_IRIS35 + 0x1C)
-#define VCODEC_VPU_CPU_CS_VCICMDARG0_IRIS35           (VCODEC_CPU_CS_IRIS35 + 0x24)
-#define VCODEC_VPU_CPU_CS_VCICMDARG1_IRIS35           (VCODEC_CPU_CS_IRIS35 + 0x28)
-#define VCODEC_VPU_CPU_CS_SCIACMD_IRIS35              (VCODEC_CPU_CS_IRIS35 + 0x48)
-#define VCODEC_VPU_CPU_CS_SCIACMDARG0_IRIS35          (VCODEC_CPU_CS_IRIS35 + 0x4C)
-#define VCODEC_VPU_CPU_CS_SCIACMDARG1_IRIS35          (VCODEC_CPU_CS_IRIS35 + 0x50)
-#define VCODEC_VPU_CPU_CS_SCIACMDARG2_IRIS35          (VCODEC_CPU_CS_IRIS35 + 0x54)
-#define VCODEC_VPU_CPU_CS_SCIBCMD_IRIS35              (VCODEC_CPU_CS_IRIS35 + 0x5C)
-#define VCODEC_VPU_CPU_CS_SCIBCMDARG0_IRIS35          (VCODEC_CPU_CS_IRIS35 + 0x60)
-#define VCODEC_VPU_CPU_CS_SCIBARG1_IRIS35             (VCODEC_CPU_CS_IRIS35 + 0x64)
-#define VCODEC_VPU_CPU_CS_SCIBARG2_IRIS35             (VCODEC_CPU_CS_IRIS35 + 0x68)
-#define CPU_CS_H2XSOFTINTEN_IRIS35                    (VCODEC_CPU_CS_IRIS35 + 0x148)
-#define CPU_IC_SOFTINT_IRIS35                         (VCODEC_CPU_CS_IRIS35 + 0x150)
-#define CPU_CS_AHB_BRIDGE_SYNC_RESET                  (VCODEC_CPU_CS_IRIS35 + 0x160)
-#define CPU_CS_X2RPMh_IRIS35                          (VCODEC_CPU_CS_IRIS35 + 0x168)
-#define CPU_IC_SOFTINT_H2A_SHFT_IRIS35                0x0
+#define VCODEC_CPU_CS_IRIS4                          0x000A0000
+#define CPU_CS_A2HSOFTINTCLR_IRIS4                   (VCODEC_CPU_CS_IRIS4 + 0x1C)
+#define VCODEC_VPU_CPU_CS_VCICMDARG0_IRIS4           (VCODEC_CPU_CS_IRIS4 + 0x24)
+#define VCODEC_VPU_CPU_CS_VCICMDARG1_IRIS4           (VCODEC_CPU_CS_IRIS4 + 0x28)
+#define VCODEC_VPU_CPU_CS_SCIACMD_IRIS4              (VCODEC_CPU_CS_IRIS4 + 0x48)
+#define VCODEC_VPU_CPU_CS_SCIACMDARG0_IRIS4          (VCODEC_CPU_CS_IRIS4 + 0x4C)
+#define VCODEC_VPU_CPU_CS_SCIACMDARG1_IRIS4          (VCODEC_CPU_CS_IRIS4 + 0x50)
+#define VCODEC_VPU_CPU_CS_SCIACMDARG2_IRIS4          (VCODEC_CPU_CS_IRIS4 + 0x54)
+#define VCODEC_VPU_CPU_CS_SCIBCMD_IRIS4              (VCODEC_CPU_CS_IRIS4 + 0x5C)
+#define VCODEC_VPU_CPU_CS_SCIBCMDARG0_IRIS4          (VCODEC_CPU_CS_IRIS4 + 0x60)
+#define VCODEC_VPU_CPU_CS_SCIBARG1_IRIS4             (VCODEC_CPU_CS_IRIS4 + 0x64)
+#define VCODEC_VPU_CPU_CS_SCIBARG2_IRIS4             (VCODEC_CPU_CS_IRIS4 + 0x68)
+#define CPU_CS_H2XSOFTINTEN_IRIS4                    (VCODEC_CPU_CS_IRIS4 + 0x148)
+#define CPU_IC_SOFTINT_IRIS4                         (VCODEC_CPU_CS_IRIS4 + 0x150)
+#define CPU_CS_AHB_BRIDGE_SYNC_RESET                  (VCODEC_CPU_CS_IRIS4 + 0x160)
+#define CPU_CS_X2RPMh_IRIS4                          (VCODEC_CPU_CS_IRIS4 + 0x168)
+#define CPU_IC_SOFTINT_H2A_SHFT_IRIS4                0x0
 
-#define HFI_CTRL_INIT_IRIS35                          VCODEC_VPU_CPU_CS_SCIACMD_IRIS35
-#define HFI_CTRL_STATUS_IRIS35                        VCODEC_VPU_CPU_CS_SCIACMDARG0_IRIS35
+#define HFI_CTRL_INIT_IRIS4                          VCODEC_VPU_CPU_CS_SCIACMD_IRIS4
+#define HFI_CTRL_STATUS_IRIS4                        VCODEC_VPU_CPU_CS_SCIACMDARG0_IRIS4
 typedef enum {
     HFI_CTRL_NOT_INIT                   = 0x0,
     HFI_CTRL_READY                      = 0x1,
@@ -56,42 +56,42 @@ typedef enum {
     HFI_CTRL_VCODEC_IDLE                = 0x40000000
 } hfi_ctrl_status_type;
 
-#define HFI_QTBL_INFO_IRIS35                          VCODEC_VPU_CPU_CS_SCIACMDARG1_IRIS35
+#define HFI_QTBL_INFO_IRIS4                          VCODEC_VPU_CPU_CS_SCIACMDARG1_IRIS4
 typedef enum {
     HFI_QTBL_DISABLED    = 0x00,
     HFI_QTBL_ENABLED     = 0x01,
 } hfi_qtbl_status_type;
 
-#define HFI_QTBL_ADDR_IRIS35                          VCODEC_VPU_CPU_CS_SCIACMDARG2_IRIS35
-#define HFI_MMAP_ADDR_IRIS35                          VCODEC_VPU_CPU_CS_SCIBCMDARG0_IRIS35
-#define HFI_UC_REGION_ADDR_IRIS35                     VCODEC_VPU_CPU_CS_SCIBARG1_IRIS35
-#define HFI_UC_REGION_SIZE_IRIS35                     VCODEC_VPU_CPU_CS_SCIBARG2_IRIS35
-#define HFI_DEVICE_REGION_ADDR_IRIS35                 VCODEC_VPU_CPU_CS_VCICMDARG0_IRIS35
-#define HFI_DEVICE_REGION_SIZE_IRIS35                 VCODEC_VPU_CPU_CS_VCICMDARG1_IRIS35
-#define HFI_SFR_ADDR_IRIS35                           VCODEC_VPU_CPU_CS_SCIBCMD_IRIS35
+#define HFI_QTBL_ADDR_IRIS4                          VCODEC_VPU_CPU_CS_SCIACMDARG2_IRIS4
+#define HFI_MMAP_ADDR_IRIS4                          VCODEC_VPU_CPU_CS_SCIBCMDARG0_IRIS4
+#define HFI_UC_REGION_ADDR_IRIS4                     VCODEC_VPU_CPU_CS_SCIBARG1_IRIS4
+#define HFI_UC_REGION_SIZE_IRIS4                     VCODEC_VPU_CPU_CS_SCIBARG2_IRIS4
+#define HFI_DEVICE_REGION_ADDR_IRIS4                 VCODEC_VPU_CPU_CS_VCICMDARG0_IRIS4
+#define HFI_DEVICE_REGION_SIZE_IRIS4                 VCODEC_VPU_CPU_CS_VCICMDARG1_IRIS4
+#define HFI_SFR_ADDR_IRIS4                           VCODEC_VPU_CPU_CS_SCIBCMD_IRIS4
 
 /*
  * --------------------------------------------------------------------------
  * MODULE: VCODEC_IRIS_WRAPPER_TOP
  * --------------------------------------------------------------------------
  */
-#define WRAPPER_BASE_OFFS_IRIS35                      0x000B0000
-#define WRAPPER_INTR_STATUS_IRIS35                    (WRAPPER_BASE_OFFS_IRIS35 + 0x0C)
-#define WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS35         0x8
-#define WRAPPER_INTR_STATUS_A2H_BMSK_IRIS35           0x4
+#define WRAPPER_BASE_OFFS_IRIS4                      0x000B0000
+#define WRAPPER_INTR_STATUS_IRIS4                    (WRAPPER_BASE_OFFS_IRIS4 + 0x0C)
+#define WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS4         0x8
+#define WRAPPER_INTR_STATUS_A2H_BMSK_IRIS4           0x4
 
-#define WRAPPER_INTR_MASK_IRIS35                      (WRAPPER_BASE_OFFS_IRIS35 + 0x10)
-#define WRAPPER_INTR_MASK_A2HWD_BMSK_IRIS35           0x8
-#define WRAPPER_INTR_MASK_A2HCPU_BMSK_IRIS35          0x4
+#define WRAPPER_INTR_MASK_IRIS4                      (WRAPPER_BASE_OFFS_IRIS4 + 0x10)
+#define WRAPPER_INTR_MASK_A2HWD_BMSK_IRIS4           0x8
+#define WRAPPER_INTR_MASK_A2HCPU_BMSK_IRIS4          0x4
 
-#define WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS35       (WRAPPER_BASE_OFFS_IRIS35 + 0x54)
-#define WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS35        (WRAPPER_BASE_OFFS_IRIS35 + 0x58)
-#define WRAPPER_IRIS_CPU_NOC_LPI_CONTROL              (WRAPPER_BASE_OFFS_IRIS35 + 0x5C)
-#define WRAPPER_IRIS_CPU_NOC_LPI_STATUS               (WRAPPER_BASE_OFFS_IRIS35 + 0x60)
-#define WRAPPER_IRIS_VCODEC_VPU_WRAPPER_SPARE_0       (WRAPPER_BASE_OFFS_IRIS35 + 0x78)
-#define WRAPPER_CORE_POWER_STATUS                     (WRAPPER_BASE_OFFS_IRIS35 + 0x80)
-#define WRAPPER_CORE_POWER_CONTROL                    (WRAPPER_BASE_OFFS_IRIS35 + 0x84)
-#define WRAPPER_CORE_CLOCK_CONFIG_IRIS35              (WRAPPER_BASE_OFFS_IRIS35 + 0x88)
+#define WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS4       (WRAPPER_BASE_OFFS_IRIS4 + 0x54)
+#define WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS4        (WRAPPER_BASE_OFFS_IRIS4 + 0x58)
+#define WRAPPER_IRIS_CPU_NOC_LPI_CONTROL              (WRAPPER_BASE_OFFS_IRIS4 + 0x5C)
+#define WRAPPER_IRIS_CPU_NOC_LPI_STATUS               (WRAPPER_BASE_OFFS_IRIS4 + 0x60)
+#define WRAPPER_IRIS_VCODEC_VPU_WRAPPER_SPARE_0       (WRAPPER_BASE_OFFS_IRIS4 + 0x78)
+#define WRAPPER_CORE_POWER_STATUS                     (WRAPPER_BASE_OFFS_IRIS4 + 0x80)
+#define WRAPPER_CORE_POWER_CONTROL                    (WRAPPER_BASE_OFFS_IRIS4 + 0x84)
+#define WRAPPER_CORE_CLOCK_CONFIG_IRIS4              (WRAPPER_BASE_OFFS_IRIS4 + 0x88)
 
 /*
  * --------------------------------------------------------------------------
@@ -122,8 +122,8 @@ typedef enum {
  * MODULE: VCODEC_SS registers
  * --------------------------------------------------------------------------
  */
-#define VCODEC_BASE_OFFS_IRIS35                       0x00000000
-#define VCODEC_SS_IDLE_STATUSn                        (VCODEC_BASE_OFFS_IRIS35 + 0x70)
+#define VCODEC_BASE_OFFS_IRIS4                       0x00000000
+#define VCODEC_SS_IDLE_STATUSn                        (VCODEC_BASE_OFFS_IRIS4 + 0x70)
 
 /*
  * --------------------------------------------------------------------------
@@ -143,48 +143,48 @@ typedef enum {
 #define NOC_ERL_ERRORLOGGER_MAIN_ERRORLOGGER_ERRLOG3_HIGH  (NOC_BASE_OFFS + 0xA03C)
 #define NOC_SIDEBANDMANAGER_MAIN_SIDEBANDMANAGER_FAULTINEN0_LOW (NOC_BASE_OFFS + 0x7040)
 
-static int __interrupt_init_iris35(struct msm_vidc_core *core)
+static int __interrupt_init_iris4(struct msm_vidc_core *core)
 {
 	u32 mask_val = 0;
 	int rc = 0;
 
 	/* All interrupts should be disabled initially 0x1F6 : Reset value */
-	rc = __read_register(core, WRAPPER_INTR_MASK_IRIS35, &mask_val);
+	rc = __read_register(core, WRAPPER_INTR_MASK_IRIS4, &mask_val);
 	if (rc)
 		return rc;
 
 	/* Write 0 to unmask CPU and WD interrupts */
-	mask_val &= ~(WRAPPER_INTR_MASK_A2HWD_BMSK_IRIS35|
-			WRAPPER_INTR_MASK_A2HCPU_BMSK_IRIS35);
-	rc = __write_register(core, WRAPPER_INTR_MASK_IRIS35, mask_val);
+	mask_val &= ~(WRAPPER_INTR_MASK_A2HWD_BMSK_IRIS4|
+			WRAPPER_INTR_MASK_A2HCPU_BMSK_IRIS4);
+	rc = __write_register(core, WRAPPER_INTR_MASK_IRIS4, mask_val);
 	if (rc)
 		return rc;
 
 	return 0;
 }
 
-static int __raise_interrupt_iris35(struct msm_vidc_core *core)
+static int __raise_interrupt_iris4(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	rc = __write_register(core, CPU_IC_SOFTINT_IRIS35, 1 << CPU_IC_SOFTINT_H2A_SHFT_IRIS35);
+	rc = __write_register(core, CPU_IC_SOFTINT_IRIS4, 1 << CPU_IC_SOFTINT_H2A_SHFT_IRIS4);
 	if (rc)
 		return rc;
 
 	return 0;
 }
 
-static int __clear_interrupt_iris35(struct msm_vidc_core *core)
+static int __clear_interrupt_iris4(struct msm_vidc_core *core)
 {
 	u32 intr_status = 0, mask = 0;
 	int rc = 0;
 
-	rc = __read_register(core, WRAPPER_INTR_STATUS_IRIS35, &intr_status);
+	rc = __read_register(core, WRAPPER_INTR_STATUS_IRIS4, &intr_status);
 	if (rc)
 		return rc;
 
-	mask = (WRAPPER_INTR_STATUS_A2H_BMSK_IRIS35 |
-		WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS35 |
+	mask = (WRAPPER_INTR_STATUS_A2H_BMSK_IRIS4 |
+		WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS4 |
 		HFI_CTRL_VCODEC_IDLE);
 
 	if (intr_status & mask) {
@@ -196,7 +196,7 @@ static int __clear_interrupt_iris35(struct msm_vidc_core *core)
 		core->spur_count++;
 	}
 
-	rc = __write_register(core, CPU_CS_A2HSOFTINTCLR_IRIS35, 1);
+	rc = __write_register(core, CPU_CS_A2HSOFTINTCLR_IRIS4, 1);
 	if (rc)
 		return rc;
 
@@ -237,7 +237,7 @@ static int __get_device_region_info(struct msm_vidc_core *core,
 	return rc;
 }
 
-static int __program_bootup_registers_iris35(struct msm_vidc_core *core)
+static int __program_bootup_registers_iris4(struct msm_vidc_core *core)
 {
 	u32 min_dev_reg_addr = 0, dev_reg_size = 0;
 	struct device *dev = NULL;
@@ -247,27 +247,27 @@ static int __program_bootup_registers_iris35(struct msm_vidc_core *core)
 	dev = &core->pdev->dev;
 
 	value = (u32)core->iface_q_table.align_device_addr;
-	rc = __write_register(core, HFI_UC_REGION_ADDR_IRIS35, value);
+	rc = __write_register(core, HFI_UC_REGION_ADDR_IRIS4, value);
 	if (rc)
 		return rc;
 
 	value = SHARED_QSIZE;
-	rc = __write_register(core, HFI_UC_REGION_SIZE_IRIS35, value);
+	rc = __write_register(core, HFI_UC_REGION_SIZE_IRIS4, value);
 	if (rc)
 		return rc;
 
 	value = (u32)core->iface_q_table.align_device_addr;
-	rc = __write_register(core, HFI_QTBL_ADDR_IRIS35, value);
+	rc = __write_register(core, HFI_QTBL_ADDR_IRIS4, value);
 	if (rc)
 		return rc;
 
-	rc = __write_register(core, HFI_QTBL_INFO_IRIS35, HFI_QTBL_ENABLED);
+	rc = __write_register(core, HFI_QTBL_INFO_IRIS4, HFI_QTBL_ENABLED);
 	if (rc)
 		return rc;
 
 	if (core->mmap_buf.align_device_addr) {
 		value = (u32)core->mmap_buf.align_device_addr;
-		rc = __write_register(core, HFI_MMAP_ADDR_IRIS35, value);
+		rc = __write_register(core, HFI_MMAP_ADDR_IRIS4, value);
 		if (rc)
 			return rc;
 	} else {
@@ -281,11 +281,11 @@ static int __program_bootup_registers_iris35(struct msm_vidc_core *core)
 		return rc;
 
 	if (min_dev_reg_addr && dev_reg_size) {
-		rc = __write_register(core, HFI_DEVICE_REGION_ADDR_IRIS35, min_dev_reg_addr);
+		rc = __write_register(core, HFI_DEVICE_REGION_ADDR_IRIS4, min_dev_reg_addr);
 		if (rc)
 			return rc;
 
-		rc = __write_register(core, HFI_DEVICE_REGION_SIZE_IRIS35, dev_reg_size);
+		rc = __write_register(core, HFI_DEVICE_REGION_SIZE_IRIS4, dev_reg_size);
 		if (rc)
 			return rc;
 	} else {
@@ -296,7 +296,7 @@ static int __program_bootup_registers_iris35(struct msm_vidc_core *core)
 
 	if (core->sfr.align_device_addr) {
 		value = (u32)core->sfr.align_device_addr + VIDEO_ARCH_LX;
-		rc = __write_register(core, HFI_SFR_ADDR_IRIS35, value);
+		rc = __write_register(core, HFI_SFR_ADDR_IRIS4, value);
 		if (rc)
 			return rc;
 	}
@@ -315,23 +315,23 @@ static int __program_bootup_registers_iris35(struct msm_vidc_core *core)
 	return 0;
 }
 
-static int __boot_firmware_iris35(struct msm_vidc_core *core)
+static int __boot_firmware_iris4(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	u32 ctrl_init_val = 0, ctrl_status = 0, count = 0, max_tries = 1000;
 
-	rc = __program_bootup_registers_iris35(core);
+	rc = __program_bootup_registers_iris4(core);
 	if (rc)
 		return rc;
 
 	ctrl_init_val = BIT(0);
 
-	rc = __write_register(core, HFI_CTRL_INIT_IRIS35, ctrl_init_val);
+	rc = __write_register(core, HFI_CTRL_INIT_IRIS4, ctrl_init_val);
 	if (rc)
 		return rc;
 
 	while (count < max_tries) {
-		rc = __read_register(core, HFI_CTRL_STATUS_IRIS35, &ctrl_status);
+		rc = __read_register(core, HFI_CTRL_STATUS_IRIS4, &ctrl_status);
 		if (rc)
 			return rc;
 
@@ -352,24 +352,23 @@ static int __boot_firmware_iris35(struct msm_vidc_core *core)
 	}
 
 	if (count >= max_tries) {
-		d_vpr_e(FMT_STRING_BOOT_FIRMWARE_ERROR,
-			ctrl_status, ctrl_init_val);
+		//d_vpr_e(FMT_STRING_BOOT_FIRMWARE_ERROR, ctrl_status, ctrl_init_val);
 		return -ETIME;
 	}
 
 	/* Enable interrupt before sending commands to venus */
-	rc = __write_register(core, CPU_CS_H2XSOFTINTEN_IRIS35, 0x1);
+	rc = __write_register(core, CPU_CS_H2XSOFTINTEN_IRIS4, 0x1);
 	if (rc)
 		return rc;
 
-	rc = __write_register(core, CPU_CS_X2RPMh_IRIS35, 0x0);
+	rc = __write_register(core, CPU_CS_X2RPMh_IRIS4, 0x0);
 	if (rc)
 		return rc;
 
 	return rc;
 }
 
-static bool is_iris35_hw_power_collapsed(struct msm_vidc_core *core)
+static bool is_iris4_hw_power_collapsed(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	u32 value = 0, pwr_status = 0;
@@ -383,7 +382,7 @@ static bool is_iris35_hw_power_collapsed(struct msm_vidc_core *core)
 	return pwr_status ? false : true;
 }
 
-static int __power_off_iris35_hardware(struct msm_vidc_core *core)
+static int __power_off_iris4_hardware(struct msm_vidc_core *core)
 {
 	int rc = 0, i;
 	u32 value = 0;
@@ -398,7 +397,7 @@ static int __power_off_iris35_hardware(struct msm_vidc_core *core)
 	 * to power collapse video hw always.
 	 */
 	if (is_core_sub_state(core, CORE_SUBSTATE_FW_PWR_CTRL)) {
-		pwr_collapsed = is_iris35_hw_power_collapsed(core);
+		pwr_collapsed = is_iris4_hw_power_collapsed(core);
 		if (pwr_collapsed) {
 			d_vpr_h("%s: video hw power collapsed %s\n",
 				__func__, core->sub_state_name);
@@ -413,14 +412,14 @@ static int __power_off_iris35_hardware(struct msm_vidc_core *core)
 	 * check to make sure core clock branch enabled else
 	 * we cannot read vcodec top idle register
 	 */
-	rc = __read_register(core, WRAPPER_CORE_CLOCK_CONFIG_IRIS35, &value);
+	rc = __read_register(core, WRAPPER_CORE_CLOCK_CONFIG_IRIS4, &value);
 	if (rc)
 		return rc;
 
 	if (value) {
 		d_vpr_e("%s: core clock config not enabled, enabling it to read vcodec registers\n",
 			__func__);
-		rc = __write_register(core, WRAPPER_CORE_CLOCK_CONFIG_IRIS35, 0);
+		rc = __write_register(core, WRAPPER_CORE_CLOCK_CONFIG_IRIS4, 0);
 		if (rc)
 			return rc;
 	}
@@ -512,7 +511,7 @@ disable_power:
 	return rc;
 }
 
-static int __power_off_iris35_controller(struct msm_vidc_core *core)
+static int __power_off_iris4_controller(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	int value = 0;
@@ -522,7 +521,7 @@ static int __power_off_iris35_controller(struct msm_vidc_core *core)
 	 * mask fal10_veto QLPAC error since fal10_veto can go 1
 	 * when pwwait == 0 and clamped to 0 -> HPG 3.7.4
 	 */
-	rc = __write_register(core, CPU_CS_X2RPMh_IRIS35, 0x3);
+	rc = __write_register(core, CPU_CS_X2RPMh_IRIS4, 0x3);
 	if (rc)
 		return rc;
 
@@ -586,11 +585,11 @@ static int __power_off_iris35_controller(struct msm_vidc_core *core)
 		return rc;
 
 	/* Debug bridge LPI release */
-	rc = __write_register(core, WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS35, 0x0);
+	rc = __write_register(core, WRAPPER_DEBUG_BRIDGE_LPI_CONTROL_IRIS4, 0x0);
 	if (rc)
 		return rc;
 
-	rc = __read_register_with_poll_timeout(core, WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS35,
+	rc = __read_register_with_poll_timeout(core, WRAPPER_DEBUG_BRIDGE_LPI_STATUS_IRIS4,
 					       0xffffffff, 0x0, 200, 2000);
 	if (rc)
 		d_vpr_e("%s: debug bridge release failed\n", __func__);
@@ -669,7 +668,7 @@ static int __power_off_iris35_controller(struct msm_vidc_core *core)
 	return rc;
 }
 
-static int __power_off_iris35(struct msm_vidc_core *core)
+static int __power_off_iris4(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
@@ -684,10 +683,10 @@ static int __power_off_iris35(struct msm_vidc_core *core)
 	if (rc)
 		d_vpr_e("%s: resetting clocks failed\n", __func__);
 
-	if (__power_off_iris35_hardware(core))
+	if (__power_off_iris4_hardware(core))
 		d_vpr_e("%s: failed to power off hardware\n", __func__);
 
-	if (__power_off_iris35_controller(core))
+	if (__power_off_iris4_controller(core))
 		d_vpr_e("%s: failed to power off controller\n", __func__);
 
 	rc = call_res_op(core, set_bw, core, 0, 0);
@@ -702,7 +701,7 @@ static int __power_off_iris35(struct msm_vidc_core *core)
 	return rc;
 }
 
-static int __power_on_iris35_controller(struct msm_vidc_core *core)
+static int __power_on_iris4_controller(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
@@ -734,7 +733,7 @@ fail_regulator:
 	return rc;
 }
 
-static int __power_on_iris35_hardware(struct msm_vidc_core *core)
+static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
@@ -778,7 +777,7 @@ fail_regulator:
 	return rc;
 }
 
-static int __power_on_iris35(struct msm_vidc_core *core)
+static int __power_on_iris4(struct msm_vidc_core *core)
 {
 	struct frequency_table *freq_tbl;
 	u32 freq = 0;
@@ -800,15 +799,15 @@ static int __power_on_iris35(struct msm_vidc_core *core)
 		goto fail_vote_buses;
 	}
 
-	rc = __power_on_iris35_controller(core);
+	rc = __power_on_iris4_controller(core);
 	if (rc) {
-		d_vpr_e("%s: failed to power on iris35 controller\n", __func__);
+		d_vpr_e("%s: failed to power on iris4 controller\n", __func__);
 		goto fail_power_on_controller;
 	}
 
-	rc = __power_on_iris35_hardware(core);
+	rc = __power_on_iris4_hardware(core);
 	if (rc) {
-		d_vpr_e("%s: failed to power on iris35 hardware\n", __func__);
+		d_vpr_e("%s: failed to power on iris4 hardware\n", __func__);
 		goto fail_power_on_hardware;
 	}
 
@@ -824,14 +823,14 @@ static int __power_on_iris35(struct msm_vidc_core *core)
 
 	__set_registers(core);
 
-	__interrupt_init_iris35(core);
+	__interrupt_init_iris4(core);
 	core->intr_status = 0;
 	enable_irq(core->resource->irq);
 
 	return rc;
 
 fail_power_on_hardware:
-	__power_off_iris35_controller(core);
+	__power_off_iris4_controller(core);
 fail_power_on_controller:
 	call_res_op(core, set_bw, core, 0, 0);
 fail_vote_buses:
@@ -840,13 +839,13 @@ fail_vote_buses:
 	return rc;
 }
 
-static int __prepare_pc_iris35(struct msm_vidc_core *core)
+static int __prepare_pc_iris4(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	u32 wfi_status = 0, idle_status = 0, pc_ready = 0;
 	u32 ctrl_status = 0;
 
-	rc = __read_register(core, HFI_CTRL_STATUS_IRIS35, &ctrl_status);
+	rc = __read_register(core, HFI_CTRL_STATUS_IRIS4, &ctrl_status);
 	if (rc)
 		return rc;
 
@@ -873,7 +872,7 @@ static int __prepare_pc_iris35(struct msm_vidc_core *core)
 		goto skip_power_off;
 	}
 
-	rc = __read_register_with_poll_timeout(core, HFI_CTRL_STATUS_IRIS35,
+	rc = __read_register_with_poll_timeout(core, HFI_CTRL_STATUS_IRIS4,
 			HFI_CTRL_PC_READY, HFI_CTRL_PC_READY, 250, 2500);
 	if (rc) {
 		d_vpr_e("%s: Skip PC. Ctrl status not set\n", __func__);
@@ -889,7 +888,7 @@ static int __prepare_pc_iris35(struct msm_vidc_core *core)
 	return rc;
 
 skip_power_off:
-	rc = __read_register(core, HFI_CTRL_STATUS_IRIS35, &ctrl_status);
+	rc = __read_register(core, HFI_CTRL_STATUS_IRIS4, &ctrl_status);
 	if (rc)
 		return rc;
 	rc = __read_register(core, WRAPPER_TZ_CPU_STATUS, &wfi_status);
@@ -901,11 +900,11 @@ skip_power_off:
 	return -EAGAIN;
 }
 
-static int __watchdog_iris35(struct msm_vidc_core *core, u32 intr_status)
+static int __watchdog_iris4(struct msm_vidc_core *core, u32 intr_status)
 {
 	int rc = 0;
 
-	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS35) {
+	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS4) {
 		d_vpr_e("%s: received watchdog interrupt\n", __func__);
 		rc = 1;
 		MSM_VIDC_FATAL(true);
@@ -914,12 +913,12 @@ static int __watchdog_iris35(struct msm_vidc_core *core, u32 intr_status)
 	return rc;
 }
 
-static int __noc_error_info_iris35(struct msm_vidc_core *core)
+static int __noc_error_info_iris4(struct msm_vidc_core *core)
 {
 	u32 value;
 	int rc = 0;
 
-	if (is_iris35_hw_power_collapsed(core)) {
+	if (is_iris4_hw_power_collapsed(core)) {
 		d_vpr_e("%s: video hardware already power collapsed\n", __func__);
 		return rc;
 	}
@@ -969,7 +968,7 @@ static int __noc_error_info_iris35(struct msm_vidc_core *core)
 	return rc;
 }
 
-static int __switch_gdsc_mode_iris35(struct msm_vidc_core *core, bool sw_mode)
+static int __switch_gdsc_mode_iris4(struct msm_vidc_core *core, bool sw_mode)
 {
 	int rc;
 
@@ -1000,7 +999,7 @@ static int __switch_gdsc_mode_iris35(struct msm_vidc_core *core, bool sw_mode)
 	return 0;
 }
 
-int msm_vidc_decide_work_mode_iris35(struct msm_vidc_inst *inst)
+int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
 {
 	u32 work_mode;
 	struct v4l2_format *inp_f;
@@ -1057,7 +1056,7 @@ exit:
 	return 0;
 }
 
-int msm_vidc_decide_work_route_iris35(struct msm_vidc_inst *inst)
+int msm_vidc_decide_work_route_iris4(struct msm_vidc_inst *inst)
 {
 	u32 work_route;
 	struct msm_vidc_core *core;
@@ -1093,7 +1092,7 @@ exit:
 	return 0;
 }
 
-int msm_vidc_decide_quality_mode_iris35(struct msm_vidc_inst *inst)
+int msm_vidc_decide_quality_mode_iris4(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
 	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
@@ -1139,101 +1138,7 @@ decision_done:
 	return 0;
 }
 
-int msm_vidc_adjust_min_quality_iris35(void *instance, struct v4l2_ctrl *ctrl)
-{
-	s32 adjusted_value;
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 rc_type = -1, enh_layer_count = -1, pix_fmts = -1;
-	u32 width, height, frame_rate;
-	struct v4l2_format *f;
-
-	adjusted_value = ctrl ? ctrl->val : inst->capabilities[MIN_QUALITY].value;
-
-	/*
-	 * Although MIN_QUALITY is static, one of its parents,
-	 * ENH_LAYER_COUNT is dynamic cap. Hence, dynamic call
-	 * may be made for MIN_QUALITY via ENH_LAYER_COUNT.
-	 * Therefore, below streaming check is required to avoid
-	 * runtime modification of MIN_QUALITY.
-	 */
-	if (inst->bufq[OUTPUT_PORT].vb2q->streaming)
-		return 0;
-
-	if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
-				      BITRATE_MODE, &rc_type, __func__) ||
-	    msm_vidc_get_parent_value(inst, MIN_QUALITY,
-				      ENH_LAYER_COUNT, &enh_layer_count, __func__))
-		return -EINVAL;
-
-	/*
-	 * Min Quality is supported only for VBR rc type.
-	 * Hence, do not adjust or set to firmware for non VBR rc's
-	 */
-	if (rc_type != HFI_RC_VBR_CFR) {
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
-	f = &inst->fmts[OUTPUT_PORT];
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	/*
-	 * VBR Min Quality not supported for:
-	 * - HEVC 10bit
-	 * - ROI support
-	 * - HP encoding
-	 * - External Blur
-	 * - Resolution beyond 1080P
-	 * (It will fall back to CQCAC 25% or 0% (CAC) or CQCAC-OFF)
-	 */
-	if (inst->codec == MSM_VIDC_HEVC) {
-		if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
-					      PIX_FMTS, &pix_fmts, __func__))
-			return -EINVAL;
-
-		if (is_10bit_colorformat(pix_fmts)) {
-			i_vpr_h(inst,
-				"%s: min quality is supported only for 8 bit\n",
-				__func__);
-			adjusted_value = 0;
-			goto update_and_exit;
-		}
-	}
-
-	if (res_is_greater_than(width, height, 1920, 1080)) {
-		i_vpr_h(inst, "%s: unsupported res, wxh %ux%u\n",
-			__func__, width, height);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	if (frame_rate > 60) {
-		i_vpr_h(inst, "%s: unsupported fps %u\n",
-			__func__, frame_rate);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	if (enh_layer_count > 0 && inst->hfi_layer_type != HFI_HIER_B) {
-		i_vpr_h(inst,
-			"%s: min quality not supported for HP encoding\n",
-			__func__);
-		adjusted_value = 0;
-		goto update_and_exit;
-	}
-
-	/* Above conditions are met. Hence enable min quality */
-	adjusted_value = MAX_SUPPORTED_MIN_QUALITY;
-
-update_and_exit:
-	msm_vidc_update_cap_value(inst, MIN_QUALITY, adjusted_value, __func__);
-
-	return 0;
-}
-
-int msm_vidc_adjust_bitrate_boost_iris35(void *instance, struct v4l2_ctrl *ctrl)
+int msm_vidc_adjust_bitrate_boost_iris4(void *instance, struct v4l2_ctrl *ctrl)
 {
 	s32 adjusted_value;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
@@ -1297,34 +1202,34 @@ adjust:
 	return 0;
 }
 
-static struct msm_vidc_venus_ops iris35_ops = {
-	.raise_interrupt = __raise_interrupt_iris35,
-	.clear_interrupt = __clear_interrupt_iris35,
-	.boot_firmware = __boot_firmware_iris35,
-	.power_on = __power_on_iris35,
-	.power_off = __power_off_iris35,
-	.prepare_pc = __prepare_pc_iris35,
-	.watchdog = __watchdog_iris35,
-	.noc_error_info = __noc_error_info_iris35,
-	.switch_gdsc_mode = __switch_gdsc_mode_iris35,
+static struct msm_vidc_venus_ops iris4_ops = {
+	.raise_interrupt = __raise_interrupt_iris4,
+	.clear_interrupt = __clear_interrupt_iris4,
+	.boot_firmware = __boot_firmware_iris4,
+	.power_on = __power_on_iris4,
+	.power_off = __power_off_iris4,
+	.prepare_pc = __prepare_pc_iris4,
+	.watchdog = __watchdog_iris4,
+	.noc_error_info = __noc_error_info_iris4,
+	.switch_gdsc_mode = __switch_gdsc_mode_iris4,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
-	.buffer_size = msm_buffer_size_iris35,
-	.min_count = msm_buffer_min_count_iris35,
-	.extra_count = msm_buffer_extra_count_iris35,
-	.ring_buf_count = msm_vidc_ring_buf_count_iris35,
-	.calc_freq = msm_vidc_calc_freq_iris35,
-	.calc_bw = msm_vidc_calc_bw_iris35,
-	.decide_work_route = msm_vidc_decide_work_route_iris35,
-	.decide_work_mode = msm_vidc_decide_work_mode_iris35,
-	.decide_quality_mode = msm_vidc_decide_quality_mode_iris35,
+	.buffer_size = msm_buffer_size_iris4,
+	.min_count = msm_buffer_min_count_iris4,
+	.extra_count = msm_buffer_extra_count_iris4,
+	.ring_buf_count = msm_vidc_ring_buf_count_iris4,
+	.calc_freq = msm_vidc_calc_freq_iris4,
+	.calc_bw = msm_vidc_calc_bw_iris4,
+	.decide_work_route = msm_vidc_decide_work_route_iris4,
+	.decide_work_mode = msm_vidc_decide_work_mode_iris4,
+	.decide_quality_mode = msm_vidc_decide_quality_mode_iris4,
 };
 
-int msm_vidc_init_iris35(struct msm_vidc_core *core)
+int msm_vidc_init_iris4(struct msm_vidc_core *core)
 {
 	d_vpr_h("%s()\n", __func__);
-	core->venus_ops = &iris35_ops;
+	core->venus_ops = &iris4_ops;
 	core->session_ops = &msm_session_ops;
 
 	return 0;
