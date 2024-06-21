@@ -7,6 +7,13 @@
 #ifndef _MSM_VIDC_FIRMWARE_H_
 #define _MSM_VIDC_FIRMWARE_H_
 
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+#include <linux/firmware/qcom/qcom_scm.h>
+#else
+#include <linux/qcom_scm.h>
+#endif
+
 struct msm_vidc_core;
 
 int fw_load(struct msm_vidc_core *core);

@@ -824,6 +824,12 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 		CAP_FLAG_OUTPUT_PORT |
 			CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 
+	{OPEN_GOP, ENC, HEVC,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_OPEN_GOP_ENABLE,
+		HFI_PROP_OPEN_GOP,
+		CAP_FLAG_OUTPUT_PORT},
+
 	{GOP_CLOSURE, ENC, H264 | HEVC,
 		0, 1, 1, 1,
 		V4L2_CID_MPEG_VIDEO_GOP_CLOSURE,
@@ -2192,7 +2198,8 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_niob
 			P_FRAME_QP, B_FRAME_QP, CONSTANT_QUALITY, ENH_LAYER_COUNT,
 			BIT_RATE, META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
-			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS, META_TRANSCODING_STAT_INFO},
+			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
+			META_TRANSCODING_STAT_INFO, OPEN_GOP},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -2214,6 +2221,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_niob
 	{GOP_SIZE, ENC, HEIC,
 		{0},
 		NULL,
+		msm_vidc_set_u32},
+
+	{OPEN_GOP, ENC, HEVC,
+		{GOP_SIZE},
+		msm_vidc_adjust_open_gop,
 		msm_vidc_set_u32},
 
 	{B_FRAME, ENC, H264 | HEVC,
@@ -2376,14 +2388,22 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_niob
 		NULL,
 		msm_vidc_set_frame_qp},
 
-	{LAYER_TYPE, ENC, H264 | HEVC,
+	{LAYER_TYPE, ENC, H264,
 		{CONTENT_ADAPTIVE_CODING, LTR_COUNT}},
+
+	{LAYER_TYPE, ENC, HEVC,
+		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, OPEN_GOP}},
 
 	{LAYER_ENABLE, ENC, H264 | HEVC,
 		{CONTENT_ADAPTIVE_CODING}},
 
-	{ENH_LAYER_COUNT, ENC, H264 | HEVC,
+	{ENH_LAYER_COUNT, ENC, H264,
 		{GOP_SIZE, B_FRAME, BIT_RATE, MIN_QUALITY, SLICE_MODE, LTR_COUNT},
+		msm_vidc_adjust_layer_count,
+		msm_vidc_set_layer_count_and_type},
+
+	{ENH_LAYER_COUNT, ENC, HEVC,
+		{GOP_SIZE, B_FRAME, BIT_RATE, MIN_QUALITY, SLICE_MODE, LTR_COUNT, OPEN_GOP},
 		msm_vidc_adjust_layer_count,
 		msm_vidc_set_layer_count_and_type},
 
@@ -2699,7 +2719,7 @@ static const struct clk_table niobe_clk_table[] = {
 	{ "gcc_video_axi0",        GCC_VIDEO_AXI0_CLK,     0 },
 	{ "core_clk",              VIDEO_CC_MVS0C_CLK,     0 },
 	{ "vcodec_clk",            VIDEO_CC_MVS0_CLK,      0 },
-	{ "core_clk_src",          VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src", VIDEO_CC_MVS0_CLK_SRC,  1 },
 };
 
 /* name, llcc_id */
@@ -2740,11 +2760,6 @@ static const struct device_region_table niobe_device_region_table[] = {
 		"aon-registers",
 		0x0AAE0000, 0x1000, 0xFFAE0000,
 		MSM_VIDC_AON
-	},
-	{
-		"ipc_protocol4_client11_version-registers",
-		0x0050B000, 0x1000, 0xFFADF000,
-		MSM_VIDC_PROTOCOL_FENCE_CLIENT_VPU
 	},
 	{
 		"qtimer_f0v1_qtmr_v1_cntpct_lo",

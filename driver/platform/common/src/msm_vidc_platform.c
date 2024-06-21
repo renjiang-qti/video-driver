@@ -3045,11 +3045,11 @@ int msm_vidc_set_chroma_qp_index_offset(void *instance,
 	u32 width, height;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct v4l2_format *f;
+	u32 hfi_value = 0, chroma_qp_offset_mode = 0, chroma_qp = 0;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
-	u32 hfi_value = 0, chroma_qp_offset_mode = 0, chroma_qp = 0;
 
 	if (inst->capabilities[cap_id].flags & CAP_FLAG_CLIENT_SET)
 		chroma_qp_offset_mode = HFI_FIXED_CHROMAQP_OFFSET;

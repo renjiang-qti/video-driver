@@ -559,8 +559,13 @@ static int msm_vidc_iommu_map(struct msm_vidc_core *core, struct msm_vidc_mem *m
 		return -EIO;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
 	rc = iommu_map(cb->domain, mem->device_addr, mem->phys_addr,
 		mem->size, IOMMU_READ | IOMMU_WRITE | IOMMU_MMIO, GFP_KERNEL);
+#else
+	rc = iommu_map(cb->domain, mem->device_addr, mem->phys_addr,
+		mem->size, IOMMU_READ | IOMMU_WRITE | IOMMU_MMIO);
+#endif
 	if (rc) {
 		d_vpr_e("iommu_map failed for device_addr 0x%llx, size %d, rc:%d\n",
 			mem->device_addr, mem->size, rc);
