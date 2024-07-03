@@ -466,6 +466,14 @@ enum msm_vidc_metadata_bits {
 	BUF_REGION(REGION_MAX)                    \
 }
 
+#define FOREACH_DEVICE_REGION(DEVICE_REGION) {    \
+	DEVICE_REGION(DEVICE_REGION_NONE)         \
+	DEVICE_REGION(AON)                        \
+	DEVICE_REGION(PROTOCOL_FENCE_CLIENT_VPU)  \
+	DEVICE_REGION(QTIMER)                     \
+	DEVICE_REGION(DEVICE_REGION_MAX)          \
+}
+
 enum msm_vidc_domain_type {
 	MSM_VIDC_ENCODER           = BIT(0),
 	MSM_VIDC_DECODER           = BIT(1),
@@ -519,13 +527,7 @@ enum msm_vidc_buffer_attributes {
 
 enum msm_vidc_buffer_region FOREACH_BUF_REGION(GENERATE_MSM_VIDC_ENUM);
 
-enum msm_vidc_device_region {
-	MSM_VIDC_DEVICE_REGION_NONE = 0,
-	MSM_VIDC_AON,
-	MSM_VIDC_PROTOCOL_FENCE_CLIENT_VPU,
-	MSM_VIDC_QTIMER,
-	MSM_VIDC_DEVICE_REGION_MAX,
-};
+enum msm_vidc_device_region FOREACH_DEVICE_REGION(GENERATE_MSM_VIDC_ENUM);
 
 enum msm_vidc_port_type {
 	INPUT_PORT = 0,

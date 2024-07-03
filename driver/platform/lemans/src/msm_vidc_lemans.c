@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
@@ -773,13 +773,13 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_BLUR_NONE, MSM_VIDC_BLUR_EXTERNAL,
 		BIT(MSM_VIDC_BLUR_NONE) | BIT(MSM_VIDC_BLUR_EXTERNAL),
 		MSM_VIDC_BLUR_NONE,
-		V4L2_CID_MPEG_VIDC_VIDEO_BLUR_TYPES,
+		V4L2_CID_MPEG_VIDC_BLUR_TYPES,
 		HFI_PROP_BLUR_TYPES,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{BLUR_RESOLUTION, ENC, H264 | HEVC,
 		0, S32_MAX, 1, 0,
-		V4L2_CID_MPEG_VIDC_VIDEO_BLUR_RESOLUTION,
+		V4L2_CID_MPEG_VIDC_BLUR_RESOLUTION,
 		HFI_PROP_BLUR_RESOLUTION,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 		CAP_FLAG_DYNAMIC_ALLOWED},
@@ -791,7 +791,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 
 	{CSC_CUSTOM_MATRIX, ENC, CODECS_ALL,
 		0, 1, 1, 0,
-		V4L2_CID_MPEG_VIDC_VIDEO_VPE_CSC_CUSTOM_MATRIX,
+		V4L2_CID_MPEG_VIDC_CSC_CUSTOM_MATRIX,
 		HFI_PROP_CSC_MATRIX,
 		CAP_FLAG_OUTPUT_PORT},
 
@@ -1636,7 +1636,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 
 	{ENC_IP_CR, ENC, CODECS_ALL,
 		0, S32_MAX, 1, 0,
-		V4L2_CID_MPEG_VIDC_ENC_INPUT_COMPRESSION_RATIO,
+		V4L2_CID_MPEG_VIDC_COMPRESSION_RATIO,
 		0, CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{INPUT_EXTRA_METADATA_OFFSET, DEC, CODECS_ALL,
@@ -1652,7 +1652,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 
 	{FILM_GRAIN, DEC, AV1,
 		0, 1, 1, 0,
-		V4L2_CID_MPEG_VIDC_AV1D_FILM_GRAIN_PRESENT,
+		V4L2_CID_MPEG_VIDC_FILM_GRAIN_PRESENT,
 		HFI_PROP_AV1_FILM_GRAIN_PRESENT,
 		CAP_FLAG_VOLATILE},
 
@@ -1787,7 +1787,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_SEI_MASTERING_DISPLAY_COLOUR,
+		V4L2_CID_MPEG_VIDC_METADATA_SEI_MDCV,
 		HFI_PROP_SEI_MASTERING_DISPLAY_COLOUR,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
@@ -1796,7 +1796,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT |
 			MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_SEI_MASTERING_DISPLAY_COLOUR,
+		V4L2_CID_MPEG_VIDC_METADATA_SEI_MDCV,
 		HFI_PROP_SEI_MASTERING_DISPLAY_COLOUR,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
@@ -1804,7 +1804,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_SEI_CONTENT_LIGHT_LEVEL,
+		V4L2_CID_MPEG_VIDC_METADATA_SEI_CLL,
 		HFI_PROP_SEI_CONTENT_LIGHT_LEVEL,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
@@ -1813,7 +1813,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT |
 			MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_SEI_CONTENT_LIGHT_LEVEL,
+		V4L2_CID_MPEG_VIDC_METADATA_SEI_CLL,
 		HFI_PROP_SEI_CONTENT_LIGHT_LEVEL,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
@@ -1933,7 +1933,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_DEC_QP_METADATA,
+		V4L2_CID_MPEG_VIDC_METADATA_QP,
 		HFI_PROP_DEC_QP_METADATA,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
@@ -1951,7 +1951,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 	{COMPLEXITY, ENC, H264 | HEVC,
 		0, 100,
 		1, DEFAULT_COMPLEXITY,
-		V4L2_CID_MPEG_VIDC_VENC_COMPLEXITY},
+		V4L2_CID_MPEG_VIDC_COMPLEXITY},
 
 	/*
 	 * value of MAX_NUM_REORDER_FRAMES is 32 packed as mentioned below
