@@ -373,6 +373,7 @@ const char *core_sub_state_name(enum msm_vidc_core_sub_state sub_state)
 	case CORE_SUBSTATE_PAGE_FAULT:           return "PAGE_FAULT ";
 	case CORE_SUBSTATE_CPU_WATCHDOG:         return "CPU_WATCHDOG ";
 	case CORE_SUBSTATE_VIDEO_UNRESPONSIVE:   return "VIDEO_UNRESPONSIVE ";
+	case CORE_SUBSTATE_RPROC_ENABLE:         return "RPROC_ENABLE ";
 	case CORE_SUBSTATE_MAX:                  return "MAX ";
 	}
 

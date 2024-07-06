@@ -127,6 +127,7 @@ struct msm_vidc_core {
 	u32                                    packet_id;
 	u32                                    sys_init_id;
 	struct msm_vidc_synx_fence_data        synx_fence_data;
+	void                                  *rproc;
 };
 
 #endif // _MSM_VIDC_CORE_H_

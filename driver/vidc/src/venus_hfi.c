@@ -156,6 +156,13 @@ static int __flush_debug_queue(struct msm_vidc_core *core,
 		 */
 		log = (u8 *)packet + sizeof(struct hfi_debug_header) + 1;
 		dprintk_firmware(log_level_fw, "%s", log);
+
+		/*
+		 * Print firmware ftrace logs in ftrace buffer if driver
+		 * enabled ftrace logging and firmware returned ftrace logs
+		 */
+		if ((log_level_fw & FW_TRACE) && (pkt->debug_level & FW_TRACE))
+			dprintk_firmware_ftrace(log_level_fw, pkt->size, "%s", log);
 	}
 
 	if (local_packet)

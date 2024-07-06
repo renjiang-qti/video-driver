@@ -604,12 +604,6 @@ static int msm_vidc_component_master_bind(struct device *dev)
 		return rc;
 	}
 
-	rc = call_fence_op(core, fence_register, core);
-	if (rc) {
-		d_vpr_e("%s: failed to register synx fence\n", __func__);
-		return rc;
-	}
-
 	rc = msm_vidc_initialize_media(core);
 	if (rc) {
 		d_vpr_e("%s: media initialization failed\n", __func__);
@@ -652,7 +646,6 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	msm_vidc_core_deinit(core, true);
 	venus_hfi_queue_deinit(core);
 	msm_vidc_deinitialize_media(core);
-	call_fence_op(core, fence_deregister, core);
 	component_unbind_all(dev, core);
 
 	d_vpr_h("%s(): succssful\n", __func__);
@@ -697,6 +690,7 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 	of_platform_depopulate(&pdev->dev);
 
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
+	call_fence_op(core, fence_deregister, core);
 
 	dev_set_drvdata(&pdev->dev, NULL);
 	g_core = NULL;
@@ -764,7 +758,7 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 	rc = msm_vidc_init_platform(core);
 	if (rc) {
 		d_vpr_e("%s: init platform failed with %d\n", __func__, rc);
-		rc = -EINVAL;
+		rc = (rc == -EAGAIN) ? -EPROBE_DEFER : -EINVAL;
 		goto init_plat_failed;
 	}
 
@@ -784,6 +778,13 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 	if (rc) {
 		d_vpr_e("%s: init inst cap failed with %d\n", __func__, rc);
 		goto init_inst_caps_fail;
+	}
+
+	rc = call_fence_op(core, fence_register, core);
+	if (rc) {
+		d_vpr_e("%s: synx fence register failed with %d\n", __func__, rc);
+		rc = (rc == -EAGAIN) ? -EPROBE_DEFER : -EINVAL;
+		goto fence_reg_fail;
 	}
 
 	rc = sysfs_create_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
@@ -858,6 +859,8 @@ master_add_failed:
 sub_dev_failed:
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 init_group_failed:
+	call_fence_op(core, fence_deregister, core);
+fence_reg_fail:
 init_inst_caps_fail:
 init_res_failed:
 init_plat_failed:

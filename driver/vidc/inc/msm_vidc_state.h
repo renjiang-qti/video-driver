@@ -41,7 +41,8 @@ enum msm_vidc_core_sub_state {
 	CORE_SUBSTATE_PAGE_FAULT             = BIT(4),
 	CORE_SUBSTATE_CPU_WATCHDOG           = BIT(5),
 	CORE_SUBSTATE_VIDEO_UNRESPONSIVE     = BIT(6),
-	CORE_SUBSTATE_MAX                    = BIT(7),
+	CORE_SUBSTATE_RPROC_ENABLE           = BIT(7),
+	CORE_SUBSTATE_MAX                    = BIT(8),
 };
 
 enum msm_vidc_core_event_type {
