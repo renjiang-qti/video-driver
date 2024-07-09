@@ -96,6 +96,12 @@ static int __acquire_regulator(struct msm_vidc_core *core,
 		goto fail_assert_xo_reset;
 	}
 
+	if (!regulator_is_enabled(rinfo->regulator)) {
+		d_vpr_e("%s: Regulator is not enabled %s\n",
+				__func__, rinfo->name);
+		return 0;
+	}
+
 	if (rinfo->hw_power_collapse) {
 		if (!rinfo->regulator) {
 			d_vpr_e("%s: invalid regulator\n", __func__);
@@ -162,6 +168,12 @@ static int __hand_off_regulator(struct msm_vidc_core *core,
 	if (rc) {
 		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
 		goto fail_assert_xo_reset;
+	}
+
+	if (!regulator_is_enabled(rinfo->regulator)) {
+		d_vpr_e("%s: Regulator is not enabled %s\n",
+				__func__, rinfo->name);
+		return 0;
 	}
 
 	if (rinfo->hw_power_collapse) {
