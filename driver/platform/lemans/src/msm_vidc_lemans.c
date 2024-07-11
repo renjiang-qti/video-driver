@@ -2839,7 +2839,7 @@ static const struct msm_vidc_platform_data lemans_data = {
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(lemans_msm_vidc_ssr_type),
 };
 
-int msm_vidc_lemans_check_ddr_type(void)
+static int msm_vidc_lemans_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -2854,13 +2854,19 @@ int msm_vidc_lemans_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_lemans(struct msm_vidc_core *core)
+{
+	d_vpr_h("%s: initialize lemans data\n", __func__);
+	core->platform->data = lemans_data;
+
+	return 0;
+}
+
+int msm_vidc_init_platform_lemans(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	d_vpr_h("%s: initialize lemans data\n", __func__);
-
-	core->platform->data = lemans_data;
+	d_vpr_h("%s: initialize lemans ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ext ops\n", __func__);
@@ -2876,15 +2882,4 @@ static int msm_vidc_init_data(struct msm_vidc_core *core)
 		return rc;
 
 	return rc;
-}
-
-int msm_vidc_init_platform_lemans(struct msm_vidc_core *core)
-{
-	int rc = 0;
-
-	rc = msm_vidc_init_data(core);
-	if (rc)
-		return rc;
-
-	return 0;
 }

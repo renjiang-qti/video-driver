@@ -1724,7 +1724,7 @@ static const struct msm_vidc_platform_data pineapple_data = {
 	.format_data = &format_data_pineapple,
 };
 
-int msm_vidc_pineapple_check_ddr_type(void)
+static int msm_vidc_pineapple_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -1739,26 +1739,20 @@ int msm_vidc_pineapple_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_pineapple(struct msm_vidc_core *core)
 {
-	int rc = 0;
-
 	d_vpr_h("%s: initialize pineapple data\n", __func__);
-
 	core->platform->data = pineapple_data;
 
-	rc = msm_vidc_pineapple_check_ddr_type();
-	if (rc)
-		return rc;
-
-	return rc;
+	return 0;
 }
 
 int msm_vidc_init_platform_pineapple(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	rc = msm_vidc_init_data(core);
+	d_vpr_h("%s: initialize pineapple ops\n", __func__);
+	rc = msm_vidc_pineapple_check_ddr_type();
 	if (rc)
 		return rc;
 

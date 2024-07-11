@@ -3861,7 +3861,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 	if (!platform_cap_data) {
 		d_vpr_e("%s: platform instance cap data is NULL\n",
 				__func__);
-			rc = -EINVAL;
+		rc = -EINVAL;
 		goto error;
 	}
 
@@ -3869,7 +3869,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 	if (!platform_cap_dependency_data) {
 		d_vpr_e("%s: platform instance cap dependency data is NULL\n",
 				__func__);
-			rc = -EINVAL;
+		rc = -EINVAL;
 		goto error;
 	}
 
@@ -3940,7 +3940,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 				rc = update_inst_capability(&platform_cap_data[i],
 					&core->inst_caps[j]);
 				if (rc)
-					return rc;
+					goto error;
 			}
 		}
 	}
@@ -3958,7 +3958,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 					&platform_cap_dependency_data[i],
 					&core->inst_caps[j]);
 				if (rc)
-					return rc;
+					goto error;
 			}
 		}
 	}

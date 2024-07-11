@@ -212,11 +212,13 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
 	{
 		.compat                     = "qcom,sm8650-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_pineapple,
 		.init_platform              = msm_vidc_init_platform_pineapple,
 		.init_iris                  = msm_vidc_init_iris33,
 	},
 	{
 		.compat                     = "qcom,sm8650-vidc-v2",
+		.get_platform_data          = msm_vidc_get_platform_data_pineapple,
 		.init_platform              = msm_vidc_init_platform_pineapple,
 		.init_iris                  = msm_vidc_init_iris33,
 	},
@@ -224,11 +226,13 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_SUN)
 	{
 		.compat                     = "qcom,sm8750-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_sun,
 		.init_platform              = msm_vidc_init_platform_sun,
 		.init_iris                  = msm_vidc_init_iris35,
 	},
 	{
 		.compat                     = "qcom,sm8750-vidc-v2",
+		.get_platform_data          = msm_vidc_get_platform_data_sun,
 		.init_platform              = msm_vidc_init_platform_sun,
 		.init_iris                  = msm_vidc_init_iris35,
 	},
@@ -236,6 +240,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_LEMANS)
 	{
 		.compat                     = "qcom,sa8255-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_iris                  = msm_vidc_init_iris3,
 	},
@@ -243,6 +248,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_NIOBE)
 	{
 		.compat                     = "qcom,niobe-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_niobe,
 		.init_platform              = msm_vidc_init_platform_niobe,
 		.init_iris                  = msm_vidc_init_iris3,
 	},
@@ -279,12 +285,39 @@ static int msm_vidc_init_ops(struct msm_vidc_core *core)
 	return 0;
 }
 
-static int msm_vidc_init_platform_variant(struct msm_vidc_core *core)
+static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 {
-	struct device *dev = NULL;
+	struct device *dev = &core->pdev->dev;
 	int i, rc = 0;
 
-	dev = &core->pdev->dev;
+	d_vpr_h("%s()\n", __func__);
+
+	/* select platform based on compatible match */
+	for (i = 0; i < ARRAY_SIZE(compat_handle); i++) {
+		if (of_device_is_compatible(dev->of_node, compat_handle[i].compat)) {
+			rc = compat_handle[i].get_platform_data(core);
+			if (rc) {
+				d_vpr_e("%s: (%s) init failed with %d\n",
+					__func__, compat_handle[i].compat, rc);
+				return rc;
+			}
+			break;
+		}
+	}
+
+	/* handle unknown compat type */
+	if (i == ARRAY_SIZE(compat_handle)) {
+		d_vpr_e("%s: Unsupported device: (%s)\n", __func__, dev_name(dev));
+		return -EINVAL;
+	}
+
+	return rc;
+}
+
+static int msm_vidc_init_platform(struct msm_vidc_core *core)
+{
+	struct device *dev = &core->pdev->dev;
+	int i, rc = 0;
 
 	d_vpr_h("%s()\n", __func__);
 
@@ -312,10 +345,8 @@ static int msm_vidc_init_platform_variant(struct msm_vidc_core *core)
 
 static int msm_vidc_init_vpu(struct msm_vidc_core *core)
 {
-	struct device *dev = NULL;
+	struct device *dev = &core->pdev->dev;
 	int i, rc = 0;
-
-	dev = &core->pdev->dev;
 
 	/* select platform based on compatible match */
 	for (i = 0; i < ARRAY_SIZE(compat_handle); i++) {
@@ -339,7 +370,7 @@ static int msm_vidc_init_vpu(struct msm_vidc_core *core)
 	return rc;
 }
 
-int msm_vidc_init_platform(struct msm_vidc_core *core)
+int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	struct msm_vidc_platform *platform = NULL;
@@ -355,12 +386,25 @@ int msm_vidc_init_platform(struct msm_vidc_core *core)
 
 	core->platform = platform;
 
+	/* get platform data */
+	rc = msm_vidc_get_platform_data(core);
+	if (rc)
+		return rc;
+
+	rc = msm_vidc_init_core_caps(core);
+	if (rc)
+		return rc;
+
+	rc = msm_vidc_init_instance_caps(core);
+	if (rc)
+		return rc;
+
 	/* selected ops can be re-assigned in platform specific file */
 	rc = msm_vidc_init_ops(core);
 	if (rc)
 		return rc;
 
-	rc = msm_vidc_init_platform_variant(core);
+	rc = msm_vidc_init_platform(core);
 	if (rc)
 		return rc;
 
@@ -3045,11 +3089,11 @@ int msm_vidc_set_chroma_qp_index_offset(void *instance,
 	u32 width, height;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct v4l2_format *f;
+	u32 hfi_value = 0, chroma_qp_offset_mode = 0, chroma_qp = 0;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
-	u32 hfi_value = 0, chroma_qp_offset_mode = 0, chroma_qp = 0;
 
 	if (inst->capabilities[cap_id].flags & CAP_FLAG_CLIENT_SET)
 		chroma_qp_offset_mode = HFI_FIXED_CHROMAQP_OFFSET;

@@ -572,9 +572,9 @@ static int __init_reset_clocks(struct msm_vidc_core *core)
 	rst_count = core->platform->data.clk_rst_tbl_size;
 
 	if (!rst_tbl || !rst_count) {
-		d_vpr_e("%s: invalid reset tbl %pK or count %d\n",
+		d_vpr_h("%s: reset tbl %pK or count %d\n",
 			__func__, rst_tbl, rst_count);
-		return -EINVAL;
+		return rc;
 	}
 
 	/* allocate reset_set */
@@ -1531,7 +1531,7 @@ static int __reset_control_acquire_name(struct msm_vidc_core *core,
 	 * skip this check and return success
 	 */
 	if (!found) {
-		d_vpr_e("%s: reset control (%s) not found but returning success\n",
+		d_vpr_h("%s: reset control (%s) not found but returning success\n",
 			__func__, name);
 		rc = 0;
 	}
@@ -1576,7 +1576,7 @@ static int __reset_control_release_name(struct msm_vidc_core *core,
 	 * skip this check and return success
 	 */
 	if (!found) {
-		d_vpr_e("%s: reset control (%s) not found but returning success\n",
+		d_vpr_h("%s: reset control (%s) not found but returning success\n",
 			__func__, name);
 		rc = 0;
 	}

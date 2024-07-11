@@ -325,7 +325,6 @@ static const struct msm_platform_core_capability core_data_sun[] = {
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
-	{SUPPORTS_SYNX_V2_FENCE, 0},
 	{SUPPORTS_REQUESTS, 0},
 };
 
@@ -3076,7 +3075,7 @@ static const struct msm_vidc_platform_data sun_data = {
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(sun_msm_vidc_ssr_type),
 };
 
-int msm_vidc_sun_check_ddr_type(void)
+static int msm_vidc_sun_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -3091,15 +3090,11 @@ int msm_vidc_sun_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_sun(struct msm_vidc_core *core)
 {
-	struct device *dev = NULL;
-	int rc = 0;
-
-	dev = &core->pdev->dev;
+	struct device *dev = &core->pdev->dev;
 
 	d_vpr_h("%s: initialize sun data\n", __func__);
-
 	core->platform->data = sun_data;
 	if (of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2")) {
 		d_vpr_h("%s: update frequency table for sun v2\n", __func__);
@@ -3107,6 +3102,14 @@ static int msm_vidc_init_data(struct msm_vidc_core *core)
 		core->platform->data.freq_tbl_size = ARRAY_SIZE(sun_freq_table_v2);
 	}
 
+	return 0;
+}
+
+int msm_vidc_init_platform_sun(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	d_vpr_h("%s: initialize sun ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ext ops\n", __func__);
@@ -3122,15 +3125,4 @@ static int msm_vidc_init_data(struct msm_vidc_core *core)
 		return rc;
 
 	return rc;
-}
-
-int msm_vidc_init_platform_sun(struct msm_vidc_core *core)
-{
-	int rc = 0;
-
-	rc = msm_vidc_init_data(core);
-	if (rc)
-		return rc;
-
-	return 0;
 }

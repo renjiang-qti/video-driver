@@ -63,7 +63,7 @@ static int msm_vidc_synx_fence_register(struct msm_vidc_core *core)
 		(struct synx_session *)synx_initialize(&params);
 	if (IS_ERR_OR_NULL(session)) {
 		d_vpr_e("%s: invalid synx fence session\n", __func__);
-		rc = -EINVAL;
+		rc = PTR_ERR(session) ? PTR_ERR(session) : -EINVAL;
 		goto error;
 	}
 

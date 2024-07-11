@@ -87,6 +87,7 @@ enum vidc_msg_prio_fw {
 	FW_ERROR        = 0x00000008,
 	FW_FATAL        = 0x00000010,
 	FW_PERF         = 0x00000020,
+	FW_TRACE        = 0x00000040,
 	FW_CACHE_LOW    = 0x00000100,
 	FW_CACHE_MED    = 0x00000200,
 	FW_CACHE_HIGH   = 0x00000400,
@@ -104,6 +105,8 @@ enum vidc_msg_prio_fw {
 #define FW_LOG         (FW_ERROR | FW_FATAL | FW_PRINTK)
 #define FW_LOGSHIFT    (0)
 #define FW_LOGMASK     (0x0FFFFFFF)
+
+#define MAX_FW_LOG_LEN 1024
 
 #define dprintk_inst(__level, __level_str, inst, __fmt, ...) \
 	do { \
@@ -163,6 +166,15 @@ enum vidc_msg_prio_fw {
 			pr_info(FW_DBG_TAG __fmt, \
 				"fw", \
 				##__VA_ARGS__); \
+		} \
+	} while (0)
+
+#define dprintk_firmware_ftrace(__level, __size, __fmt, ...)	\
+	do { \
+		if ((msm_fw_debug & (__level)) & FW_FTRACE) { \
+			if (((__level) & FW_TRACE) && __size < MAX_FW_LOG_LEN) { \
+				trace_msm_v4l2_vidc_trace_fw_log(__size, __VA_ARGS__); \
+			} \
 		} \
 	} while (0)
 

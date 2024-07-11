@@ -221,7 +221,6 @@ static const struct msm_platform_core_capability core_data_sun[] = {
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_STREAMING},
-	{SUPPORTS_SYNX_V2_FENCE, 0},
 	{SUPPORTS_REQUESTS, 0},
 };
 
@@ -1724,7 +1723,7 @@ static const struct msm_vidc_platform_data sun_data = {
 	.format_data = &format_data_sun,
 };
 
-int msm_vidc_sun_check_ddr_type(void)
+static int msm_vidc_sun_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -1739,26 +1738,20 @@ int msm_vidc_sun_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_sun(struct msm_vidc_core *core)
 {
-	int rc = 0;
-
 	d_vpr_h("%s: initialize sun data\n", __func__);
-
 	core->platform->data = sun_data;
 
-	rc = msm_vidc_sun_check_ddr_type();
-	if (rc)
-		return rc;
-
-	return rc;
+	return 0;
 }
 
 int msm_vidc_init_platform_sun(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	rc = msm_vidc_init_data(core);
+	d_vpr_h("%s: initialize sun ops\n", __func__);
+	rc = msm_vidc_sun_check_ddr_type();
 	if (rc)
 		return rc;
 

@@ -10,8 +10,13 @@
 #include "msm_vidc_core.h"
 
 #if defined(CONFIG_MSM_VIDC_LEMANS)
+int msm_vidc_get_platform_data_lemans(struct msm_vidc_core *core, struct device *dev);
 int msm_vidc_init_platform_lemans(struct msm_vidc_core *core, struct device *dev);
 #else
+int msm_vidc_get_platform_data_lemans(struct msm_vidc_core *core, struct device *dev)
+{
+	return -EINVAL;
+}
 int msm_vidc_init_platform_lemans(struct msm_vidc_core *core, struct device *dev)
 {
 	return -EINVAL;
