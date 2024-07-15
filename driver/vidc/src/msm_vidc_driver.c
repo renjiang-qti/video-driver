@@ -1660,6 +1660,10 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		ctrl->val = inst->capabilities[CODED_FRAMES].value;
 		i_vpr_h(inst, "%s: coded frames: %d\n", __func__, ctrl->val);
 		break;
+	case LEVEL:
+		ctrl->val = inst->capabilities[LEVEL].value;
+		i_vpr_h(inst, "%s: level: %d\n", __func__, ctrl->val);
+		break;
 	default:
 		i_vpr_e(inst, "invalid ctrl %s id %d\n",
 			ctrl->name, ctrl->id);
@@ -4398,6 +4402,35 @@ int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 			(unsigned long)SSR_ADDR_ID) >> SSR_ADDR_SHIFT;
 	schedule_work(&core->ssr_work);
 	return 0;
+}
+
+int msm_vidc_set_crc(struct msm_vidc_core *core)
+{
+	struct msm_vidc_inst *temp = NULL;
+	int count = 0, rc = 0;
+
+	/* Skip venus_hfi_set_crc() if debug_enable_crc is not enabled */
+	if (!core->debug_enable_crc &&
+		!(core->hfi_debug_config & HFI_DEBUG_CONFIG_CRC))
+		return 0;
+
+	core_lock(core, __func__);
+	if (!is_core_state(core, MSM_VIDC_CORE_INIT)) {
+		rc = -EINVAL;
+		goto unlock;
+	}
+	list_for_each_entry(temp, &core->instances, list)
+		count++;
+	if (count > 1)
+		goto unlock;
+	rc = venus_hfi_set_crc(core);
+	if (rc) {
+		d_vpr_e("%s: set crc failed\n", __func__);
+		goto unlock;
+	}
+unlock:
+	core_unlock(core, __func__);
+	return rc;
 }
 
 void msm_vidc_ssr_handler(struct work_struct *work)
