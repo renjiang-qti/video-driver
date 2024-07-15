@@ -99,6 +99,22 @@ exit:
 	return name;
 }
 
+static const char * const device_region_name_arr[] =
+	FOREACH_DEVICE_REGION(GENERATE_STRING);
+
+const char *device_region_name(enum msm_vidc_device_region region)
+{
+	const char *name = "UNKNOWN REGION";
+
+	if (region >= ARRAY_SIZE(device_region_name_arr))
+		goto exit;
+
+	name = device_region_name_arr[region];
+
+exit:
+	return name;
+}
+
 static const char * const inst_allow_name_arr[] =
 	FOREACH_ALLOW(GENERATE_STRING);
 
@@ -1663,6 +1679,10 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	case LEVEL:
 		ctrl->val = inst->capabilities[LEVEL].value;
 		i_vpr_h(inst, "%s: level: %d\n", __func__, ctrl->val);
+		break;
+	case HEVC_TIER:
+		ctrl->val = inst->capabilities[HEVC_TIER].value;
+		i_vpr_h(inst, "%s: hevc_tier: %d\n", __func__, ctrl->val);
 		break;
 	default:
 		i_vpr_e(inst, "invalid ctrl %s id %d\n",
