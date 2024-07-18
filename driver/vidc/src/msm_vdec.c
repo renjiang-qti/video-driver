@@ -1203,20 +1203,6 @@ static int msm_vdec_set_delivery_mode_property(struct msm_vidc_inst *inst,
 
 	if (port == INPUT_PORT) {
 		for (i = 0; i < ARRAY_SIZE(property_input_list); i++) {
-			if (property_input_list[i] == INPBUF_FENCE_ENABLE) {
-				if (is_inpbuf_fence_rx_enabled(inst)) {
-					/*
-					 * if input buffer fence enabled via INPBUF_FENCE_ENABLE,
-					 * then driver will send fence info using
-					 * HFI_PROP_FENCE_INPUT to firmware via property,
-					 * so enable HFI_PROP_FENCE_INPUT as delivery mode
-					 * property.
-					 */
-					payload[++count] =
-						inst->capabilities[property_input_list[i]].hfi_id;
-				}
-				continue;
-			}
 			if (inst->capabilities[property_input_list[i]].value) {
 				payload[count + 1] =
 					inst->capabilities[property_input_list[i]].hfi_id;
@@ -1583,6 +1569,10 @@ int msm_vdec_streamon_input(struct msm_vidc_inst *inst)
 	 * first ETB (sequence header OBU + metadata OBU)
 	 */
 	rc = msm_vdec_subscribe_metadata(inst, OUTPUT_PORT);
+	if (rc)
+		goto error;
+
+	rc = msm_vdec_set_delivery_mode_property(inst, INPUT_PORT);
 	if (rc)
 		goto error;
 
@@ -2585,7 +2575,7 @@ int msm_vdec_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 		if (!f->pixelformat)
 			return -EINVAL;
 		f->flags = V4L2_FMT_FLAG_COMPRESSED;
-		strlcpy(f->description, "codec", sizeof(f->description));
+		strscpy(f->description, "codec", sizeof(f->description));
 	} else if (f->type == OUTPUT_MPLANE) {
 		u32 formats = inst->capabilities[PIX_FMTS].step_or_mask;
 		u32 idx = 0;
@@ -2607,12 +2597,12 @@ int msm_vdec_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 				__func__);
 		if (!f->pixelformat)
 			return -EINVAL;
-		strlcpy(f->description, "colorformat", sizeof(f->description));
+		strscpy(f->description, "colorformat", sizeof(f->description));
 	} else if (f->type == INPUT_META_PLANE || f->type == OUTPUT_META_PLANE) {
 		if (!f->index) {
 			f->pixelformat =
 				v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_META, __func__);
-			strlcpy(f->description, "metadata", sizeof(f->description));
+			strscpy(f->description, "metadata", sizeof(f->description));
 		} else {
 			return -EINVAL;
 		}
