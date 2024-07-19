@@ -98,12 +98,16 @@ static int msm_vidc_memory_free_ext(struct msm_vidc_core *core, struct msm_vidc_
 		buf_name(mem->type), mem->secure, mem->region);
 
 	if (mem->kvaddr) {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-		dma_buf_vunmap(mem->dmabuf, mem->kvaddr);
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0))
+#if (KERNEL_VERSION(6, 2, 0) <= LINUX_VERSION_CODE)
+		/* dma_buf_vunmap_unlocked api got introduced in 6.2.0 */
+		dma_buf_vunmap_unlocked(mem->dmabuf, &mem->dmabuf_map);
+#elif (KERNEL_VERSION(5, 11, 0) <= LINUX_VERSION_CODE)
+		/* Second arg to api changed from void to struct dma_buf_map from 5.11.0
+		 * It again changed from struct dma_buf_map to struct iosys_map from 5.18.0
+		 */
 		dma_buf_vunmap(mem->dmabuf, &mem->dmabuf_map);
 #else
-		dma_buf_vunmap_unlocked(mem->dmabuf, &mem->dmabuf_map);
+		dma_buf_vunmap(mem->dmabuf, mem->kvaddr);
 #endif
 		mem->kvaddr = NULL;
 		dma_buf_end_cpu_access(mem->dmabuf, DMA_BIDIRECTIONAL);
@@ -187,20 +191,15 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 	if (mem->map_kernel) {
 		dma_buf_begin_cpu_access(mem->dmabuf, DMA_BIDIRECTIONAL);
 
-	/*
-	 * Waipio uses Kernel version 5.10.x,
-	 * Kalama uses Kernel Version 5.15.x,
-	 * Pineapple uses Kernel Version 6.1.x
-	 * Sun uses Kernel Version 6.4.x
-	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-		mem->kvaddr = dma_buf_vmap(mem->dmabuf);
-		if (!mem->kvaddr) {
+#if (KERNEL_VERSION(6, 2, 0) <= LINUX_VERSION_CODE)
+		rc = dma_buf_vmap_unlocked(mem->dmabuf, &mem->dmabuf_map);
+		if (rc) {
 			d_vpr_e("%s: kernel map failed\n", __func__);
 			rc = -EIO;
 			goto error;
 		}
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0))
+		mem->kvaddr = mem->dmabuf_map.vaddr;
+#elif (KERNEL_VERSION(5, 11, 0) <= LINUX_VERSION_CODE)
 		rc = dma_buf_vmap(mem->dmabuf, &mem->dmabuf_map);
 		if (rc) {
 			d_vpr_e("%s: kernel map failed\n", __func__);
@@ -209,13 +208,12 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 		}
 		mem->kvaddr = mem->dmabuf_map.vaddr;
 #else
-		rc = dma_buf_vmap_unlocked(mem->dmabuf, &mem->dmabuf_map);
-		if (rc) {
+		mem->kvaddr = dma_buf_vmap(mem->dmabuf);
+		if (!mem->kvaddr) {
 			d_vpr_e("%s: kernel map failed\n", __func__);
 			rc = -EIO;
 			goto error;
 		}
-		mem->kvaddr = mem->dmabuf_map.vaddr;
 #endif
 	}
 
@@ -229,7 +227,7 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 	return 0;
 
 error:
-    msm_vidc_memory_free_ext(core, mem);
+	msm_vidc_memory_free_ext(core, mem);
 	return rc;
 }
 
