@@ -826,8 +826,13 @@ static int msm_vidc_handle_fence_signal(struct msm_vidc_inst *inst,
 		}
 		fence_seqno = fence->seqno;
 
-		/* sanitize fence seqno */
-		if (fence_seqno <= inst->prev_seqno) {
+		/*
+		 * sanitize fence seqno
+		 * during streamoff/stop firmware returns all fences with signal error
+		 * and seqno order is not guaranteed and hence skip seqno check in
+		 * signal error case
+		 */
+		if (!signal_error && fence_seqno <= inst->prev_seqno) {
 			i_vpr_e(inst, "%s: invalid fence seqno %llu, prev fence seqno %llu\n",
 				__func__, fence_seqno, inst->prev_seqno);
 			rc = -EINVAL;
