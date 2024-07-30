@@ -106,8 +106,6 @@ enum vidc_msg_prio_fw {
 #define FW_LOGSHIFT    (0)
 #define FW_LOGMASK     (0x0FFFFFFF)
 
-#define MAX_FW_LOG_LEN 1024
-
 #define dprintk_inst(__level, __level_str, inst, __fmt, ...) \
 	do { \
 		if (inst && (msm_vidc_debug & (__level))) { \
@@ -169,12 +167,10 @@ enum vidc_msg_prio_fw {
 		} \
 	} while (0)
 
-#define dprintk_firmware_ftrace(__level, __size, __fmt, ...)	\
+#define dprintk_firmware_ftrace(__level, __fmt, ...)	\
 	do { \
 		if ((msm_fw_debug & (__level)) & FW_FTRACE) { \
-			if (((__level) & FW_TRACE) && __size < MAX_FW_LOG_LEN) { \
-				trace_msm_v4l2_vidc_trace_fw_log(__size, __VA_ARGS__); \
-			} \
+			trace_msm_v4l2_vidc_trace_fw_log(__VA_ARGS__); \
 		} \
 	} while (0)
 

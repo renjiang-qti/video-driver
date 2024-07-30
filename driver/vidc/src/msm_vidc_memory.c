@@ -295,7 +295,7 @@ static void msm_vidc_dma_buf_put_completely(struct msm_vidc_inst *inst,
 }
 
 static struct dma_buf_attachment *msm_vidc_dma_buf_attach(struct msm_vidc_core *core,
-	struct dma_buf *dbuf, struct device *dev)
+	struct dma_buf *dbuf, struct device *dev, bool delayed_unmap)
 {
 	int rc = 0;
 	struct dma_buf_attachment *attach = NULL;

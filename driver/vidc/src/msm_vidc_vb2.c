@@ -100,7 +100,7 @@ void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
 		}
 	}
 
-	buf->attach = call_mem_op(core, dma_buf_attach, core, dbuf, dev);
+	buf->attach = call_mem_op(core, dma_buf_attach, core, dbuf, dev, true);
 	if (!buf->attach) {
 		i_vpr_e(inst, "failed to attach. %s: %s: idx %2d size %8d\n",
 			buf_name(buf->type), buf_region_name(buf->region),

@@ -1,75 +1,34 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/of_address.h>
-#include <linux/devcoredump.h>
-#include <linux/firmware.h>
+#include <linux/version.h>
+#if (KERNEL_VERSION(6, 3, 0) <= LINUX_VERSION_CODE)
+#include <linux/firmware/qcom/qcom_scm.h>
+#else
+#include <linux/qcom_scm.h>
+#endif
 #include <linux/soc/qcom/mdt_loader.h>
 #include <linux/soc/qcom/smem.h>
+#include <linux/devcoredump.h>
+#include <linux/firmware.h>
+
 
 #include "msm_vidc_core.h"
 #include "msm_vidc_debug.h"
-#include "msm_vidc_events.h"
 #include "msm_vidc_platform.h"
 #include "firmware.h"
 
 #define MAX_FIRMWARE_NAME_SIZE	128
-
-struct tzbsp_memprot {
-	u32 cp_start;
-	u32 cp_size;
-	u32 cp_nonpixel_start;
-	u32 cp_nonpixel_size;
-};
 
 enum tzbsp_video_state {
 	TZBSP_VIDEO_STATE_SUSPEND = 0,
 	TZBSP_VIDEO_STATE_RESUME = 1,
 	TZBSP_VIDEO_STATE_RESTORE_THRESHOLD = 2,
 };
-
-static int protect_cp_mem(struct msm_vidc_core *core)
-{
-	struct tzbsp_memprot memprot;
-	int rc = 0;
-	struct context_bank_info *cb;
-
-	memprot.cp_start = 0x0;
-	memprot.cp_size = 0x0;
-	memprot.cp_nonpixel_start = 0x0;
-	memprot.cp_nonpixel_size = 0x0;
-
-	venus_hfi_for_each_context_bank(core, cb) {
-		if (cb->region == MSM_VIDC_NON_SECURE) {
-			memprot.cp_size = cb->addr_range.start;
-
-			d_vpr_h("%s: memprot.cp_size: %#x\n",
-				__func__, memprot.cp_size);
-		}
-
-		if (cb->region == MSM_VIDC_SECURE_NONPIXEL) {
-			memprot.cp_nonpixel_start = cb->addr_range.start;
-			memprot.cp_nonpixel_size = cb->addr_range.size;
-
-			d_vpr_h("%s: cp_nonpixel_start: %#x size: %#x\n",
-				__func__, memprot.cp_nonpixel_start,
-				memprot.cp_nonpixel_size);
-		}
-	}
-
-	rc = qcom_scm_mem_protect_video_var(memprot.cp_start, memprot.cp_size,
-			memprot.cp_nonpixel_start, memprot.cp_nonpixel_size);
-	if (rc)
-		d_vpr_e("Failed to protect memory(%d)\n", rc);
-
-	trace_venus_hfi_var_done(memprot.cp_start, memprot.cp_size,
-				 memprot.cp_nonpixel_start, memprot.cp_nonpixel_size);
-
-	return rc;
-}
 
 static int __load_fw_to_memory(struct platform_device *pdev,
 			       const char *fw_name)
@@ -191,15 +150,15 @@ int fw_load(struct msm_vidc_core *core)
 		}
 	}
 
-	rc = protect_cp_mem(core);
+	rc = call_venus_op(core, scm_mem_protect, core);
 	if (rc) {
-		d_vpr_e("%s: protect memory failed\n", __func__);
-		goto fail_protect_mem;
+		d_vpr_e("%s scm_mem_protect failed\n", __func__);
+		goto fail_scm_mem_protect;
 	}
 
 	return rc;
 
-fail_protect_mem:
+fail_scm_mem_protect:
 	if (core->resource->fw_cookie)
 		qcom_scm_pas_shutdown(core->resource->fw_cookie);
 	core->resource->fw_cookie = 0;

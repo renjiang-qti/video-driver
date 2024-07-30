@@ -771,6 +771,16 @@ static int __watchdog_iris3(struct msm_vidc_core *core, u32 intr_status)
 	return rc;
 }
 
+static int __hw_ctrl_gdsc_iris3(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_hw_ctrl, core);
+}
+
+static int __sw_ctrl_gdsc_iris3(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_sw_ctrl, core);
+}
+
 static int __noc_error_info_iris3(struct msm_vidc_core *core)
 {
 	/*
@@ -1100,8 +1110,6 @@ adjust:
 	return 0;
 }
 
-
-
 static struct msm_vidc_venus_ops iris3_ops = {
 	.boot_firmware = __boot_firmware_iris3,
 	.raise_interrupt = __raise_interrupt_iris3,
@@ -1111,6 +1119,9 @@ static struct msm_vidc_venus_ops iris3_ops = {
 	.prepare_pc = __prepare_pc_iris3,
 	.watchdog = __watchdog_iris3,
 	.noc_error_info = __noc_error_info_iris3,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris3,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris3,
+	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
