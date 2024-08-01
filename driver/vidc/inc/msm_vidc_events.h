@@ -237,17 +237,21 @@ DEFINE_EVENT(msm_v4l2_vidc_buffer_events, msm_v4l2_vidc_buffer_event_log,
 
 DECLARE_EVENT_CLASS(msm_vidc_perf,
 
-	TP_PROTO(struct msm_vidc_inst *inst, u64 clk_freq, u64 bw_ddr, u64 bw_llcc),
+	TP_PROTO(struct msm_vidc_inst *inst, u32 clk_freq_idx, u64 bw_ddr, u64 bw_llcc),
 
-	TP_ARGS(inst, clk_freq, bw_ddr, bw_llcc),
+	TP_ARGS(inst, clk_freq_idx, bw_ddr, bw_llcc),
 
 	TP_STRUCT__entry(
 		__string(debug_str, inst ? inst->debug_str : (u8 *)"")
-		__field(u64, curr_freq)
+		__field(u64, min_freq)
+		__field(u64, min_vpp_freq)
+		__field(u64, min_apv_freq)
+		__field(u64, min_bse_freq)
+		__field(u64, min_tensilica_freq)
 		__field(u32, ddr_bw)
 		__field(u32, sys_cache_bw)
 		__field(u32, dcvs_flags)
-		__field(u64, clk_freq)
+		__field(u32, clk_freq_idx)
 		__field(u64, bw_ddr)
 		__field(u64, bw_llcc)
 	),
@@ -258,25 +262,32 @@ DECLARE_EVENT_CLASS(msm_vidc_perf,
 #else
 		__assign_str(debug_str, inst ? inst->debug_str : (u8 *)"");
 #endif
-		__entry->curr_freq = inst ? inst->power.curr_freq : 0;
+		__entry->min_freq = inst ? inst->power.min_freq : 0;
+		__entry->min_vpp_freq = inst ? inst->power.min_vpp_freq : 0;
+		__entry->min_apv_freq = inst ? inst->power.min_apv_freq : 0;
+		__entry->min_bse_freq = inst ? inst->power.min_bse_freq : 0;
+		__entry->min_tensilica_freq = inst ? inst->power.min_tensilica_freq : 0;
 		__entry->ddr_bw = inst ? inst->power.ddr_bw : 0;
 		__entry->sys_cache_bw = inst ? inst->power.sys_cache_bw : 0;
 		__entry->dcvs_flags = inst ? inst->power.dcvs_flags : 0;
-		__entry->clk_freq = clk_freq;
+		__entry->clk_freq_idx = clk_freq_idx;
 		__entry->bw_ddr = bw_ddr;
 		__entry->bw_llcc = bw_llcc;
 	),
 
-	TP_printk("%s: power: inst: clk %lld ddr %d llcc %d dcvs flags %#x, core: clk %lld ddr %lld llcc %lld\n",
-		__get_str(debug_str), __entry->curr_freq, __entry->ddr_bw, __entry->sys_cache_bw,
-		__entry->dcvs_flags, __entry->clk_freq, __entry->bw_ddr, __entry->bw_llcc)
+	TP_printk("%s: power: inst: clk %lld %lld %lld %lld %lld ddr %d llcc %d dcvs flags %#x, core: clk_idx %d ddr %lld llcc %lld\n",
+		__get_str(debug_str), __entry->min_freq, __entry->min_vpp_freq,
+		__entry->min_apv_freq, __entry->min_bse_freq,
+		__entry->min_tensilica_freq, __entry->ddr_bw,
+		__entry->sys_cache_bw, __entry->dcvs_flags, __entry->clk_freq_idx,
+		__entry->bw_ddr, __entry->bw_llcc)
 );
 
 DEFINE_EVENT(msm_vidc_perf, msm_vidc_perf_power_scale,
 
-	TP_PROTO(struct msm_vidc_inst *inst, u64 clk_freq, u64 bw_ddr, u64 bw_llcc),
+	TP_PROTO(struct msm_vidc_inst *inst, u32 clk_freq_idx, u64 bw_ddr, u64 bw_llcc),
 
-	TP_ARGS(inst, clk_freq, bw_ddr, bw_llcc)
+	TP_ARGS(inst, clk_freq_idx, bw_ddr, bw_llcc)
 );
 
 DECLARE_EVENT_CLASS(msm_vidc_buffer_dma_ops,

@@ -61,7 +61,7 @@ struct msm_video_device {
 };
 
 struct msm_vidc_core_power {
-	u64 clk_freq;
+	u32 clk_freq_idx;
 	u64 bw_ddr;
 	u64 bw_llcc;
 };

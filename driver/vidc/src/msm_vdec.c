@@ -117,6 +117,34 @@ static int msm_vdec_set_bitstream_resolution(struct msm_vidc_inst *inst,
 	return rc;
 }
 
+static int msm_vdec_set_scale_resolution(struct msm_vidc_inst *inst)
+{
+	int rc = 0;
+	u32 resolution = 0;
+
+	if (!inst->capabilities[SCALE_FACTOR].value)
+		return 0;
+
+	if (inst->capabilities[SCALE_ENABLE].value)
+		resolution = inst->compose.width << 16 | inst->compose.height;
+
+	i_vpr_h(inst, "%s: width: %d height: %d\n", __func__,
+		inst->compose.width, inst->compose.height);
+	rc = venus_hfi_session_property(inst,
+					HFI_PROP_DOWNSCALE_RESOLUTION,
+					HFI_HOST_FLAGS_NONE,
+					HFI_PORT_RAW,
+					HFI_PAYLOAD_32_PACKED,
+					&resolution,
+					sizeof(u32));
+	if (rc) {
+		i_vpr_e(inst, "%s: set property failed\n", __func__);
+		return rc;
+	}
+
+	return rc;
+}
+
 static int msm_vdec_set_linear_stride_scanline(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
@@ -653,9 +681,6 @@ static int msm_vdec_set_opb_enable(struct msm_vidc_inst *inst)
 	int rc = 0;
 	u32 opb_enable = 0;
 
-	if (inst->codec != MSM_VIDC_AV1)
-		return 0;
-
 	if (is_split_mode_enabled(inst))
 		opb_enable = 1;
 
@@ -711,6 +736,10 @@ static int msm_vdec_set_output_properties(struct msm_vidc_inst *inst)
 		return rc;
 
 	rc = msm_vdec_set_colorformat(inst);
+	if (rc)
+		return rc;
+
+	rc = msm_vdec_set_scale_resolution(inst);
 	if (rc)
 		return rc;
 
@@ -1368,19 +1397,6 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 	inst->fmts[INPUT_PORT].fmt.pix_mp.width = width;
 	inst->fmts[INPUT_PORT].fmt.pix_mp.height = height;
 
-	output_fmt = v4l2_colorformat_to_driver(inst,
-		inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat, __func__);
-
-	inst->fmts[OUTPUT_PORT].fmt.pix_mp.width = video_y_stride_pix(
-		output_fmt, width);
-	inst->fmts[OUTPUT_PORT].fmt.pix_mp.height = video_y_scanlines(
-		output_fmt, height);
-	inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].bytesperline =
-		video_y_stride_bytes(output_fmt, width);
-	inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].sizeimage =
-		call_session_op(core, buffer_size, inst, MSM_VIDC_BUF_OUTPUT);
-	//inst->buffers.output.size = inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].sizeimage;
-
 	matrix_coeff = subsc_params.color_info & 0xFF;
 	transfer_char = (subsc_params.color_info & 0xFF00) >> 8;
 	primaries = (subsc_params.color_info & 0xFF0000) >> 16;
@@ -1466,7 +1482,33 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 			subsc_params.av1_super_block_enabled, __func__);
 	}
 
+	/* update output port info */
 	inst->fw_min_count = subsc_params.fw_min_count;
+
+	/* decide scaling needs fw_min_count, crop, input port resolution */
+	call_session_op(core, decide_scaling, inst);
+
+	output_fmt = v4l2_colorformat_to_driver(inst,
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat, __func__);
+	if (is_dec_scaling_enabled(inst)) {
+		inst->crop.width = inst->compose.width;
+		inst->crop.height = inst->compose.height;
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.width = inst->compose.width;
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.height = inst->compose.height;
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].bytesperline =
+			video_y_stride_bytes(output_fmt, inst->compose.width);
+	} else {
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.width = video_y_stride_pix(
+			output_fmt, width);
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.height = video_y_scanlines(
+			output_fmt, height);
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].bytesperline =
+			video_y_stride_bytes(output_fmt, width);
+	}
+	inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].sizeimage =
+		call_session_op(core, buffer_size, inst, MSM_VIDC_BUF_OUTPUT);
+	//inst->buffers.output.size = inst->fmts[OUTPUT_PORT].fmt.pix_mp.plane_fmt[0].sizeimage;
+
 	inst->buffers.output.min_count = call_session_op(core,
 		min_count, inst, MSM_VIDC_BUF_OUTPUT);
 	inst->buffers.output.extra_count = call_session_op(core,
@@ -2326,6 +2368,12 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 		codec_align = inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat ==
 			V4L2_PIX_FMT_HEVC ? 32 : 16;
+
+		/* disable scaling if resolution updated */
+		if (fmt->fmt.pix_mp.width != ALIGN(f->fmt.pix_mp.width, codec_align) ||
+		    fmt->fmt.pix_mp.height != ALIGN(f->fmt.pix_mp.height, codec_align))
+			msm_vidc_update_cap_value(inst, SCALE_ENABLE, 0, __func__);
+
 		fmt->fmt.pix_mp.width = ALIGN(f->fmt.pix_mp.width, codec_align);
 		fmt->fmt.pix_mp.height = ALIGN(f->fmt.pix_mp.height, codec_align);
 		fmt->fmt.pix_mp.num_planes = 1;
@@ -2391,16 +2439,28 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		fmt = &inst->fmts[OUTPUT_PORT];
 		fmt->type = OUTPUT_MPLANE;
 		if (inst->bufq[INPUT_PORT].vb2q->streaming) {
-			f->fmt.pix_mp.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
-			f->fmt.pix_mp.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+			if (inst->capabilities[SCALE_ENABLE].value) {
+				f->fmt.pix_mp.width = inst->compose.width;
+				f->fmt.pix_mp.height = inst->compose.height;
+			} else {
+				f->fmt.pix_mp.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
+				f->fmt.pix_mp.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+			}
 		}
 		fmt->fmt.pix_mp.pixelformat = f->fmt.pix_mp.pixelformat;
 		colorformat = v4l2_colorformat_to_driver(inst, fmt->fmt.pix_mp.pixelformat,
 			__func__);
-		fmt->fmt.pix_mp.width = video_y_stride_pix(
-			colorformat, f->fmt.pix_mp.width);
-		fmt->fmt.pix_mp.height = video_y_scanlines(
-			colorformat, f->fmt.pix_mp.height);
+		/* skip colorformat alignment for downscaling case */
+		if (inst->capabilities[SCALE_ENABLE].value) {
+			fmt->fmt.pix_mp.width = f->fmt.pix_mp.width;
+			fmt->fmt.pix_mp.height = f->fmt.pix_mp.height;
+		} else {
+			fmt->fmt.pix_mp.width = video_y_stride_pix(
+					colorformat, f->fmt.pix_mp.width);
+			fmt->fmt.pix_mp.height = video_y_scanlines(
+					colorformat, f->fmt.pix_mp.height);
+		}
+
 		fmt->fmt.pix_mp.num_planes = 1;
 		fmt->fmt.pix_mp.plane_fmt[0].bytesperline =
 			video_y_stride_bytes(
@@ -2483,8 +2543,44 @@ int msm_vdec_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 int msm_vdec_s_selection(struct msm_vidc_inst *inst, struct v4l2_selection *s)
 {
-	i_vpr_e(inst, "%s: unsupported\n", __func__);
-	return -EINVAL;
+	if (s->type != OUTPUT_MPLANE && s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
+		i_vpr_e(inst, "%s: invalid type %d\n", __func__, s->type);
+		return -EINVAL;
+	}
+
+	switch (s->target) {
+	case V4L2_SEL_TGT_CROP:
+	case V4L2_SEL_TGT_CROP_BOUNDS:
+	case V4L2_SEL_TGT_CROP_DEFAULT:
+		inst->crop.left = s->r.left;
+		inst->crop.top = s->r.top;
+		inst->crop.width = s->r.width;
+		inst->crop.height = s->r.height;
+		break;
+	case V4L2_SEL_TGT_COMPOSE:
+	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
+	case V4L2_SEL_TGT_COMPOSE_PADDED:
+	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
+		/* skip enabling scaling if the session does not support scaling */
+		if (inst->capabilities[SCALE_FACTOR].max <= 1)
+			break;
+
+		inst->compose.left = s->r.left;
+		inst->compose.top = s->r.top;
+		inst->compose.width = s->r.width;
+		inst->compose.height = s->r.height;
+		i_vpr_h(inst, "%s: scaling requested\n", __func__);
+		msm_vidc_update_cap_value(inst, SCALE_ENABLE, 1, __func__);
+		break;
+	default:
+		i_vpr_e(inst, "%s: invalid target %d\n",
+				__func__, s->target);
+		return -EINVAL;
+	}
+	i_vpr_h(inst, "%s: target %s: r [%d, %d, %d, %d]\n",
+		__func__, (s->target < V4L2_SEL_TGT_COMPOSE) ? "crop" : "compose",
+		s->r.top, s->r.left, s->r.width, s->r.height);
+	return 0;
 }
 
 int msm_vdec_g_selection(struct msm_vidc_inst *inst, struct v4l2_selection *s)
@@ -2498,23 +2594,28 @@ int msm_vdec_g_selection(struct msm_vidc_inst *inst, struct v4l2_selection *s)
 	case V4L2_SEL_TGT_CROP_BOUNDS:
 	case V4L2_SEL_TGT_CROP_DEFAULT:
 	case V4L2_SEL_TGT_CROP:
-	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
-	case V4L2_SEL_TGT_COMPOSE_PADDED:
-	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
-	case V4L2_SEL_TGT_COMPOSE:
 		s->r.left = inst->crop.left;
 		s->r.top = inst->crop.top;
 		s->r.width = inst->crop.width;
 		s->r.height = inst->crop.height;
+		break;
+	case V4L2_SEL_TGT_COMPOSE:
+	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
+	case V4L2_SEL_TGT_COMPOSE_PADDED:
+	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
+		s->r.left = inst->compose.left;
+		s->r.top = inst->compose.top;
+		s->r.width = inst->compose.width;
+		s->r.height = inst->compose.height;
 		break;
 	default:
 		i_vpr_e(inst, "%s: invalid target %d\n",
 			__func__, s->target);
 		return -EINVAL;
 	}
-	i_vpr_h(inst, "%s: target %d, r [%d, %d, %d, %d]\n",
-		__func__, s->target, s->r.top, s->r.left,
-		s->r.width, s->r.height);
+	i_vpr_h(inst, "%s: target %s: r [%d, %d, %d, %d]\n",
+		__func__, (s->target < V4L2_SEL_TGT_COMPOSE) ? "crop" : "compose",
+		s->r.top, s->r.left, s->r.width, s->r.height);
 	return 0;
 }
 

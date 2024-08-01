@@ -332,14 +332,14 @@ static int __set_clk_rate(struct msm_vidc_core *core, struct clock_info *cl,
 	 * and used for scaling.
 	 * TODO: Remove this scaling if using source clock instead of branch clock.
 	 */
-	srate = rate * MSM_VIDC_CLOCK_SOURCE_SCALING_RATIO;
+	srate = rate * core->platform->data.clock_source_scaling_ratio;
 
 	/* bail early if requested clk rate is not changed */
 	if (rate == cl->prev)
 		return 0;
 
 	d_vpr_p("Scaling clock %s to %llu, prev %llu\n",
-		cl->name, srate, cl->prev * MSM_VIDC_CLOCK_SOURCE_SCALING_RATIO);
+		cl->name, srate, cl->prev * core->platform->data.clock_source_scaling_ratio);
 
 	if (is_mmrm_supported(core)) {
 		/* set clock rate to mmrm driver */
@@ -380,14 +380,14 @@ static int __set_clk_rate(struct msm_vidc_core *core, struct clock_info *cl,
 	 * and used for scaling.
 	 * TODO: Remove this scaling if using source clock instead of branch clock.
 	 */
-	srate = rate * MSM_VIDC_CLOCK_SOURCE_SCALING_RATIO;
+	srate = rate * core->platform->data.clock_source_scaling_ratio;
 
 	/* bail early if requested clk rate is not changed */
 	if (rate == cl->prev)
 		return 0;
 
 	d_vpr_p("Scaling clock %s to %llu, prev %llu\n",
-		cl->name, srate, cl->prev * MSM_VIDC_CLOCK_SOURCE_SCALING_RATIO);
+		cl->name, srate, cl->prev * core->platform->data.clock_source_scaling_ratio);
 
 	rc = clk_set_rate(cl->clk, srate);
 	if (rc) {
@@ -402,14 +402,19 @@ static int __set_clk_rate(struct msm_vidc_core *core, struct clock_info *cl,
 }
 #endif
 
-static int __set_clocks_ext(struct msm_vidc_core *core, u64 freq)
+static int
+__set_clocks_ext(struct msm_vidc_core *core, int idx)
 {
 	int rc = 0;
 	struct clock_info *cl;
 
 	venus_hfi_for_each_clock(core, cl) {
 		if (cl->has_scaling) {
-			rc = __set_clk_rate(core, cl, freq);
+			if (idx > cl->freq_count - 1)
+				idx = cl->freq_count - 1;
+			if (idx < 0)
+				idx = 0;
+			rc = __set_clk_rate(core, cl, cl->freq[idx]);
 			if (rc)
 				return rc;
 		}

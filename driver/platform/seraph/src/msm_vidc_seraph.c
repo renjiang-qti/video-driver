@@ -2940,9 +2940,12 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
 	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
-	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1 },
-	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1 },
-	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1 },
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
+	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
+	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
 };
 
 /* name, exclusive_release */
@@ -2968,11 +2971,6 @@ const struct context_bank_table seraph_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xefb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-ns-bitstream",  0x00500000, 0xefb00000, 0, 1,
 		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
-};
-
-/* freq */
-static struct freq_table seraph_freq_table[] = {
-	{630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
@@ -3115,10 +3113,9 @@ static const struct msm_vidc_platform_data seraph_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(seraph_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = seraph_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(seraph_freq_table),
 	.reg_prst_tbl = seraph_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(seraph_reg_preset_table),
+	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
 	.supports_mmrm = 1,

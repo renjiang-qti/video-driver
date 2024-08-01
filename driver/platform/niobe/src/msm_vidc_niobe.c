@@ -354,7 +354,9 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 
 	{LOSSLESS_FRAME_WIDTH, ENC, HEVC, 96, 4096, 1, 1920},
 
-	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
+	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 8192, 1, 1920},
+
+	{SECURE_FRAME_WIDTH, DEC, VP9 | HEIC, 96, 4096, 1, 1920},
 
 	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 
@@ -374,7 +376,9 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 
 	{LOSSLESS_FRAME_HEIGHT, ENC, HEVC, 96, 4096, 1, 1080},
 
-	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
+	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 8192, 1, 1080},
+
+	{SECURE_FRAME_HEIGHT, DEC, VP9 | HEIC, 96, 4096, 1, 1080},
 
 	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 
@@ -448,7 +452,13 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 	/* (4096 * 2304) / 256 */
 	{BATCH_FPS, DEC, H264 | HEVC | VP9 | AV1, 1, 120, 1, 120},
 
-	{SECURE_MBPF, ENC | DEC, H264 | HEVC | VP9 | AV1, 64, 36864, 1, 36864},
+	/* (8192 * 4320) / 256 */
+	{SECURE_MBPF, DEC, H264 | HEVC | AV1, 64, 138240, 1, 138240},
+
+	/* (4096 * 2304) / 256 */
+	{SECURE_MBPF, DEC, VP9, 64, 36864, 1, 36864},
+
+	{SECURE_MBPF, ENC, H264, 64, 36864, 1, 36864},
 
 	{SECURE_MBPF, ENC, HEVC, 36, 36864, 1, 36864},
 
@@ -2836,7 +2846,8 @@ static const struct clk_table niobe_clk_table[] = {
 	{ "gcc_video_axi0",        GCC_VIDEO_AXI0_CLK,     0 },
 	{ "core_clk",              VIDEO_CC_MVS0C_CLK,     0 },
 	{ "vcodec_clk",            VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src", VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src", VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {533333333, 444000000, 366000000, 338000000, 240000000, 168000000}, 6},
 };
 
 /* name, llcc_id */
@@ -2853,11 +2864,6 @@ const struct context_bank_table niobe_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL, 0},
 	{"qcom,vidc,cb-sec-non-pxl", 0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL, 0},
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0},
-};
-
-/* freq */
-static struct freq_table niobe_freq_table[] = {
-	{533333333}, {444000000}, {366000000}, {338000000}, {240000000}, {168000000}
 };
 
 /* register, value, mask */
@@ -3008,12 +3014,11 @@ static const struct msm_vidc_platform_data niobe_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(niobe_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = niobe_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(niobe_freq_table),
 	.reg_prst_tbl = niobe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(niobe_reg_preset_table),
 	.dev_reg_tbl = niobe_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(niobe_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu33_4v",
 	.pas_id = 9,
 	.supports_mmrm = 0,

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+
 #include <linux/types.h>
 
-#include "msm_vidc_buffer_iris4.h"
+#include "msm_vidc_buffer_iris36.h"
 #include "msm_vidc_buffer.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_core.h"
@@ -14,16 +14,16 @@
 #include "msm_media_info.h"
 #include "msm_vidc_platform.h"
 #include "hfi_property.h"
-#include "hfi_buffer_iris4.h"
+#include "hfi_buffer_iris36.h"
 
-static u32 msm_vidc_decoder_bin_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_bin_size_iris36(struct msm_vidc_inst *inst)
 {
-	struct msm_vidc_core *core;
+	struct msm_vidc_core *core = NULL;
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes;
-	struct v4l2_format *f;
-	bool is_interlaced;
-	u32 vpp_delay;
+	u32 width = 0, height = 0, num_vpp_pipes = 0;
+	struct v4l2_format *f = NULL;
+	bool is_interlaced = false;
+	u32 vpp_delay = 0;
 
 	core = inst->core;
 
@@ -53,15 +53,17 @@ static u32 msm_vidc_decoder_bin_size_iris4(struct msm_vidc_inst *inst)
 	else if (inst->codec == MSM_VIDC_AV1)
 		HFI_BUFFER_BIN_AV1D(size, width, height, is_interlaced,
 			0, num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_MPEG2)
+		size = 0;
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_decoder_comv_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_comv_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height, num_comv, vpp_delay;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, num_comv = 0, vpp_delay = 0;
+	struct v4l2_format *f = NULL;
 
 	f = &inst->fmts[INPUT_PORT];
 	width = f->fmt.pix_mp.width;
@@ -85,12 +87,17 @@ static u32 msm_vidc_decoder_comv_size_iris4(struct msm_vidc_inst *inst)
 	}
 	msm_vidc_update_cap_value(inst, NUM_COMV, num_comv, __func__);
 
-	if (inst->decode_vpp_delay.enable)
-		vpp_delay = inst->decode_vpp_delay.size;
-	else
-		vpp_delay = DEFAULT_BSE_VPP_DELAY;
-	num_comv = max(vpp_delay + 1, num_comv);
+	if (inst->codec == MSM_VIDC_HEIC
+		&& is_thumbnail_session(inst)) {
+		vpp_delay = 0;
+	} else {
+		if (inst->decode_vpp_delay.enable)
+			vpp_delay = inst->decode_vpp_delay.size;
+		else
+			vpp_delay = DEFAULT_BSE_VPP_DELAY;
+	}
 
+	num_comv = max(vpp_delay + 1, num_comv);
 	if (inst->codec == MSM_VIDC_H264) {
 		HFI_BUFFER_COMV_H264D(size, width, height, num_comv);
 	} else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
@@ -105,18 +112,20 @@ static u32 msm_vidc_decoder_comv_size_iris4(struct msm_vidc_inst *inst)
 			size = 0;
 		else
 			HFI_BUFFER_COMV_AV1D(size, width, height, num_comv);
+	} else if (inst->codec == MSM_VIDC_MPEG2) {
+		size = 0;
 	}
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_decoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_non_comv_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes;
-	struct msm_vidc_core *core;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, num_vpp_pipes = 0;
+	struct msm_vidc_core *core = NULL;
+	struct v4l2_format *f = NULL;
 
 	core = inst->core;
 
@@ -130,20 +139,22 @@ static u32 msm_vidc_decoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
 		HFI_BUFFER_NON_COMV_H264D(size, width, height, num_vpp_pipes);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_NON_COMV_H265D(size, width, height, num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_MPEG2)
+		size = 0;
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_decoder_line_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_line_size_iris36(struct msm_vidc_inst *inst)
 {
-	struct msm_vidc_core *core;
+	struct msm_vidc_core *core = NULL;
 	u32 size = 0;
-	u32 width, height, out_min_count, num_vpp_pipes, vpp_delay;
-	struct v4l2_format *f;
-	bool is_opb;
-	u32 color_fmt;
-	u32 ds_width, ds_height;
+	u32 width = 0, height = 0, out_min_count = 0;
+	u32 num_vpp_pipes = 0, vpp_delay = 0;
+	struct v4l2_format *f = NULL;
+	bool is_opb = false;
+	u32 color_fmt = 0;
 
 	core = inst->core;
 	num_vpp_pipes = core->capabilities[NUM_VPP_PIPE].value;
@@ -170,45 +181,30 @@ static u32 msm_vidc_decoder_line_size_iris4(struct msm_vidc_inst *inst)
 	height = f->fmt.pix_mp.height;
 	out_min_count = inst->buffers.output.min_count;
 	out_min_count = max(vpp_delay + 1, out_min_count);
-	ds_width = inst->compose.width;
-	ds_height = inst->compose.height;
-	if (inst->codec == MSM_VIDC_H264) {
-		if (inst->capabilities[SCALE_ENABLE].value) {
-			HFI_BUFFER_LINE_H264D_DS_IRIS4(size, width, height,
-					ds_width, ds_height, is_opb, num_vpp_pipes);
-		} else {
-			HFI_BUFFER_LINE_H264D_IRIS4(size, width, height, is_opb,
-						num_vpp_pipes);
-		}
-	} else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
-		if (inst->capabilities[SCALE_ENABLE].value) {
-			HFI_BUFFER_LINE_H265D_DS_IRIS4(size, width, height,
-					ds_width, ds_height, is_opb, num_vpp_pipes);
-		} else {
-			HFI_BUFFER_LINE_H265D_IRIS4(size, width, height, is_opb,
-						num_vpp_pipes);
-		}
-	} else if (inst->codec == MSM_VIDC_VP9) {
-		HFI_BUFFER_LINE_VP9D_IRIS4(size, width, height, 0, 0,
-					is_opb, num_vpp_pipes);
-	} else if (inst->codec == MSM_VIDC_AV1) {
-		if (inst->capabilities[SCALE_ENABLE].value) {
-			HFI_BUFFER_LINE_AV1D_DS_IRIS4(size, width, height,
-					ds_width, ds_height, is_opb, num_vpp_pipes);
-		} else {
-			HFI_BUFFER_LINE_AV1D_IRIS4(size, width, height, is_opb,
-						num_vpp_pipes);
-		}
-	}
+	if (inst->codec == MSM_VIDC_H264)
+		HFI_BUFFER_LINE_H264D(size, width, height, is_opb,
+			num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
+		HFI_BUFFER_LINE_H265D(size, width, height, is_opb,
+			num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_VP9)
+		HFI_BUFFER_LINE_VP9D(size, width, height, out_min_count,
+			is_opb, num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_AV1)
+		HFI_BUFFER_LINE_AV1D(size, width, height, is_opb,
+			num_vpp_pipes);
+	else if (inst->codec == MSM_VIDC_MPEG2)
+		HFI_BUFFER_LINE_MP2D(size, width, height, out_min_count,
+			is_opb, num_vpp_pipes);
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_decoder_partial_data_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_partial_data_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0;
+	struct v4l2_format *f = NULL;
 
 	f = &inst->fmts[INPUT_PORT];
 	width = f->fmt.pix_mp.width;
@@ -221,7 +217,7 @@ static u32 msm_vidc_decoder_partial_data_size_iris4(struct msm_vidc_inst *inst)
 	return size;
 }
 
-static u32 msm_vidc_decoder_persist_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_persist_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
 	u32 rpu_enabled = 0;
@@ -234,7 +230,7 @@ static u32 msm_vidc_decoder_persist_size_iris4(struct msm_vidc_inst *inst)
 	} else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
 		HFI_BUFFER_PERSIST_H265D(size, rpu_enabled);
 	} else if (inst->codec == MSM_VIDC_VP9) {
-		HFI_BUFFER_PERSIST_VP9D_IRIS4(size);
+		HFI_BUFFER_PERSIST_VP9D(size);
 	} else if (inst->codec == MSM_VIDC_AV1) {
 		/*
 		 * When DRAP is enabled, COMV buffer is part of PERSIST buffer and
@@ -249,27 +245,22 @@ static u32 msm_vidc_decoder_persist_size_iris4(struct msm_vidc_inst *inst)
 				inst->capabilities[FRAME_HEIGHT].max, 16);
 		else
 			HFI_BUFFER_PERSIST_AV1D(size, 0, 0, 0);
-	} else if (inst->codec == MSM_VIDC_APV) {
-		HFI_BUFFER_PERSIST_APVD(size);
+	} else if (inst->codec == MSM_VIDC_MPEG2) {
+		HFI_BUFFER_PERSIST_MP2D(size);
 	}
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_decoder_dpb_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_decoder_dpb_size_iris36(struct msm_vidc_inst *inst)
 {
 
 	u32 size = 0;
-	u32 color_fmt;
-	u32 width, height;
+	u32 color_fmt = 0;
+	u32 width = 0, height = 0;
 	u32 interlace = 0;
-	struct v4l2_format *f;
-
-	if (inst->codec == MSM_VIDC_APV) {
-		i_vpr_l(inst, "%s: size %d for APV codec\n", __func__, size);
-		return size;
-	}
+	struct v4l2_format *f = NULL;
 
 	/*
 	 * For legacy codecs (non-AV1), DPB is calculated only
@@ -277,12 +268,16 @@ static u32 msm_vidc_decoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 	 * enabled bitstreams (UBWC & linear).
 	 */
 	color_fmt = inst->capabilities[PIX_FMTS].value;
+	if (!is_linear_colorformat(color_fmt)) {
+		if (inst->codec != MSM_VIDC_AV1)
+			return size;
 
-	/* DPB buffers not required if split mode is not enabled */
-	if (!is_split_mode_enabled(inst))
-		return 0;
+		if (inst->codec == MSM_VIDC_AV1 &&
+			!inst->capabilities[FILM_GRAIN].value)
+			return size;
+	}
 
-	f = &inst->fmts[INPUT_PORT];
+	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 
@@ -322,13 +317,38 @@ static u32 msm_vidc_decoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 	return size;
 }
 
-/* encoder internal buffers */
-static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
+bool vidc_session_is_multicore(struct msm_vidc_inst *inst)
 {
-	struct msm_vidc_core *core;
+	bool is_multicore = false;
+
+	/*
+	 * multi-core scheduling can be done for following scenarios:
+	 * 1, All intra encoding
+	 * 2, Lossless encoding
+	 * 3, Hierarchical-P encoding
+	 */
+	if ((is_encode_session(inst)) &&
+		((inst->capabilities[LAYER_TYPE].value ==
+		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) ||
+		(inst->capabilities[ALL_INTRA].value == 1) ||
+		(inst->capabilities[LOSSLESS].value == 1))) {
+		is_multicore = true;
+	}
+	i_vpr_l(inst, "is_multicore: %d session", is_multicore);
+
+	return is_multicore;
+}
+
+
+/* encoder internal buffers */
+static u32 msm_vidc_encoder_bin_size_iris36(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_core *core = NULL;
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes, stage, profile, ring_buf_count;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, num_vpp_pipes = 0, stage = 0;
+	u32 profile = 0, ring_buf_count = 0;
+	struct v4l2_format *f = NULL;
+	bool is_dual_core = vidc_session_is_multicore(inst);
 
 	core = inst->core;
 
@@ -342,10 +362,12 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 
 	if (inst->codec == MSM_VIDC_H264)
 		HFI_BUFFER_BIN_H264E(size, inst->hfi_rc_type, width,
-			height, stage, num_vpp_pipes, profile, ring_buf_count);
+			height, stage, num_vpp_pipes, profile, ring_buf_count,
+			is_dual_core);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_BIN_H265E(size, inst->hfi_rc_type, width,
-			height, stage, num_vpp_pipes, profile, ring_buf_count);
+			height, stage, num_vpp_pipes, profile, ring_buf_count,
+			is_dual_core);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -354,9 +376,10 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 {
 	u32 num_buf_recon = 0;
-	s32 n_bframe, ltr_count, hp_layers = 0, hb_layers = 0;
+	s32 n_bframe = 0, ltr_count = 0, hp_layers = 0, hb_layers = 0;
 	bool is_hybrid_hp = false;
 	u32 hfi_codec = 0;
+	bool is_dual_core = vidc_session_is_multicore(inst);
 
 	n_bframe = inst->capabilities[B_FRAME].value;
 	ltr_count = inst->capabilities[LTR_COUNT].value;
@@ -373,19 +396,19 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 		hfi_codec = HFI_CODEC_ENCODE_AVC;
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		hfi_codec = HFI_CODEC_ENCODE_HEVC;
-	else if (inst->codec == MSM_VIDC_APV)
-		hfi_codec = HFI_CODEC_ENCODE_APV;
+
 	HFI_IRIS3_ENC_RECON_BUF_COUNT(num_buf_recon, n_bframe, ltr_count,
-			hp_layers, hb_layers, is_hybrid_hp, hfi_codec);
+			hp_layers, hb_layers, is_hybrid_hp, hfi_codec,
+			is_dual_core);
 
 	return num_buf_recon;
 }
 
-static u32 msm_vidc_encoder_comv_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_comv_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height, num_recon = 0;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, num_recon = 0;
+	struct v4l2_format *f = NULL;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
@@ -401,39 +424,41 @@ static u32 msm_vidc_encoder_comv_size_iris4(struct msm_vidc_inst *inst)
 	return size;
 }
 
-static u32 msm_vidc_encoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_non_comv_size_iris36(struct msm_vidc_inst *inst)
 {
-	struct msm_vidc_core *core;
+	struct msm_vidc_core *core = NULL;
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes, profile;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, num_vpp_pipes = 0;
+	struct v4l2_format *f = NULL;
+	bool is_dual_core = vidc_session_is_multicore(inst);
+	u32 profile = inst->capabilities[PROFILE].value;
 
 	core = inst->core;
 
 	num_vpp_pipes = core->capabilities[NUM_VPP_PIPE].value;
-	profile = inst->capabilities[PROFILE].value;
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_NON_COMV_H264E(size, width, height, num_vpp_pipes, profile);
+		HFI_BUFFER_NON_COMV_H264E(size, width, height, num_vpp_pipes,
+			profile, is_dual_core);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes, profile);
-	else if (inst->codec == MSM_VIDC_APV)
-		HFI_BUFFER_NON_COMV_APVE(size);
+		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes,
+			profile, is_dual_core);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_line_size_iris36(struct msm_vidc_inst *inst)
 {
-	struct msm_vidc_core *core;
+	struct msm_vidc_core *core = NULL;
 	u32 size = 0;
-	u32 width, height, pixfmt, num_vpp_pipes;
+	u32 width = 0, height = 0, pixfmt = 0, num_vpp_pipes = 0;
 	bool is_tenbit = false;
-	struct v4l2_format *f;
+	struct v4l2_format *f = NULL;
+	bool is_dual_core = vidc_session_is_multicore(inst);
 
 	core = inst->core;
 	num_vpp_pipes = core->capabilities[NUM_VPP_PIPE].value;
@@ -443,23 +468,24 @@ static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 	is_tenbit = (pixfmt == MSM_VIDC_FMT_P010 || pixfmt == MSM_VIDC_FMT_TP10C);
-	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_LINE_H264E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
+		HFI_BUFFER_LINE_H264E(size, width, height, is_tenbit,
+			num_vpp_pipes, is_dual_core);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_LINE_H265E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
+		HFI_BUFFER_LINE_H265E(size, width, height, is_tenbit,
+			num_vpp_pipes, is_dual_core);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_encoder_dpb_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_dpb_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height, pixfmt;
-	struct v4l2_format *f;
-	bool is_tenbit;
+	u32 width = 0, height = 0, pixfmt = 0;
+	struct v4l2_format *f = NULL;
+	bool is_tenbit = false;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
@@ -467,7 +493,6 @@ static u32 msm_vidc_encoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 
 	pixfmt = inst->capabilities[PIX_FMTS].value;
 	is_tenbit = (pixfmt == MSM_VIDC_FMT_P010 || pixfmt == MSM_VIDC_FMT_TP10C);
-	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
 		HFI_BUFFER_DPB_H264E(size, width, height);
@@ -478,22 +503,23 @@ static u32 msm_vidc_encoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 	return size;
 }
 
-static u32 msm_vidc_encoder_arp_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_arp_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
+	bool is_dual_core = vidc_session_is_multicore(inst);
 
-	HFI_BUFFER_ARP_ENC(size);
+	HFI_BUFFER_ARP_ENC(size, is_dual_core);
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
 
-static u32 msm_vidc_encoder_vpss_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_vpss_size_iris36(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
 	bool ds_enable = false, is_tenbit = false, blur = false;
 	u32 rotation_val = HFI_ROTATION_NONE;
-	u32 width, height, driver_colorfmt;
-	struct v4l2_format *f;
+	u32 width = 0, height = 0, driver_colorfmt = 0;
+	struct v4l2_format *f = NULL;
 
 	ds_enable = is_scaling_enabled(inst);
 	msm_vidc_v4l2_to_hfi_enum(inst, ROTATION, &rotation_val);
@@ -524,24 +550,17 @@ static u32 msm_vidc_encoder_vpss_size_iris4(struct msm_vidc_inst *inst)
 	return size;
 }
 
-static u32 msm_vidc_encoder_output_size_iris4(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_output_size_iris36(struct msm_vidc_inst *inst)
 {
-	u32 frame_size;
-	struct v4l2_format *f;
+	u32 frame_size = 0;
+	struct v4l2_format *f = NULL;
 	bool is_ten_bit = false;
-	int bitrate_mode, frame_rc;
+	int bitrate_mode = 0, frame_rc = 0;
 	u32 hfi_rc_type = HFI_RC_VBR_CFR;
-	enum msm_vidc_codec_type codec;
+	enum msm_vidc_codec_type codec = MSM_VIDC_H264;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	codec = v4l2_codec_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
-
-	if (codec == MSM_VIDC_APV) {
-		HFI_BUFFER_BITSTREAM_ENC_APVE(frame_size, f->fmt.pix_mp.width,
-			f->fmt.pix_mp.height);
-		return frame_size;
-	}
-
 	if (codec == MSM_VIDC_HEVC || codec == MSM_VIDC_HEIC)
 		is_ten_bit = true;
 
@@ -565,10 +584,10 @@ struct msm_vidc_buf_type_handle {
 	u32 (*handle)(struct msm_vidc_inst *inst);
 };
 
-int msm_buffer_size_iris4(struct msm_vidc_inst *inst,
+int msm_buffer_size_iris36(struct msm_vidc_inst *inst,
 		enum msm_vidc_buffer_type buffer_type)
 {
-	int i;
+	int i = 0;
 	u32 size = 0, buf_type_handle_size = 0;
 	const struct msm_vidc_buf_type_handle *buf_type_handle_arr = NULL;
 	static const struct msm_vidc_buf_type_handle dec_buf_type_handle[] = {
@@ -576,26 +595,26 @@ int msm_buffer_size_iris4(struct msm_vidc_inst *inst,
 		{MSM_VIDC_BUF_OUTPUT,          msm_vidc_decoder_output_size             },
 		{MSM_VIDC_BUF_INPUT_META,      msm_vidc_decoder_input_meta_size         },
 		{MSM_VIDC_BUF_OUTPUT_META,     msm_vidc_decoder_output_meta_size        },
-		{MSM_VIDC_BUF_BIN,             msm_vidc_decoder_bin_size_iris4         },
-		{MSM_VIDC_BUF_COMV,            msm_vidc_decoder_comv_size_iris4        },
-		{MSM_VIDC_BUF_NON_COMV,        msm_vidc_decoder_non_comv_size_iris4    },
-		{MSM_VIDC_BUF_LINE,            msm_vidc_decoder_line_size_iris4        },
-		{MSM_VIDC_BUF_PERSIST,         msm_vidc_decoder_persist_size_iris4     },
-		{MSM_VIDC_BUF_DPB,             msm_vidc_decoder_dpb_size_iris4         },
-		{MSM_VIDC_BUF_PARTIAL_DATA,    msm_vidc_decoder_partial_data_size_iris4 },
+		{MSM_VIDC_BUF_BIN,             msm_vidc_decoder_bin_size_iris36         },
+		{MSM_VIDC_BUF_COMV,            msm_vidc_decoder_comv_size_iris36        },
+		{MSM_VIDC_BUF_NON_COMV,        msm_vidc_decoder_non_comv_size_iris36    },
+		{MSM_VIDC_BUF_LINE,            msm_vidc_decoder_line_size_iris36        },
+		{MSM_VIDC_BUF_PERSIST,         msm_vidc_decoder_persist_size_iris36     },
+		{MSM_VIDC_BUF_DPB,             msm_vidc_decoder_dpb_size_iris36         },
+		{MSM_VIDC_BUF_PARTIAL_DATA,    msm_vidc_decoder_partial_data_size_iris36 },
 	};
 	static const struct msm_vidc_buf_type_handle enc_buf_type_handle[] = {
 		{MSM_VIDC_BUF_INPUT,           msm_vidc_encoder_input_size              },
-		{MSM_VIDC_BUF_OUTPUT,          msm_vidc_encoder_output_size_iris4      },
+		{MSM_VIDC_BUF_OUTPUT,          msm_vidc_encoder_output_size_iris36      },
 		{MSM_VIDC_BUF_INPUT_META,      msm_vidc_encoder_input_meta_size         },
 		{MSM_VIDC_BUF_OUTPUT_META,     msm_vidc_encoder_output_meta_size        },
-		{MSM_VIDC_BUF_BIN,             msm_vidc_encoder_bin_size_iris4         },
-		{MSM_VIDC_BUF_COMV,            msm_vidc_encoder_comv_size_iris4        },
-		{MSM_VIDC_BUF_NON_COMV,        msm_vidc_encoder_non_comv_size_iris4    },
-		{MSM_VIDC_BUF_LINE,            msm_vidc_encoder_line_size_iris4        },
-		{MSM_VIDC_BUF_DPB,             msm_vidc_encoder_dpb_size_iris4         },
-		{MSM_VIDC_BUF_ARP,             msm_vidc_encoder_arp_size_iris4         },
-		{MSM_VIDC_BUF_VPSS,            msm_vidc_encoder_vpss_size_iris4        },
+		{MSM_VIDC_BUF_BIN,             msm_vidc_encoder_bin_size_iris36         },
+		{MSM_VIDC_BUF_COMV,            msm_vidc_encoder_comv_size_iris36        },
+		{MSM_VIDC_BUF_NON_COMV,        msm_vidc_encoder_non_comv_size_iris36    },
+		{MSM_VIDC_BUF_LINE,            msm_vidc_encoder_line_size_iris36        },
+		{MSM_VIDC_BUF_DPB,             msm_vidc_encoder_dpb_size_iris36         },
+		{MSM_VIDC_BUF_ARP,             msm_vidc_encoder_arp_size_iris36         },
+		{MSM_VIDC_BUF_VPSS,            msm_vidc_encoder_vpss_size_iris36        },
 	};
 
 	if (is_decode_session(inst)) {
@@ -632,7 +651,7 @@ exit:
 	return size;
 }
 
-static int msm_vidc_input_min_count_iris4(struct msm_vidc_inst *inst)
+static int msm_vidc_input_min_count_iris36(struct msm_vidc_inst *inst)
 {
 	u32 input_min_count = 0;
 	u32 total_hb_layer = 0;
@@ -676,15 +695,17 @@ static int msm_buffer_dpb_count(struct msm_vidc_inst *inst)
 	return count;
 }
 
-static int msm_buffer_delivery_mode_based_min_count_iris4(struct msm_vidc_inst *inst,
+static int msm_buffer_delivery_mode_based_min_count_iris36(struct msm_vidc_inst *inst,
 	uint32_t count)
 {
-	struct v4l2_format *f;
-	u32 width, height, total_num_slices = 1;
+	struct v4l2_format *f = NULL;
+	struct msm_vidc_core *core = NULL;
+	u32 width = 0, height = 0, total_num_slices = 1;
 	u32 hfi_codec = 0;
 	u32 max_mbs_per_slice = 0;
 	u32 slice_mode = 0;
 	u32 delivery_mode = 0;
+	u32 num_vpp_pipes = 0;
 
 	slice_mode = inst->capabilities[SLICE_MODE].value;
 	delivery_mode = inst->capabilities[DELIVERY_MODE].value;
@@ -703,16 +724,17 @@ static int msm_buffer_delivery_mode_based_min_count_iris4(struct msm_vidc_inst *
 		hfi_codec = HFI_CODEC_ENCODE_AVC;
 	else if (inst->codec == MSM_VIDC_HEVC)
 		hfi_codec = HFI_CODEC_ENCODE_HEVC;
-	else if (inst->codec == MSM_VIDC_APV)
-		hfi_codec = HFI_CODEC_ENCODE_APV;
+
+	core = inst->core;
+	num_vpp_pipes = core->capabilities[NUM_VPP_PIPE].value;
 
 	HFI_IRIS3_ENC_MB_BASED_MULTI_SLICE_COUNT(total_num_slices, width, height,
-			hfi_codec, max_mbs_per_slice);
+			hfi_codec, max_mbs_per_slice, num_vpp_pipes);
 
 	return (total_num_slices * count);
 }
 
-int msm_buffer_min_count_iris4(struct msm_vidc_inst *inst,
+int msm_buffer_min_count_iris36(struct msm_vidc_inst *inst,
 		enum msm_vidc_buffer_type buffer_type)
 {
 	int count = 0;
@@ -720,12 +742,12 @@ int msm_buffer_min_count_iris4(struct msm_vidc_inst *inst,
 	switch (buffer_type) {
 	case MSM_VIDC_BUF_INPUT:
 	case MSM_VIDC_BUF_INPUT_META:
-		count = msm_vidc_input_min_count_iris4(inst);
+		count = msm_vidc_input_min_count_iris36(inst);
 		break;
 	case MSM_VIDC_BUF_OUTPUT:
 	case MSM_VIDC_BUF_OUTPUT_META:
 		count = msm_vidc_output_min_count(inst);
-		count = msm_buffer_delivery_mode_based_min_count_iris4(inst, count);
+		count = msm_buffer_delivery_mode_based_min_count_iris36(inst, count);
 		break;
 	case MSM_VIDC_BUF_BIN:
 	case MSM_VIDC_BUF_COMV:
@@ -748,7 +770,7 @@ int msm_buffer_min_count_iris4(struct msm_vidc_inst *inst,
 	return count;
 }
 
-int msm_buffer_extra_count_iris4(struct msm_vidc_inst *inst,
+int msm_buffer_extra_count_iris36(struct msm_vidc_inst *inst,
 		enum msm_vidc_buffer_type buffer_type)
 {
 	int count = 0;

@@ -48,7 +48,7 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_NORDAU)
 #include "msm_vidc_nordau.h"
-#include "msm_vidc_iris33_au.h"
+#include "msm_vidc_iris36.h"
 #endif
 
 #define CAP_TO_8BIT_QP(a) {          \
@@ -287,7 +287,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,sm8797-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_nordau,
 		.init_platform              = msm_vidc_init_platform_nordau,
-		.init_iris                  = msm_vidc_init_iris33_au,
+		.init_iris                  = msm_vidc_init_iris36,
 	},
 #endif
 };

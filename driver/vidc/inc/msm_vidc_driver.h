@@ -15,6 +15,11 @@ enum msm_vidc_debugfs_event;
 struct vb2_buffer;
 struct iommu_domain;
 
+static inline bool is_dec_scaling_enabled(struct msm_vidc_inst *inst)
+{
+	return inst->capabilities[SCALE_ENABLE].value;
+}
+
 static inline bool is_decode_session(struct msm_vidc_inst *inst)
 {
 	return inst->domain == MSM_VIDC_DECODER;
@@ -418,6 +423,7 @@ static inline bool is_split_mode_enabled(struct msm_vidc_inst *inst)
 		return false;
 
 	if (is_linear_colorformat(inst->capabilities[PIX_FMTS].value) ||
+		is_dec_scaling_enabled(inst) ||
 		(inst->codec == MSM_VIDC_AV1 &&
 		inst->capabilities[FILM_GRAIN].value))
 		return true;

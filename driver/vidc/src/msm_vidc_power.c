@@ -239,26 +239,6 @@ void __dump(struct dump dump[], int len)
 	}
 }
 
-u64 msm_vidc_max_freq(struct msm_vidc_inst *inst)
-{
-	struct msm_vidc_core *core;
-	struct frequency_table *freq_tbl;
-	u64 freq = 0;
-
-	core = inst->core;
-
-	if (!core->resource || !core->resource->freq_set.freq_tbl ||
-		!core->resource->freq_set.count) {
-		i_vpr_e(inst, "%s: invalid frequency table\n", __func__);
-		return freq;
-	}
-	freq_tbl = core->resource->freq_set.freq_tbl;
-	freq = freq_tbl[0].freq;
-
-	i_vpr_l(inst, "%s: rate = %llu\n", __func__, freq);
-	return freq;
-}
-
 static int fill_dynamic_stats(struct msm_vidc_inst *inst,
 	struct vidc_bus_vote_data *vote_data)
 {
@@ -491,85 +471,7 @@ set_buses:
 	return 0;
 }
 
-int msm_vidc_set_clocks(struct msm_vidc_inst *inst)
-{
-	int rc = 0;
-	struct msm_vidc_core *core;
-	struct msm_vidc_inst *temp;
-	u64 freq;
-	u64 rate = 0;
-	bool increment, decrement;
-	int i = 0;
-
-	core = inst->core;
-
-	if (!core->resource || !core->resource->freq_set.freq_tbl ||
-		!core->resource->freq_set.count) {
-		d_vpr_e("%s: invalid frequency table\n", __func__);
-		return -EINVAL;
-	}
-
-	mutex_lock(&core->lock);
-	increment = false;
-	decrement = true;
-	freq = 0;
-	list_for_each_entry(temp, &core->instances, list) {
-		/* skip for session where no input is there to process */
-		if (!temp->max_input_data_size)
-			continue;
-
-		/* skip inactive session clock rate */
-		if (!temp->active)
-			continue;
-
-		freq += temp->power.min_freq;
-
-		if (msm_vidc_clock_voting) {
-			d_vpr_l("msm_vidc_clock_voting %d\n", msm_vidc_clock_voting);
-			freq = msm_vidc_clock_voting;
-			decrement = false;
-			break;
-		}
-		/* increment even if one session requested for it */
-		if (temp->power.dcvs_flags & MSM_VIDC_DCVS_INCR)
-			increment = true;
-		/* decrement only if all sessions requested for it */
-		if (!(temp->power.dcvs_flags & MSM_VIDC_DCVS_DECR))
-			decrement = false;
-	}
-
-	/*
-	 * keep checking from lowest to highest rate until
-	 * table rate >= requested rate
-	 */
-	for (i = core->resource->freq_set.count - 1; i >= 0; i--) {
-		rate = core->resource->freq_set.freq_tbl[i].freq;
-		if (rate >= freq)
-			break;
-	}
-	if (i < 0)
-		i = 0;
-	if (increment) {
-		if (i > 0)
-			rate = core->resource->freq_set.freq_tbl[i - 1].freq;
-	} else if (decrement) {
-		if (i < (int)(core->platform->data.freq_tbl_size - 1))
-			rate = core->resource->freq_set.freq_tbl[i + 1].freq;
-	}
-	core->power.clk_freq = (u32)rate;
-
-	i_vpr_p(inst, "%s: clock rate %llu requested %llu increment %d decrement %d\n",
-		__func__, rate, freq, increment, decrement);
-	mutex_unlock(&core->lock);
-
-	rc = venus_hfi_scale_clocks(inst, rate);
-	if (rc)
-		return rc;
-
-	return 0;
-}
-
-static int msm_vidc_apply_dcvs(struct msm_vidc_inst *inst)
+int msm_vidc_apply_dcvs(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	int bufs_with_fw = 0;
@@ -641,38 +543,12 @@ exit:
 	return rc;
 }
 
-int msm_vidc_scale_clocks(struct msm_vidc_inst *inst)
-{
-	struct msm_vidc_core *core;
-
-	core = inst->core;
-
-	if (inst->power.buffer_counter < DCVS_WINDOW ||
-	    is_image_session(inst) ||
-	    is_sub_state(inst, MSM_VIDC_DRC) ||
-	    is_sub_state(inst, MSM_VIDC_DRAIN)) {
-		inst->power.min_freq = msm_vidc_max_freq(inst);
-		inst->power.dcvs_flags = 0;
-	} else if (msm_vidc_clock_voting) {
-		inst->power.min_freq = msm_vidc_clock_voting;
-		inst->power.dcvs_flags = 0;
-	} else {
-		inst->power.min_freq =
-			call_session_op(core, calc_freq, inst, inst->max_input_data_size);
-		msm_vidc_apply_dcvs(inst);
-	}
-	inst->power.curr_freq = inst->power.min_freq;
-	msm_vidc_set_clocks(inst);
-
-	return 0;
-}
-
 int msm_vidc_scale_power(struct msm_vidc_inst *inst, bool scale_buses)
 {
 	struct msm_vidc_core *core;
 	struct msm_vidc_buffer *vbuf;
 	u32 data_size = 0;
-	u32 cnt = 0;
+	u32 cnt = 0, idx;
 	u32 fps;
 	u32 frame_rate, operating_rate;
 	u32 timestamp_rate = 0, input_rate = 0;
@@ -766,7 +642,8 @@ int msm_vidc_scale_power(struct msm_vidc_inst *inst, bool scale_buses)
 	}
 	core_unlock(core, __func__);
 
-	if (msm_vidc_scale_clocks(inst))
+	idx = call_session_op(core, scale_clocks, inst);
+	if (venus_hfi_scale_clocks(inst, idx))
 		i_vpr_e(inst, "failed to scale clock\n");
 
 	if (scale_buses) {
@@ -775,15 +652,16 @@ int msm_vidc_scale_power(struct msm_vidc_inst *inst, bool scale_buses)
 	}
 
 	i_vpr_hp(inst,
-		"power: inst: clk %lld ddr %d llcc %d dcvs flags %#x fps %u (%u %u %u %u) core: clk %lld ddr %lld llcc %lld\n",
-		inst->power.curr_freq, inst->power.ddr_bw,
-		inst->power.sys_cache_bw, inst->power.dcvs_flags,
+		"power: inst: clk %lld %lld %lld %lld %lld ddr %d llcc %d dcvs flags %#x fps %u (%u %u %u %u) core: clk_idx %d ddr %lld llcc %lld\n",
+		inst->power.min_freq, inst->power.min_vpp_freq, inst->power.min_apv_freq,
+		inst->power.min_bse_freq, inst->power.min_tensilica_freq,
+		inst->power.ddr_bw, inst->power.sys_cache_bw, inst->power.dcvs_flags,
 		inst->max_rate, frame_rate, operating_rate, timestamp_rate,
-		input_rate, core->power.clk_freq, core->power.bw_ddr,
-		core->power.bw_llcc);
+		input_rate, core->power.clk_freq_idx, core->power.bw_ddr, core->power.bw_llcc);
 
-	trace_msm_vidc_perf_power_scale(inst, core->power.clk_freq,
-		core->power.bw_ddr, core->power.bw_llcc);
+	trace_msm_vidc_perf_power_scale(inst, core->power.clk_freq_idx,
+					core->power.bw_ddr,
+					core->power.bw_llcc);
 
 	return 0;
 }

@@ -2932,7 +2932,20 @@ static const struct clk_table sun_clk_table[] = {
 	{"video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
 	{ "video_cc_mvs0c_clk",        VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_clk",         VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0_clk_src",     VIDEO_CC_MVS0_CLK_SRC,      1 },
+	{ "video_cc_mvs0_clk_src",     VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {570000000, 533333333, 444000000, 420000000, 338000000, 240000000}, 6},
+};
+
+/* name, clock id, scaling */
+static const struct clk_table sun_clk_table_v2[] = {
+	{ "gcc_video_axi1_clk",        GCC_VIDEO_AXI1_CLK,         0 },
+	{ "gcc_video_axi0_clk",        GCC_VIDEO_AXI0_CLK,         0 },
+	{"video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
+	{"video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
+	{ "video_cc_mvs0c_clk",        VIDEO_CC_MVS0C_CLK,         0 },
+	{ "video_cc_mvs0_clk",         VIDEO_CC_MVS0_CLK,          0 },
+	{ "video_cc_mvs0_clk_src",     VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {570000000, 533333333, 444000000, 420000000, 338000000, 240000000}, 6},
 };
 
 /* name, exclusive_release */
@@ -2957,15 +2970,6 @@ const struct context_bank_table sun_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
 	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
-};
-
-/* freq */
-static struct freq_table sun_freq_table[] = {
-	{570000000}, {533333333}, {444000000}, {420000000}, {338000000}, {240000000}
-};
-
-static struct freq_table sun_freq_table_v2[] = {
-	{570000000}, {533333333}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
@@ -3122,12 +3126,11 @@ static const struct msm_vidc_platform_data sun_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(sun_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = sun_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(sun_freq_table),
 	.reg_prst_tbl = sun_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(sun_reg_preset_table),
 	.dev_reg_tbl = sun_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(sun_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu35_4v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
@@ -3198,8 +3201,8 @@ int msm_vidc_get_platform_data_sun(struct msm_vidc_core *core)
 	core->platform->data = sun_data;
 	if (of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2")) {
 		d_vpr_h("%s: update frequency table for sun v2\n", __func__);
-		core->platform->data.freq_tbl = sun_freq_table_v2;
-		core->platform->data.freq_tbl_size = ARRAY_SIZE(sun_freq_table_v2);
+		core->platform->data.clk_tbl = sun_clk_table_v2;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(sun_clk_table_v2);
 	}
 
 	return 0;

@@ -74,6 +74,7 @@ enum chipset_generation {
 	MSM_PINEAPPLE,
 	MSM_SUN,
 	MSM_CANOE,
+	MSM_NORDAU,
 	MSM_MAX,
 };
 
@@ -168,6 +169,7 @@ struct corner_voting {
 
 struct api_calculation_freq_output {
 	u32 vpp_min_freq;
+	u32 apv_min_freq;
 	u32 vsp_min_freq;
 	u32 tensilica_min_freq;
 	u32 hw_min_freq;

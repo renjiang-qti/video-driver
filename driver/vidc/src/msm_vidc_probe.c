@@ -489,6 +489,10 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 {
 	struct context_bank_info *cb = NULL;
 	int rc = 0;
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	int len = 0;
+	const __be32 *prop;
+#endif
 
 	cb = msm_vidc_get_context_bank_for_device(core, dev);
 	if (!cb) {
@@ -504,6 +508,13 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 		d_vpr_e("%s: Failed to get iommu domain for %s\n", __func__, dev_name(dev));
 		return -EIO;
 	}
+
+	/* update context bank address and size only for nordau */
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	prop = of_get_property(dev->of_node, "qcom,iommu-dma-addr-pool", &len);
+	cb->addr_range.start = be32_to_cpup(&prop[0]);
+	cb->addr_range.size = be32_to_cpup(&prop[1]);
+#endif
 
 	if (cb->dma_mask) {
 		rc = dma_set_mask_and_coherent(cb->dev, cb->dma_mask);

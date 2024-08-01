@@ -11,7 +11,7 @@
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
 #include "hfi_property.h"
-#include "msm_vidc_iris33_au.h"
+#include "msm_vidc_iris36.h"
 #include "hfi_command.h"
 
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8020010

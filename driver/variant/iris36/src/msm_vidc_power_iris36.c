@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/types.h>
 
-#include "msm_vidc_power_iris33.h"
+#include "msm_vidc_power_iris36.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_core.h"
@@ -21,8 +20,7 @@
 static u64 __calculate_decoder(struct vidc_bus_vote_data *d);
 static u64 __calculate_encoder(struct vidc_bus_vote_data *d);
 static u64 __calculate(struct msm_vidc_inst *inst, struct vidc_bus_vote_data *d);
-static int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
-					    struct vidc_clock_scaling_data *clock_scaling_data);
+static u64 msm_vidc_calc_freq_iris36_legacy(struct msm_vidc_inst *inst, u32 data_size);
 
 
 static int msm_vidc_get_hier_layer_val(struct msm_vidc_inst *inst)
@@ -53,9 +51,9 @@ static int msm_vidc_get_hier_layer_val(struct msm_vidc_inst *inst)
 static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_size,
 		struct api_calculation_input *codec_input)
 {
-	enum msm_vidc_port_type port;
-	u32 color_fmt, tile_rows_columns = 0;
-	struct msm_vidc_core *core;
+	enum msm_vidc_port_type port = PORT_NONE;
+	u32 color_fmt = 0, tile_rows_columns = 0;
+	struct msm_vidc_core *core = NULL;
 
 	if (is_encode_session(inst)) {
 		codec_input->decoder_or_encoder = CODEC_ENCODER;
@@ -66,7 +64,7 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 		return -EINVAL;
 	}
 
-	codec_input->chipset_gen = MSM_PINEAPPLE;
+	codec_input->chipset_gen = MSM_NORDAU;
 
 	if (inst->codec == MSM_VIDC_H264) {
 		codec_input->codec    = CODEC_H264;
@@ -174,7 +172,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 {
 	u32 complexity_factor_int = 0, complexity_factor_frac = 0, tile_rows_columns = 0;
 	bool opb_compression_enabled = false;
-	struct msm_vidc_core *core;
+	struct msm_vidc_core *core = NULL;
 
 	if (!d)
 		return -EINVAL;
@@ -188,7 +186,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 		return -EINVAL;
 	}
 
-	codec_input->chipset_gen = MSM_PINEAPPLE;
+	codec_input->chipset_gen = MSM_NORDAU;
 
 	if (d->codec == MSM_VIDC_H264) {
 		if (inst->capabilities[ENTROPY_MODE].value ==
@@ -378,32 +376,35 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 static bool is_vpp_cycles_close_to_freq_corner(struct msm_vidc_core *core,
 	u64 vpp_min_freq)
 {
-	u64 margin_freq = 0, freq;
+	u64 margin_freq = 0;
 	u64 closest_freq_upper_corner = 0;
 	u32 margin_percent = 0;
 	int i = 0;
 
-	if (!core || !core->resource) {
+	if (!core || !core->resource || !core->resource->freq_set.freq_tbl ||
+		!core->resource->freq_set.count) {
 		d_vpr_e("%s: invalid params\n", __func__);
 		return false;
 	}
 
 	vpp_min_freq = vpp_min_freq * 1000000; /* convert to hz */
 
-	closest_freq_upper_corner = get_clock_freq(core, "video_cc_mvs0_clk_src",
-						   get_max_clock_index(core));
+	closest_freq_upper_corner =
+		core->resource->freq_set.freq_tbl[0].freq;
 
 	/* return true if vpp_min_freq is more than max frequency */
 	if (vpp_min_freq > closest_freq_upper_corner)
 		return true;
 
 	/* get the closest freq corner for vpp_min_freq */
-	for (i = 0; i < get_clock_freq_count(core, "video_cc_mvs0_clk_src"); i++) {
-		freq = get_clock_freq(core, "video_cc_mvs0_clk_src", i);
-		if (vpp_min_freq <= freq)
-			closest_freq_upper_corner = freq;
-		else
+	for (i = 0; i < core->resource->freq_set.count; i++) {
+		if (vpp_min_freq <=
+			core->resource->freq_set.freq_tbl[i].freq) {
+			closest_freq_upper_corner =
+				core->resource->freq_set.freq_tbl[i].freq;
+		} else {
 			break;
+		}
 	}
 
 	margin_freq = closest_freq_upper_corner - vpp_min_freq;
@@ -416,15 +417,14 @@ static bool is_vpp_cycles_close_to_freq_corner(struct msm_vidc_core *core,
 	return false;
 }
 
-static int msm_vidc_calc_freq_iris33_new(struct msm_vidc_inst *inst,
-					 struct vidc_clock_scaling_data *clock_scaling_data)
+static u64 msm_vidc_calc_freq_iris36_new(struct msm_vidc_inst *inst, u32 data_size)
 {
-	u64 freq = 0, nom_freq;
-	struct msm_vidc_core *core;
+	u64 freq = 0;
+	struct msm_vidc_core *core = NULL;
 	int ret = 0;
-	struct api_calculation_input codec_input;
-	struct api_calculation_freq_output codec_output;
-	u32 fps, mbpf;
+	struct api_calculation_input codec_input = {};
+	struct api_calculation_freq_output codec_output = {};
+	u32 fps = 0, mbpf = 0;
 
 	core = inst->core;
 
@@ -433,12 +433,12 @@ static int msm_vidc_calc_freq_iris33_new(struct msm_vidc_inst *inst,
 
 	memset(&codec_input, 0, sizeof(struct api_calculation_input));
 	memset(&codec_output, 0, sizeof(struct api_calculation_freq_output));
-	ret = msm_vidc_init_codec_input_freq(inst, clock_scaling_data->data_size, &codec_input);
+	ret = msm_vidc_init_codec_input_freq(inst, data_size, &codec_input);
 	if (ret)
-		return ret;
+		return freq;
 	ret = msm_vidc_calculate_frequency(codec_input, &codec_output);
 	if (ret)
-		return ret;
+		return freq;
 
 	if (is_encode_session(inst)) {
 		if (!inst->capabilities[ENC_RING_BUFFER_COUNT].value &&
@@ -462,7 +462,7 @@ static int msm_vidc_calc_freq_iris33_new(struct msm_vidc_inst *inst,
 
 	i_vpr_p(inst,
 		"%s: filled len %d, required freq %llu, vpp %u, vsp %u, tensilica %u, hw_freq %u, fps %u, mbpf %u\n",
-		__func__, clock_scaling_data->data_size, freq, codec_output.vpp_min_freq,
+		__func__, data_size, freq, codec_output.vpp_min_freq,
 		codec_output.vsp_min_freq, codec_output.tensilica_min_freq,
 		codec_output.hw_min_freq, fps, mbpf);
 
@@ -480,24 +480,20 @@ static int msm_vidc_calc_freq_iris33_new(struct msm_vidc_inst *inst,
 		 */
 	} else {
 		/* limit to NOM, index 0 is TURBO, index 1 is NOM clock rate */
-		if (get_clock_freq_count(core, "video_cc_mvs0_clk_src") >= 2) {
-			nom_freq = get_clock_freq(core, "video_cc_mvs0_clk_src", 1);
-			if (freq > nom_freq)
-				freq = nom_freq;
-		}
+		if (core->resource->freq_set.count >= 2 &&
+				freq > core->resource->freq_set.freq_tbl[1].freq)
+			freq = core->resource->freq_set.freq_tbl[1].freq;
 	}
 
-	clock_scaling_data->freq = freq;
-
-	return ret;
+	return freq;
 }
 
-static int msm_vidc_calc_bw_iris33_new(struct msm_vidc_inst *inst,
+static int msm_vidc_calc_bw_iris36_new(struct msm_vidc_inst *inst,
 		struct vidc_bus_vote_data *vidc_data)
 {
 	u32 ret = 0;
-	struct api_calculation_input codec_input;
-	struct api_calculation_bw_output codec_output;
+	struct api_calculation_input codec_input = {};
+	struct api_calculation_bw_output codec_output = {};
 
 	memset(&codec_input, 0, sizeof(struct api_calculation_input));
 	memset(&codec_output, 0, sizeof(struct api_calculation_bw_output));
@@ -518,141 +514,36 @@ static int msm_vidc_calc_bw_iris33_new(struct msm_vidc_inst *inst,
 	return ret;
 }
 
-static int
-msm_vidc_calc_freq_iris33(struct msm_vidc_inst *inst,
-			  struct vidc_clock_scaling_data *clock_scaling_data)
-{
-	if (ENABLE_LEGACY_POWER_CALCULATIONS)
-		return msm_vidc_calc_freq_iris33_legacy(inst, clock_scaling_data);
-	else
-		return msm_vidc_calc_freq_iris33_new(inst, clock_scaling_data);
-}
-
-static int get_clock_corner_index(struct msm_vidc_core *core, u64 freq)
-{
-	struct clock_info *cl;
-	int idx = INT_MAX;
-	u64 rate = 0;
-
-	venus_hfi_for_each_clock(core, cl) {
-		/*
-		 * keep checking from lowest to highest rate until
-		 * table rate >= requested rate
-		 */
-		if (freq && !strcmp(cl->name, "video_cc_mvs0_clk_src")) {
-			for (idx = cl->freq_count - 1; idx >= 0; idx--) {
-				rate = cl->freq[idx];
-				if (rate >= freq)
-					break;
-			}
-		}
-	}
-
-	return idx;
-}
-
-int msm_vidc_get_freq_corner(struct msm_vidc_inst *inst)
+u64 msm_vidc_calc_freq_iris36(struct msm_vidc_inst *inst, u32 data_size)
 {
 	u64 freq = 0;
-	bool increment = false, decrement = true;
-	struct msm_vidc_core *core;
-	struct msm_vidc_inst *temp;
-	int idx;
 
-	core = inst->core;
+	if (ENABLE_LEGACY_POWER_CALCULATIONS)
+		freq = msm_vidc_calc_freq_iris36_legacy(inst, data_size);
+	else
+		freq = msm_vidc_calc_freq_iris36_new(inst, data_size);
 
-	mutex_lock(&core->lock);
-	list_for_each_entry(temp, &core->instances, list) {
-		/* skip for session where no input is there to process */
-		if (!temp->max_input_data_size)
-			continue;
-
-		/* skip inactive session clock rate */
-		if (!temp->active)
-			continue;
-
-		freq += temp->power.min_freq;
-
-		if (msm_vidc_clock_voting) {
-			d_vpr_l("msm_vidc_clock_voting %d\n", msm_vidc_clock_voting);
-			freq = msm_vidc_clock_voting;
-			decrement = false;
-			break;
-		}
-
-		/* increment even if one session requested for it */
-		if (temp->power.dcvs_flags & MSM_VIDC_DCVS_INCR)
-			increment = true;
-		/* decrement only if all sessions requested for it */
-		if (!(temp->power.dcvs_flags & MSM_VIDC_DCVS_DECR))
-			decrement = false;
-	}
-	mutex_unlock(&core->lock);
-
-	idx = get_clock_corner_index(core, freq);
-	if (idx < 0)
-		idx = 0;
-	if (increment)
-		idx -= 1;
-	else if (decrement)
-		idx += 1;
-
-	i_vpr_p(inst, "%s: requested rate: core %llu, increment %d decrement %d\n",
-		__func__, freq, increment, decrement);
-
-	core->power.clk_freq_idx = idx;
-
-	return idx;
+	return freq;
 }
 
-int msm_vidc_scale_clocks_iris33(struct msm_vidc_inst *inst)
+u64 msm_vidc_calc_freq_iris36_legacy(struct msm_vidc_inst *inst, u32 data_size)
 {
-	struct vidc_clock_scaling_data *clock_data;
-	struct msm_vidc_core *core;
-
-	core = inst->core;
-	clock_data = &inst->clock_data;
-
-	if (inst->power.buffer_counter < DCVS_WINDOW ||
-	    is_image_session(inst) ||
-	    is_sub_state(inst, MSM_VIDC_DRC) ||
-	    is_sub_state(inst, MSM_VIDC_DRAIN)) {
-		inst->power.min_freq =
-			get_clock_freq(core, "video_cc_mvs0_clk_src", get_max_clock_index(core));
-		inst->power.dcvs_flags = 0;
-	} else if (msm_vidc_clock_voting ||
-		   (msm_vidc_vpp_clock_voting && msm_vidc_apv_clock_voting &&
-		    msm_vidc_bse_clock_voting && msm_vidc_tensilica_clock_voting)) {
-		inst->power.min_freq = msm_vidc_clock_voting;
-		inst->power.dcvs_flags = 0;
-	} else {
-		clock_data->data_size = inst->max_input_data_size;
-		msm_vidc_calc_freq_iris33(inst, clock_data);
-		inst->power.min_freq = clock_data->freq;
-		msm_vidc_apply_dcvs(inst);
-	}
-
-	return msm_vidc_get_freq_corner(inst);
-}
-
-int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
-				     struct vidc_clock_scaling_data *clock_scaling_data)
-{
-	u64 freq = 0, nom_freq;
-	struct msm_vidc_core *core;
+	u64 freq = 0;
+	struct msm_vidc_core *core = NULL;
 	u64 vsp_cycles = 0, vpp_cycles = 0, fw_cycles = 0;
 	u64 fw_vpp_cycles = 0, bitrate = 0;
-	u32 vpp_cycles_per_mb;
-	u32 mbs_per_second;
-	u32 operating_rate, vsp_factor_num = 1, vsp_factor_den = 1;
+	u32 vpp_cycles_per_mb = 0;
+	u32 mbs_per_second = 0;
+	u32 operating_rate = 0, vsp_factor_num = 1, vsp_factor_den = 1;
 	u32 base_cycles = 0;
-	u32 fps, mbpf;
+	u32 fps = 0, mbpf = 0;
 
 	core = inst->core;
 
-	if (!core->resource) {
+	if (!core->resource || !core->resource->freq_set.freq_tbl ||
+		!core->resource->freq_set.count) {
 		d_vpr_e("%s: invalid params\n", __func__);
-		return -EINVAL;
+		return freq;
 	}
 
 	mbpf = msm_vidc_get_mbs_per_frame(inst);
@@ -762,7 +653,7 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 		/* VSP */
 		if (inst->codec == MSM_VIDC_AV1) {
 			/*
-			 * For AV1: Use VSP calculations from Lanai perf model.
+			 * For AV1: Use VSP calculations from NordAU perf model.
 			 * For legacy codecs, use vsp_cycles based on legacy MB_CYCLES_VSP.
 			 */
 			u32 decoder_vsp_fw_overhead = 105;
@@ -773,6 +664,7 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 			u32 bitrate_1stage = 100;
 			u32 width, height;
 			u32 bitrate_entry, freq_entry, freq_tbl_value;
+			struct frequency_table *freq_tbl;
 			struct v4l2_format *out_f = &inst->fmts[OUTPUT_PORT];
 
 			width = out_f->fmt.pix_mp.width;
@@ -785,12 +677,10 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 
 			freq_entry = bitrate_entry;
 
-			freq_tbl_value =
-				get_clock_freq(core, "video_cc_mvs0_clk_src", freq_entry) /
-				1000000;
+			freq_tbl = core->resource->freq_set.freq_tbl;
+			freq_tbl_value = freq_tbl[freq_entry].freq / 1000000;
 
-			input_bitrate_mbps = fps * clock_scaling_data->data_size *
-					8 / (1024 * 1024);
+			input_bitrate_mbps = fps * data_size * 8 / (1024 * 1024);
 			vsp_hw_min_frequency = freq_tbl_value * 1000 * input_bitrate_mbps;
 
 			if (inst->capabilities[STAGE].value == MSM_VIDC_STAGE_2) {
@@ -811,7 +701,7 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 		} else {
 			base_cycles = inst->has_bframe ?
 					80 : inst->capabilities[MB_CYCLES_VSP].value;
-			bitrate = fps * clock_scaling_data->data_size * 8;
+			bitrate = fps * data_size * 8;
 			vsp_cycles = bitrate;
 
 			if (inst->codec == MSM_VIDC_VP9) {
@@ -844,12 +734,11 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 						MSM_VIDC_STAGE_2 &&
 					inst->capabilities[PIPE].value == 4 &&
 					bitrate > 90000000)
-				vsp_cycles = get_clock_freq(core, "video_cc_mvs0_clk_src",
-							    get_max_clock_index(core));
+				vsp_cycles = msm_vidc_max_freq(inst);
 		}
 	} else {
 		i_vpr_e(inst, "%s: Unknown session type\n", __func__);
-		return -EINVAL;
+		return msm_vidc_max_freq(inst);
 	}
 
 	freq = max(vpp_cycles, vsp_cycles);
@@ -857,7 +746,7 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 
 	i_vpr_p(inst,
 		"%s: filled len %d, required freq %llu, vpp %llu, vsp %llu, fw_cycles %llu, fps %u, mbpf %u\n",
-		__func__, clock_scaling_data->data_size, freq,
+		__func__, data_size, freq,
 		vpp_cycles, vsp_cycles, fw_cycles, fps, mbpf);
 
 	if (inst->codec == MSM_VIDC_AV1 || (inst->iframe && is_hevc_10bit_decode_session(inst)) ||
@@ -871,16 +760,12 @@ int msm_vidc_calc_freq_iris33_legacy(struct msm_vidc_inst *inst,
 		 */
 	} else {
 		/* limit to NOM, index 0 is TURBO, index 1 is NOM clock rate */
-		if (get_clock_freq_count(core, "video_cc_mvs0_clk_src") >= 2) {
-			nom_freq = get_clock_freq(core, "video_cc_mvs0_clk_src", 1);
-			if (freq > nom_freq)
-				freq = nom_freq;
-		}
+		if (core->resource->freq_set.count >= 2 &&
+				freq > core->resource->freq_set.freq_tbl[1].freq)
+			freq = core->resource->freq_set.freq_tbl[1].freq;
 	}
 
-	clock_scaling_data->freq = freq;
-
-	return 0;
+	return freq;
 }
 
 static u64 __calculate_decoder(struct vidc_bus_vote_data *d)
@@ -891,24 +776,24 @@ static u64 __calculate_decoder(struct vidc_bus_vote_data *d)
 	 * measured heuristics and hardcoded numbers taken from the firmware.
 	 */
 	/* Decoder parameters */
-	int width, height, lcu_size, fps, dpb_bpp;
-	bool unified_dpb_opb, dpb_compression_enabled = true,
+	int width = 0, height = 0, lcu_size = 0, fps = 0, dpb_bpp = 0;
+	bool unified_dpb_opb = false, dpb_compression_enabled = true,
 		opb_compression_enabled = false,
 		llc_ref_read_l2_cache_enabled = false,
 		llc_top_line_buf_enabled = false;
-	fp_t dpb_read_compression_factor, dpb_opb_scaling_ratio,
-		dpb_write_compression_factor, opb_write_compression_factor,
-		qsmmu_bw_overhead_factor;
+	fp_t dpb_read_compression_factor = 0, dpb_opb_scaling_ratio = 0,
+		dpb_write_compression_factor = 0,
+		opb_write_compression_factor = 0, qsmmu_bw_overhead_factor = 0;
 	bool is_h264_category = (d->codec == MSM_VIDC_H264) ? true : false;
 
 	/* Derived parameters */
-	int lcu_per_frame, collocated_bytes_per_lcu, tnbr_per_lcu;
-	unsigned long bitrate;
+	int lcu_per_frame = 0, collocated_bytes_per_lcu = 0, tnbr_per_lcu = 0;
+	unsigned long bitrate = 0;
 
-	fp_t bins_to_bit_factor, vsp_read_factor, vsp_write_factor,
-		dpb_factor, dpb_write_factor, y_bw_no_ubwc_8bpp;
+	fp_t bins_to_bit_factor = 0, vsp_read_factor = 0, vsp_write_factor = 0,
+		dpb_factor = 0, dpb_write_factor = 0, y_bw_no_ubwc_8bpp = 0;
 	fp_t y_bw_no_ubwc_10bpp = 0, y_bw_10bpp_p010 = 0,
-	     motion_vector_complexity = 0;
+		motion_vector_complexity = 0;
 	fp_t	dpb_total = 0;
 
 	/* Output parameters */
@@ -924,7 +809,7 @@ static u64 __calculate_decoder(struct vidc_bus_vote_data *d)
 	} llc = {0};
 
 	unsigned long ret = 0;
-	unsigned int integer_part, frac_part;
+	unsigned int integer_part = 0, frac_part = 0;
 
 	width = max(d->input_width, BASELINE_DIMENSIONS.width);
 	height = max(d->input_height, BASELINE_DIMENSIONS.height);
@@ -1141,29 +1026,31 @@ static u64 __calculate_encoder(struct vidc_bus_vote_data *d)
 	 * measured heuristics and hardcoded numbers taken from the firmware.
 	 */
 	/* Encoder Parameters */
-	int width, height, fps, lcu_size, bitrate, lcu_per_frame,
-		collocated_bytes_per_lcu, tnbr_per_lcu, dpb_bpp,
-		original_color_format, vertical_tile_width, rotation;
-	bool work_mode_1, original_compression_enabled,
-		low_power, cropping_or_scaling,
+	int width = 0, height = 0, fps = 0, lcu_size = 0, bitrate = 0,
+		lcu_per_frame = 0, collocated_bytes_per_lcu = 0,
+		tnbr_per_lcu = 0, dpb_bpp = 0, original_color_format = 0,
+		vertical_tile_width = 0, rotation = 0;
+	bool work_mode_1 = false, original_compression_enabled = false,
+		low_power = false, cropping_or_scaling = false,
 		b_frames_enabled = false,
 		llc_ref_chroma_cache_enabled = false,
 		llc_top_line_buf_enabled = false,
 		llc_vpss_rot_line_buf_enabled = false,
 		vpss_preprocessing_enabled = false;
 
-	unsigned int bins_to_bit_factor;
-	fp_t dpb_compression_factor,
-		original_compression_factor,
-		original_compression_factor_y,
-		y_bw_no_ubwc_8bpp, y_bw_no_ubwc_10bpp = 0, y_bw_10bpp_p010 = 0,
-		input_compression_factor,
-		downscaling_ratio,
-		ref_y_read_bw_factor, ref_cbcr_read_bw_factor,
-		recon_write_bw_factor,
-		total_ref_read_crcb,
-		qsmmu_bw_overhead_factor;
-	fp_t integer_part, frac_part;
+	unsigned int bins_to_bit_factor = 0;
+	fp_t dpb_compression_factor = 0,
+		original_compression_factor = 0,
+		original_compression_factor_y = 0,
+		y_bw_no_ubwc_8bpp = 0, y_bw_no_ubwc_10bpp = 0,
+		y_bw_10bpp_p010 = 0,
+		input_compression_factor = 0,
+		downscaling_ratio = 0,
+		ref_y_read_bw_factor = 0, ref_cbcr_read_bw_factor = 0,
+		recon_write_bw_factor = 0,
+		total_ref_read_crcb = 0,
+		qsmmu_bw_overhead_factor = 0;
+	fp_t integer_part = 0, frac_part = 0;
 	unsigned long ret = 0;
 
 	/* Output parameters */
@@ -1233,7 +1120,7 @@ static u64 __calculate_encoder(struct vidc_bus_vote_data *d)
 
 	if (d->use_sys_cache) {
 		llc_ref_chroma_cache_enabled = true;
-		llc_top_line_buf_enabled = true,
+		llc_top_line_buf_enabled = true;
 		llc_vpss_rot_line_buf_enabled = true;
 	}
 
@@ -1424,7 +1311,7 @@ static u64 __calculate(struct msm_vidc_inst *inst, struct vidc_bus_vote_data *d)
 	return value;
 }
 
-int msm_vidc_calc_bw_iris33(struct msm_vidc_inst *inst,
+int msm_vidc_calc_bw_iris36(struct msm_vidc_inst *inst,
 		struct vidc_bus_vote_data *vidc_data)
 {
 	int value = 0;
@@ -1435,21 +1322,22 @@ int msm_vidc_calc_bw_iris33(struct msm_vidc_inst *inst,
 	if (ENABLE_LEGACY_POWER_CALCULATIONS)
 		value = __calculate(inst, vidc_data);
 	else
-		value = msm_vidc_calc_bw_iris33_new(inst, vidc_data);
+		value = msm_vidc_calc_bw_iris36_new(inst, vidc_data);
 
 	return value;
 }
 
-int msm_vidc_ring_buf_count_iris33(struct msm_vidc_inst *inst, u32 data_size)
+int msm_vidc_ring_buf_count_iris36(struct msm_vidc_inst *inst, u32 data_size)
 {
 	int rc = 0;
-	struct msm_vidc_core *core;
-	struct api_calculation_input codec_input;
-	struct api_calculation_freq_output codec_output;
+	struct msm_vidc_core *core = NULL;
+	struct api_calculation_input codec_input = {};
+	struct api_calculation_freq_output codec_output = {};
 
 	core = inst->core;
 
-	if (!core->resource) {
+	if (!core->resource || !core->resource->freq_set.freq_tbl ||
+		!core->resource->freq_set.count) {
 		i_vpr_e(inst, "%s: invalid frequency table\n", __func__);
 		return -EINVAL;
 	}
