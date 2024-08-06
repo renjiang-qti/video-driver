@@ -771,6 +771,16 @@ static int __watchdog_iris3(struct msm_vidc_core *core, u32 intr_status)
 	return rc;
 }
 
+static int __hw_ctrl_gdsc_iris3(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_hw_ctrl, core);
+}
+
+static int __sw_ctrl_gdsc_iris3(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_sw_ctrl, core);
+}
+
 static int __noc_error_info_iris3(struct msm_vidc_core *core)
 {
 	/*
@@ -1111,6 +1121,8 @@ static struct msm_vidc_venus_ops iris3_ops = {
 	.prepare_pc = __prepare_pc_iris3,
 	.watchdog = __watchdog_iris3,
 	.noc_error_info = __noc_error_info_iris3,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris3,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris3,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {

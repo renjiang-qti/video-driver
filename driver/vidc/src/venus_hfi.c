@@ -542,7 +542,7 @@ static int __resume(struct msm_vidc_core *core)
 	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
 	 * present.
 	 */
-	call_res_op(core, gdsc_hw_ctrl, core);
+	call_venus_op(core, hw_ctrl_gdsc, core);
 
 	/* Wait for boot completion */
 	rc = call_venus_op(core, boot_firmware, core);
@@ -563,7 +563,7 @@ static int __resume(struct msm_vidc_core *core)
 	rc = __sys_set_power_control(core, true);
 	if (rc) {
 		d_vpr_e("%s: set power control failed\n", __func__);
-		call_res_op(core, gdsc_sw_ctrl, core);
+		call_venus_op(core, sw_ctrl_gdsc, core);
 		rc = 0;
 	}
 
@@ -608,7 +608,7 @@ int __load_fw(struct msm_vidc_core *core)
 	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
 	 * present.
 	 */
-	call_res_op(core, gdsc_hw_ctrl, core);
+	call_venus_op(core, hw_ctrl_gdsc, core);
 	trace_msm_v4l2_vidc_fw_load("END");
 
 	return rc;
@@ -924,7 +924,7 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 	rc = __sys_set_power_control(core, true);
 	if (rc) {
 		d_vpr_e("%s: set power control failed\n", __func__);
-		call_res_op(core, gdsc_sw_ctrl, core);
+		call_venus_op(core, sw_ctrl_gdsc, core);
 		rc = 0;
 	}
 
