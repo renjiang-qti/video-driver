@@ -3007,8 +3007,6 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.freq_tbl_size = ARRAY_SIZE(canoe_freq_table),
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
-	.dev_reg_tbl = canoe_device_region_table,
-	.dev_reg_tbl_size = ARRAY_SIZE(canoe_device_region_table),
 	.fwname = "vpu35_4v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
@@ -3073,8 +3071,6 @@ static int msm_vidc_canoe_check_ddr_type(void)
 
 int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 {
-	struct device *dev = &core->pdev->dev;
-
 	d_vpr_h("%s: initialize canoe data\n", __func__);
 	core->platform->data = canoe_data;
 

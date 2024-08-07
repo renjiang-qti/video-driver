@@ -37,6 +37,10 @@
 #include "msm_vidc_niobe.h"
 #include "msm_vidc_iris3.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_CANOE)
+#include "msm_vidc_canoe.h"
+#include "msm_vidc_iris4.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -251,6 +255,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_niobe,
 		.init_platform              = msm_vidc_init_platform_niobe,
 		.init_iris                  = msm_vidc_init_iris3,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_CANOE)
+	{
+		.compat                     = "qcom,sm8850-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_canoe,
+		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
 	},
 #endif
 };
