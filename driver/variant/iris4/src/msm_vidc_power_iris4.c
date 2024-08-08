@@ -45,12 +45,9 @@ static int msm_vidc_get_hier_layer_val(struct msm_vidc_inst *inst)
 	return hierachical_layer;
 }
 
-static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_size,
+static int msm_vidc_init_codec(struct msm_vidc_inst *inst,
 		struct api_calculation_input *codec_input)
 {
-	enum msm_vidc_port_type port;
-	u32 color_fmt, tile_rows_columns = 0;
-
 	if (is_encode_session(inst)) {
 		codec_input->decoder_or_encoder = CODEC_ENCODER;
 	} else if (is_decode_session(inst)) {
@@ -59,34 +56,50 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 		d_vpr_e("%s: invalid domain %d\n", __func__, inst->domain);
 		return -EINVAL;
 	}
-	/* (civirakt) - To change to sun target */
-	codec_input->chipset_gen = MSM_SUN;
 
 	if (inst->codec == MSM_VIDC_H264) {
-		codec_input->codec    = CODEC_H264;
 		codec_input->lcu_size = 16;
 		if (inst->capabilities[ENTROPY_MODE].value ==
-				V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC) {
-			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CABAC;
+			V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC) {
 			codec_input->codec = CODEC_H264;
+			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CABAC;
 		} else {
-			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CAVLC;
 			codec_input->codec = CODEC_H264_CAVLC;
+			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CAVLC;
 		}
 	} else if (inst->codec == MSM_VIDC_HEVC) {
-		codec_input->codec    = CODEC_HEVC;
+		codec_input->codec = CODEC_HEVC;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_VP9) {
-		codec_input->codec    = CODEC_VP9;
+		codec_input->codec = CODEC_VP9;
 		codec_input->lcu_size = 32;
 	} else if (inst->codec == MSM_VIDC_AV1) {
-		codec_input->codec    = CODEC_AV1;
+		codec_input->codec = CODEC_AV1;
 		codec_input->lcu_size =
 			inst->capabilities[SUPER_BLOCK].value ? 128 : 64;
+	}  else if (inst->codec == MSM_VIDC_APV) {
+		codec_input->codec = CODEC_APV;
+		codec_input->lcu_size = 16;
 	} else {
 		d_vpr_e("%s: invalid codec %d\n", __func__, inst->codec);
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_size,
+		struct api_calculation_input *codec_input)
+{
+	enum msm_vidc_port_type port;
+	u32 color_fmt, tile_rows_columns = 0;
+
+	/* (civirakt) - To change to sun target */
+	codec_input->chipset_gen = MSM_SUN;
+
+	rc = msm_vidc_init_codec(inst, &codec_input);
+	if (rc)
+		return rc;
 
 	codec_input->pipe_num = inst->capabilities[PIPE].value;
 	codec_input->frame_rate = inst->max_rate;
@@ -169,41 +182,12 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	if (!d)
 		return -EINVAL;
 
-	if (d->domain == MSM_VIDC_ENCODER) {
-		codec_input->decoder_or_encoder = CODEC_ENCODER;
-	} else if (d->domain == MSM_VIDC_DECODER) {
-		codec_input->decoder_or_encoder = CODEC_DECODER;
-	} else {
-		d_vpr_e("%s: invalid domain %d\n", __func__, d->domain);
-		return -EINVAL;
-	}
 	/* (civirakt) - To change to sun target */
 	codec_input->chipset_gen = MSM_SUN;
 
-	if (d->codec == MSM_VIDC_H264) {
-		if (inst->capabilities[ENTROPY_MODE].value ==
-			V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC) {
-			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CABAC;
-			codec_input->codec = CODEC_H264;
-		} else if (inst->capabilities[ENTROPY_MODE].value ==
-			V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CAVLC) {
-			codec_input->entropy_coding_mode = CODEC_ENTROPY_CODING_CAVLC;
-			codec_input->codec = CODEC_H264_CAVLC;
-		} else {
-			d_vpr_e("%s: invalid entropy %lld\n", __func__,
-				inst->capabilities[ENTROPY_MODE].value);
-			return -EINVAL;
-		}
-	} else if (d->codec == MSM_VIDC_HEVC) {
-		codec_input->codec = CODEC_HEVC;
-	} else if (d->codec == MSM_VIDC_VP9) {
-		codec_input->codec = CODEC_VP9;
-	} else if (d->codec == MSM_VIDC_AV1) {
-		codec_input->codec = CODEC_AV1;
-	} else {
-		d_vpr_e("%s: invalid codec %d\n", __func__, d->codec);
-		return -EINVAL;
-	}
+	rc = msm_vidc_init_codec(inst, &codec_input);
+	if (rc)
+		return rc;
 
 	codec_input->lcu_size = d->lcu_size;
 	codec_input->pipe_num = d->num_vpp_pipes;

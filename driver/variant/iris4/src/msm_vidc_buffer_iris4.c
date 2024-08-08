@@ -396,6 +396,8 @@ static u32 msm_vidc_encoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
 		HFI_BUFFER_NON_COMV_H264E(size, width, height, num_vpp_pipes, profile);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes, profile);
+	else if (inst->codec == MSM_VIDC_APV)
+		HFI_BUFFER_NON_COMV_APVE(size, width, height, num_vpp_pipes, profile);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -507,6 +509,13 @@ static u32 msm_vidc_encoder_output_size_iris4(struct msm_vidc_inst *inst)
 
 	f = &inst->fmts[OUTPUT_PORT];
 	codec = v4l2_codec_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
+
+	if (codec == MSM_VIDC_APV) {
+		HFI_BUFFER_BITSTREAM_ENC_APVE(frame_size, f->fmt.pix_mp.width,
+			f->fmt.pix_mp.height);
+		return frame_size;
+	}
+
 	if (codec == MSM_VIDC_HEVC || codec == MSM_VIDC_HEIC)
 		is_ten_bit = true;
 

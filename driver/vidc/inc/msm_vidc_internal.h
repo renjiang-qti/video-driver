@@ -486,6 +486,7 @@ enum msm_vidc_codec_type {
 	MSM_VIDC_HEIC              = BIT(3),
 	MSM_VIDC_AV1               = BIT(4),
 	MSM_VIDC_MPEG2             = BIT(5),
+	MSM_VIDC_APV               = BIT(6),
 };
 
 enum msm_vidc_colorformat_type {
@@ -497,6 +498,8 @@ enum msm_vidc_colorformat_type {
 	MSM_VIDC_FMT_P010          = BIT(4),
 	MSM_VIDC_FMT_RGBA8888C     = BIT(5),
 	MSM_VIDC_FMT_RGBA8888      = BIT(6),
+	MSM_VIDC_FMT_P210C         = BIT(7),
+	MSM_VIDC_FMT_P210          = BIT(8),
 	MSM_VIDC_FMT_META          = BIT(31),
 };
 

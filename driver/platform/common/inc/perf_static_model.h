@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _PERF_STATIC_MODEL_H_
@@ -14,6 +14,8 @@
 #define CODEC_HEVC                              2
 #define CODEC_VP9                               3
 #define CODEC_AV1                               4
+// TODO: modify after perf team update
+#define CODEC_APV                               CODEC_HEVC
 
 #define CODEC_BSE_FrameFactor                   0
 #define CODEC_BSE_MBFactor                      1

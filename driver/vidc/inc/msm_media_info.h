@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __MSM_MEDIA_INFO_H__
@@ -52,6 +52,7 @@ static inline unsigned int video_y_stride_bytes(unsigned int colorformat,
 		stride = MSM_MEDIA_ALIGN(stride * 4 / 3, alignment);
 		break;
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 256;
 		stride = MSM_MEDIA_ALIGN(width * 2, alignment);
 		break;
@@ -82,6 +83,7 @@ static inline unsigned int video_y_stride_pix(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV21:
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 128;
 		stride = MSM_MEDIA_ALIGN(width, alignment);
 		break;
@@ -125,6 +127,7 @@ static inline unsigned int video_uv_stride_bytes(unsigned int colorformat,
 		stride = MSM_MEDIA_ALIGN(stride * 4 / 3, alignment);
 		break;
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 256;
 		stride = MSM_MEDIA_ALIGN(width * 2, alignment);
 		break;
@@ -155,6 +158,7 @@ static inline unsigned int video_uv_stride_pix(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV12:
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 128;
 		stride = MSM_MEDIA_ALIGN(width, alignment);
 		break;
@@ -189,6 +193,7 @@ static inline unsigned int video_y_scanlines(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV21:
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 32;
 		break;
 	case MSM_VIDC_FMT_TP10C:
@@ -222,6 +227,7 @@ static inline unsigned int video_uv_scanlines(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV12:
 	case MSM_VIDC_FMT_TP10C:
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		alignment = 16;
 		break;
 	case MSM_VIDC_FMT_NV12C:
@@ -231,7 +237,10 @@ static inline unsigned int video_uv_scanlines(unsigned int colorformat,
 		goto invalid_input;
 	}
 
-	sclines = MSM_MEDIA_ALIGN((height + 1) >> 1, alignment);
+	if (colorformat == MSM_VIDC_FMT_P210)
+		sclines = MSM_MEDIA_ALIGN(height, alignment);
+	else
+		sclines = MSM_MEDIA_ALIGN((height + 1) >> 1, alignment);
 
 invalid_input:
 	return sclines;
@@ -503,6 +512,7 @@ static inline unsigned int video_buffer_size(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV21:
 	case MSM_VIDC_FMT_NV12:
 	case MSM_VIDC_FMT_P010:
+	case MSM_VIDC_FMT_P210:
 		y_plane = y_stride * y_sclines;
 		uv_plane = uv_stride * uv_sclines;
 		size = y_plane + uv_plane;
