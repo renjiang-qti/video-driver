@@ -957,6 +957,7 @@ struct msm_vidc_mem {
 	u32                         size;
 	u8                          secure:1;
 	u8                          map_kernel:1;
+	u8                          delayed_unmap:1;
 	struct dma_buf             *dmabuf;
 	/*
 	 * Kalama uses Kernel Version 5.15.x,

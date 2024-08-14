@@ -3018,6 +3018,7 @@ int msm_vidc_create_internal_buffer(struct msm_vidc_inst *inst,
 	mem->region = call_mem_op(core, buffer_region, inst, buffer_type);
 	mem->size = buffer->buffer_size;
 	mem->secure = is_secure_region(mem->region);
+	mem->delayed_unmap = true;
 	rc = call_mem_op(core, memory_alloc_map, core, mem);
 	if (rc) {
 		i_vpr_e(inst, "failed to alloc and map. %s: %s: size %8d\n",
