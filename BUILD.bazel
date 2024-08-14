@@ -46,6 +46,14 @@ ddk_headers(
 )
 
 ddk_headers(
+    name = "canoe_headers",
+    hdrs = glob([
+      "driver/platform/canoe/inc/*.h",
+    ]),
+    includes = ["driver/platform/canoe/inc"]
+)
+
+ddk_headers(
     name = "iris33_headers",
     hdrs = glob([
       "driver/variant/iris33/inc/*.h",
@@ -62,6 +70,14 @@ ddk_headers(
 )
 
 ddk_headers(
+    name = "iris4_headers",
+    hdrs = glob([
+      "driver/variant/iris4/inc/*.h",
+    ]),
+    includes = ["driver/variant/iris4/inc"]
+)
+
+ddk_headers(
     name = "vidc_headers",
     hdrs = glob([
       "driver/vidc/inc/*.h",
@@ -73,7 +89,7 @@ ddk_headers(
 
 ddk_headers(
     name = "video_driver_headers",
-    hdrs = [":uapi_headers", "niobe_headers", "pineapple_headers", "sun_headers", "iris3_headers", "iris33_headers", "iris35_headers", "vidc_headers"]
+    hdrs = [":uapi_headers", "niobe_headers", "pineapple_headers", "sun_headers", "canoe_headers", "iris3_headers", "iris33_headers", "iris35_headers", "iris4_headers", "vidc_headers"]
 )
 
 load(":target.bzl", "define_target_modules")

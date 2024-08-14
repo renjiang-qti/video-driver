@@ -14,8 +14,7 @@
 #define CODEC_HEVC                              2
 #define CODEC_VP9                               3
 #define CODEC_AV1                               4
-// TODO: modify after perf team update
-#define CODEC_APV                               CODEC_HEVC
+#define CODEC_APV                               5
 
 #define CODEC_BSE_FrameFactor                   0
 #define CODEC_BSE_MBFactor                      1
@@ -74,6 +73,7 @@ enum chipset_generation {
 	MSM_QOGNITION,
 	MSM_PINEAPPLE,
 	MSM_SUN,
+	MSM_CANOE,
 	MSM_MAX,
 };
 
@@ -123,6 +123,8 @@ struct api_calculation_input {
 	u32 frame_rate;
 	u32 frame_width;
 	u32 frame_height;
+	u32 opb_frame_width;
+	u32 opb_frame_height;
 	u32 vsp_vpp_mode;
 	u32 entropy_coding_mode;
 	u32 hierachical_layer;
@@ -147,7 +149,7 @@ struct api_calculation_input {
 	u32 cr_rpb;
 	u32 cr_dpb;
 	u32 cr_opb;
-	u32  av1d_commer_tile_enable;
+	u32 av1d_commer_tile_enable;
 	u32 regression_mode;
 
 	/* used in aurora for depth map decode */

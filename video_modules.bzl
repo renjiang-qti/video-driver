@@ -59,6 +59,14 @@ module_entry(
             "driver/variant/iris35/src/msm_vidc_iris35.c",
             "driver/platform/sun/src/msm_vidc_sun.c",
         ],
+        "CONFIG_MSM_VIDC_CANOE" : [
+            "driver/variant/iris4/src/msm_vidc_buffer_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_bus_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_clock_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_power_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_iris4.c",
+            "driver/platform/canoe/src/msm_vidc_canoe.c",
+        ],
     },
     deps = [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
@@ -119,6 +127,14 @@ module_entry(
             "driver/variant/iris35/src/msm_vidc_bus_iris35.c",
             "driver/variant/iris35/src/msm_vidc_clock_iris35.c",
             "driver/variant/iris35/src/msm_vidc_iris35.c",
+        ],
+        "CONFIG_MSM_VIDC_CANOE" : [
+            "driver/platform/canoe/src/canoe.c",
+            "driver/variant/iris4/src/msm_vidc_buffer_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_power_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_bus_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_clock_iris4.c",
+            "driver/variant/iris4/src/msm_vidc_iris4.c",
         ],
     }
 )

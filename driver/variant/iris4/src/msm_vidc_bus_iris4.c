@@ -85,15 +85,9 @@ static u32 av1_num_tiles_iris4[7][3] = {
  */
 
 /* 1000x */
-static u32 sun_en_readfactor[8] = {1000, 1500, 1750, 1875, 1000, 2000, 2000, 1000};
+static u32 en_readfactor[8] = {1000, 1500, 1750, 1875, 1000, 2000, 2000, 1000};
 /* 1000x */
-static u32 sun_en_writefactor[8] = {1000, 500, 500, 500, 1000, 0, 1000, 1000};
-static u32 sun_en_frame_num_parallel = 1;
-
-static u32 sun_P_en_vertical_tiles_width = 960;
-static u32 sun_B_2REFP_en_vertical_tiles_width = 768;
-static u32 sun_P_en_search_windows_size_horizontal = 192;
-static u32 sun_B_2REFP_en_search_windows_size_horizontal = 96;
+static u32 en_writefactor[8] = {1000, 500, 500, 500, 1000, 0, 1000, 1000};
 
 u32 calculate_number_lcus_iris4(u32 width, u32 height, u32 lcu_size)
 {
@@ -132,6 +126,16 @@ u32 get_compression_factors(struct compression_factors *compression_factor,
 	u32 frame_width;
 	u32 frame_height;
 	u32 bit_coeff = 0;
+	u32 dpbopb_cr_y = 0;
+	u32 dpbopb_cr_c = 0;
+	u32 dpbopb_cr_uni = 0;
+	u32 ipblossless_cr_y = 0;
+	u32 ipblossless_cr_c = 0;
+	u32 ipblossless_cr_uni = 0;
+	u32 ipblossy_cr_y = 0;
+	u32 ipblossy_cr_uni = 0;
+	u32 rpb_cr_y = 0;
+	u32 rpb_cr_c = 0;
 
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;
@@ -153,63 +157,221 @@ u32 get_compression_factors(struct compression_factors *compression_factor,
 		cr_index_uni = 5 + bit_coeff * (6 + (codec_input.format_10bpp % 2) * 6);
 	}
 
+	dpbopb_cr_y = dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
+	dpbopb_cr_c = dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_c];
+	dpbopb_cr_uni =	dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
+
+	ipblossless_cr_y =
+		ipblossless_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
+	ipblossless_cr_c =
+		ipblossless_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_c];
+	ipblossless_cr_uni =
+		ipblossless_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
+
+	ipblossy_cr_y = ipblossy_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
+	ipblossy_cr_uni = ipblossy_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
+
+	rpb_cr_y = rpb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
+	rpb_cr_c = rpb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_c];
+
 	if (codec_input.decoder_or_encoder == CODEC_DECODER) {
-		compression_factor->dpb_cf_y =
-			dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
-		compression_factor->dpb_cf_cbcr =
-			dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_c];
-		compression_factor->opb_cf_ycbcr =
-			dpbopb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
+		compression_factor->dpb_cf_y = dpbopb_cr_y;
+		compression_factor->dpb_cf_cbcr = dpbopb_cr_c;
+		if (codec_input.codec != CODEC_APV)
+			compression_factor->opb_cf_ycbcr = dpbopb_cr_uni;
 
-		if (codec_input.regression_mode == 3) {
-			/* input cr numbers from interface */
-			if (codec_input.cr_dpb != 0) {
-				compression_factor->dpb_cf_y = codec_input.cr_dpb;
-				compression_factor->dpb_cf_cbcr = codec_input.cr_dpb;
-			}
-
-			if (codec_input.cr_opb != 0) {
-				compression_factor->opb_cf_ycbcr = codec_input.cr_opb;
-			}
+		/* input cr numbers from interface */
+		if (codec_input.cr_dpb != 0) {
+			compression_factor->dpb_cf_y = codec_input.cr_dpb;
+			compression_factor->dpb_cf_cbcr = codec_input.cr_dpb;
 		}
+
+		if (codec_input.cr_opb != 0 && codec_input.codec != CODEC_APV)
+			compression_factor->opb_cf_ycbcr = codec_input.cr_opb;
 	} else { /* encoder */
 		/*
 		 * IPB CR Table Choice; static sheet (if framewidth<3840, use lossless table)
 		 * (else, use lossy table)
 		 * stick to this choice for SW purpose (no change for SW)
 		 */
-		if (frame_width < 3840) {
-			compression_factor->ipb_cr =
-				ipblossless_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
-			compression_factor->ipb_cr_y =
-				ipblossless_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
+
+
+		if (codec_input.codec == CODEC_APV) {
+			compression_factor->dpb_cf_y = ipblossless_cr_y;
+			compression_factor->dpb_cf_cbcr = ipblossless_cr_c;
+
+			if (codec_input.cr_ipb != 0) {
+				compression_factor->dpb_cf_y = codec_input.cr_ipb;
+				compression_factor->dpb_cf_cbcr = codec_input.cr_ipb;
+			}
 		} else {
-			compression_factor->ipb_cr =
-				ipblossy_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_uni];
-			compression_factor->ipb_cr_y =
-				ipblossy_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
-		}
+			if (frame_width < 3840) {
+				compression_factor->ipb_cr = ipblossless_cr_uni;
+				compression_factor->ipb_cr_y = ipblossless_cr_y;
+			} else {
+				compression_factor->ipb_cr = ipblossy_cr_uni;
+				compression_factor->ipb_cr_y = ipblossy_cr_y;
+			}
+			compression_factor->dpb_cf_y = rpb_cr_y;
 
-		compression_factor->dpb_cf_y =
-			rpb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_y];
-
-		compression_factor->dpb_cf_cbcr =
-			rpb_ubwc30_cr_table_cratio_iris4[cr_index_entry][cr_index_c];
-
-		if (codec_input.regression_mode == 3) {
+			compression_factor->dpb_cf_cbcr = rpb_cr_c;
 			/* input cr from interface */
 			if (codec_input.cr_rpb != 0) {
 				compression_factor->dpb_cf_y = codec_input.cr_rpb;
 				compression_factor->dpb_cf_cbcr = codec_input.cr_rpb;
 			}
-
 			if (codec_input.cr_ipb != 0) {
 				compression_factor->ipb_cr = codec_input.cr_ipb;
 				compression_factor->ipb_cr_y = codec_input.cr_ipb;
 			}
 		}
 	}
+	return 0;
+}
 
+static u32 calculate_bandwidth_apv(struct api_calculation_input codec_input,
+		struct api_calculation_bw_output *codec_output)
+{
+	u32 frame_width;
+	u32 frame_height;
+	u32 target_bitrate;
+	u16 ubwc_tile_w;
+	u16 ubwc_tile_h;
+	u32 frame420_y_bw_no_ubwc_tile_10bpp;
+	u32 dpb_compression_factor_y;
+	u32 dpb_compression_factor_cbcr;
+
+	target_bitrate = codec_input.bitrate_mbps;
+	frame_width = codec_input.frame_width;
+	frame_height = codec_input.frame_height;
+
+	if ((codec_input.format_10bpp % 2) == 0) {
+		ubwc_tile_w = 48;
+		ubwc_tile_h = 4;
+	} else {
+		ubwc_tile_w = 32;
+		ubwc_tile_h = 4;
+	}
+
+	frame420_y_bw_no_ubwc_tile_10bpp = ((calculate_number_ubwctiles_iris4(frame_width,
+			frame_height, ubwc_tile_w, ubwc_tile_h)
+			* 256 * codec_input.frame_rate + 999) / 1000 + 999) / 1000;
+
+	get_compression_factors(&compression_factor, codec_input);
+	dpb_compression_factor_y = compression_factor.dpb_cf_y;
+	dpb_compression_factor_cbcr = compression_factor.dpb_cf_cbcr;
+
+	codec_output->noc_bw_rd = 0;
+	codec_output->noc_bw_wr = 0;
+	codec_output->ddr_bw_rd = 0;
+	codec_output->ddr_bw_wr = 0;
+	if (codec_input.decoder_or_encoder == CODEC_DECODER) {
+		codec_output->noc_bw_rd += target_bitrate / 8;
+		codec_output->ddr_bw_rd += target_bitrate / 8;
+
+		if (codec_input.linear_opb == 1) {
+			ubwc_tile_w = 32; ubwc_tile_h = 4;
+			frame420_y_bw_no_ubwc_tile_10bpp =
+				((calculate_number_ubwctiles_iris4(frame_width,
+					frame_height, ubwc_tile_w, ubwc_tile_h)
+					* 256 * codec_input.frame_rate + 999) / 1000 + 999) / 1000;
+			if (codec_input.format_10bpp <= 1) { //YUV420
+				codec_output->ddr_bw_wr +=
+					(frame420_y_bw_no_ubwc_tile_10bpp * 3) >> 1;
+			} else { // YUV422
+				codec_output->ddr_bw_wr += frame420_y_bw_no_ubwc_tile_10bpp * 2;
+			}
+			codec_output->noc_bw_wr = codec_output->ddr_bw_wr;
+		} else {
+			if (codec_input.format_10bpp <= 1) { //YUV420
+				codec_output->ddr_bw_wr +=
+					(frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_y - 1) /
+						dpb_compression_factor_y;
+				codec_output->ddr_bw_wr +=
+					((frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_cbcr - 1) /
+						dpb_compression_factor_cbcr) >> 1;
+			} else {//YUV422
+				codec_output->ddr_bw_wr +=
+					(frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_y - 1) /
+						dpb_compression_factor_y;
+				codec_output->ddr_bw_wr +=
+					(frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_cbcr - 1) /
+						dpb_compression_factor_cbcr;
+			}
+			codec_output->noc_bw_wr = codec_output->ddr_bw_wr;
+		}
+	} else {
+		codec_output->noc_bw_wr += target_bitrate / 8;
+		codec_output->ddr_bw_wr += target_bitrate / 8;
+
+		//CR bitstream copy
+		codec_output->noc_bw_wr += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+		codec_output->ddr_bw_wr += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+
+		//CB bitstream copy
+		codec_output->noc_bw_wr += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+		codec_output->ddr_bw_wr += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+
+		if (codec_input.linear_ipb == 1) {
+			ubwc_tile_w = 32; ubwc_tile_h = 4;
+			frame420_y_bw_no_ubwc_tile_10bpp =
+				((calculate_number_ubwctiles_iris4(frame_width,
+				frame_height, ubwc_tile_w, ubwc_tile_h)
+				* 256 * codec_input.frame_rate + 999) / 1000 + 999) / 1000;
+			codec_output->dpb_rd_y_noc = frame420_y_bw_no_ubwc_tile_10bpp;
+			if (codec_input.format_10bpp <= 1) {//YUV420
+				codec_output->dpb_rd_crcb_noc =
+					(frame420_y_bw_no_ubwc_tile_10bpp >> 1);
+			} else {// YUV422
+				codec_output->dpb_rd_crcb_noc =
+					frame420_y_bw_no_ubwc_tile_10bpp;
+			}
+			codec_output->ddr_bw_rd =
+				codec_output->dpb_rd_y_noc + codec_output->dpb_rd_crcb_noc;
+			codec_output->noc_bw_rd = codec_output->ddr_bw_rd;
+			if (codec_input.format_10bpp == 1)
+				codec_output->noc_bw_rd = (codec_output->noc_bw_rd) / 100 * 120;
+			if (codec_input.format_10bpp == 3)
+				codec_output->noc_bw_rd = (codec_output->noc_bw_rd) / 100 * 125;
+
+		} else {
+			codec_output->dpb_rd_y_noc = (frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_y - 1) /
+						dpb_compression_factor_y;
+			if (codec_input.format_10bpp <= 1) {//YUV420
+				codec_output->dpb_rd_crcb_noc =
+					((frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_cbcr - 1) /
+						dpb_compression_factor_cbcr) >> 1;
+			} else {//YUV422 format
+				codec_output->dpb_rd_crcb_noc =
+					((frame420_y_bw_no_ubwc_tile_10bpp * 100
+						+ dpb_compression_factor_cbcr - 1) /
+						dpb_compression_factor_cbcr);
+			}
+			codec_output->ddr_bw_rd = codec_output->dpb_rd_y_noc +
+						codec_output->dpb_rd_crcb_noc;
+			codec_output->noc_bw_rd = codec_output->ddr_bw_rd;
+			if (codec_input.format_10bpp == 0) //UBWC_TP10
+				codec_output->noc_bw_rd = (codec_output->noc_bw_rd) / 100 * 215;
+			if (codec_input.format_10bpp == 1) //UBWC_P010
+				codec_output->noc_bw_rd = (codec_output->noc_bw_rd) / 100 * 175;
+			if (codec_input.format_10bpp == 3) //UBWCP210
+				codec_output->noc_bw_rd = (codec_output->noc_bw_rd) / 100 * 185;
+		}
+
+		//CR bitstream copy
+		codec_output->noc_bw_rd += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+		codec_output->ddr_bw_rd += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+
+		//CB bitstream copy
+		codec_output->noc_bw_rd += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+		codec_output->ddr_bw_rd += target_bitrate / 8 / 4;  //CR is 1/4 of the bitstream
+	}
 	return 0;
 }
 
@@ -245,11 +407,8 @@ static int calculate_bandwidth_decoder_iris4(
 	u32 decoder_vsp_read_factor = 6;
 	u32 bins_to_bits_factor = 4;
 
-	u32 dpb_to_opb_ratios_ds = 100;
+	u32 dpb_to_opb_ratios_ds = 1;
 
-	u8 llc_enabled_ref_y_rd = 1;
-	u8 llc_enable_ref_crcb_rd = 1;
-	u8 llc_enabled_bse_tlb = 1;
 	/* this is for 2pipe and 1pipe LLC */
 	u8 llc_enable_probtable_av1d_21pipe = 0;
 
@@ -269,10 +428,10 @@ static int calculate_bandwidth_decoder_iris4(
 
 	u32 large_bw_calculation_fp = 0;
 
-	llc_enabled_ref_y_rd = (codec_input.status_llc_onoff) ? 1 : 0;
-	llc_enable_ref_crcb_rd = (codec_input.status_llc_onoff) ? 1 : 0;
+	u8 llc_enabled_ref_y_rd = (codec_input.status_llc_onoff) ? 1 : 0;
+	u8 llc_enable_ref_crcb_rd = (codec_input.status_llc_onoff) ? 1 : 0;
 	/* H265D BSE tlb in LLC will be pored in Kailua */
-	llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
+	u8 llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
 
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;
@@ -281,17 +440,8 @@ static int calculate_bandwidth_decoder_iris4(
 		frame_lcu_size = 16;
 		collocated_bytes_per_lcu = 16;
 		llc_saving = 120;
-	} else if (codec_input.codec == CODEC_HEVC) {
-		if (codec_input.lcu_size == 32) {
-			frame_lcu_size = 32;
-			collocated_bytes_per_lcu = 64;
-			llc_saving = 114;
-		} else if (codec_input.lcu_size == 64) {
-			frame_lcu_size = 64;
-			collocated_bytes_per_lcu = 256;
-			llc_saving = 107;
-		}
-	} else if (codec_input.codec == CODEC_VP9) {
+	} else if (codec_input.codec == CODEC_HEVC ||
+		codec_input.codec == CODEC_VP9) {
 		if (codec_input.lcu_size == 32) {
 			frame_lcu_size = 32;
 			collocated_bytes_per_lcu = 64;
@@ -367,8 +517,7 @@ static int calculate_bandwidth_decoder_iris4(
 		(codec_input.complexity_setting == 0) ?
 		400 : ((codec_input.complexity_setting == 1) ? 266 : 100);
 
-	reconstructed_write_bw_factor_rd = (codec_input.complexity_setting == 0) ?
-		105 : 100;
+	reconstructed_write_bw_factor_rd = (codec_input.complexity_setting == 0) ? 105 : 100;
 
 	reference_y_read_bw_factor = llc_saving;
 
@@ -535,6 +684,10 @@ static int calculate_bandwidth_decoder_iris4(
 	codec_output->ddr_bw_wr += codec_output->dpb_wr_ddr;
 
 	if (codec_input.linear_opb || codec_input.split_opb) {
+		dpb_to_opb_ratios_ds = frame_width * 100 / codec_input.opb_frame_width;
+		dpb_to_opb_ratios_ds = dpb_to_opb_ratios_ds *
+			(frame_height * 100 / codec_input.opb_frame_height) / 100;
+
 		if (codec_input.linear_opb) {
 			if (codec_input.bitdepth == CODEC_BITDEPTH_8) {
 				large_bw_calculation_fp = (frame420_y_bw_linear_8bpp) * 3 / 2;
@@ -630,7 +783,6 @@ static int calculate_bandwidth_decoder_iris4(
 		codec_output->ddr_bw_wr += codec_output->statistics_wr_ddr;
 	}
 
-
 	codec_output->mmu_rd_ddr = 0;
 	codec_output->mmu_rd_noc = 0;
 	/* accumulation */
@@ -686,10 +838,15 @@ static int calculate_bandwidth_encoder_iris4(
 
 	/* TODO Are these really needed in Encoder? */
 	u32 bse_tlb_byte_per_lcu = 0;
-	u8 llc_enabled_bse_tlb = 1;
+	u32 en_frame_num_parallel = 1;
+
+	u32 en_P_tilesize = 960;
+	u32 en_P_h_search_range = 192;
+	u32 en_B_2REFP_tilesize = 768;
+	u32 en_B_2REFP_h_search_range = 96;
 
 	/*H265D BSE tlb in LLC will be pored in Kailua */
-	llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
+	u8 llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
 
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;
@@ -729,8 +886,9 @@ static int calculate_bandwidth_encoder_iris4(
 	}
 
 	frame420_y_bw_no_ubwc_tile_10bpp =
-		((calculate_number_ubwctiles_iris4(frame_width, frame_height, 48, 4) *
-		256 * codec_input.frame_rate + 999) / 1000 + 999) / 1000;
+		((calculate_number_ubwctiles_iris4(frame_width,
+			frame_height, ubwc_tile_w, ubwc_tile_h) *
+			256 * codec_input.frame_rate + 999) / 1000 + 999) / 1000;
 
 	frame420_y_bw_linear_10bpp = ((frame_width * frame_height *
 		codec_input.frame_rate * 2 + 999) / 1000 + 999) / 1000;
@@ -743,14 +901,13 @@ static int calculate_bandwidth_encoder_iris4(
 	ipb_compression_factor = compression_factor.ipb_cr;
 
 	if (codec_input.hierachical_layer == CODEC_GOP_IPP) {
-		en_vertical_tiles_width = sun_P_en_vertical_tiles_width;
-		en_search_windows_size_horizontal = sun_P_en_search_windows_size_horizontal;
+		en_vertical_tiles_width = en_P_tilesize;
+		en_search_windows_size_horizontal = en_P_h_search_range;
 	} else if (codec_input.hierachical_layer >= CODEC_GOP_IbP &&
 				codec_input.hierachical_layer <= CODEC_GOP_I3B4b1P) {
-		en_vertical_tiles_width = sun_B_2REFP_en_vertical_tiles_width;
-		en_search_windows_size_horizontal =
-			(sun_B_2REFP_en_search_windows_size_horizontal +
-			 sun_P_en_search_windows_size_horizontal) >> 1;
+		en_vertical_tiles_width = en_B_2REFP_tilesize;
+		en_search_windows_size_horizontal = (en_B_2REFP_h_search_range
+							+ en_P_h_search_range) >> 1;
 	}
 	en_tile_number = (frame_width % en_vertical_tiles_width) ?
 		((frame_width / en_vertical_tiles_width) + 1) :
@@ -826,7 +983,7 @@ static int calculate_bandwidth_encoder_iris4(
 		frame420_y_bw_no_ubwc_tile_10bpp) * reference_y_read_bw_factor;
 
 	large_bw_calculation_fp = (large_bw_calculation_fp *
-		sun_en_readfactor[codec_input.hierachical_layer]);
+		en_readfactor[codec_input.hierachical_layer]);
 
 	large_bw_calculation_fp = (large_bw_calculation_fp +
 		dpb_compression_factor_y - 1) / dpb_compression_factor_y;
@@ -842,7 +999,7 @@ static int calculate_bandwidth_encoder_iris4(
 		frame420_y_bw_no_ubwc_tile_10bpp) * reference_crcb_read_bw_factor / 2;
 
 	large_bw_calculation_fp = large_bw_calculation_fp *
-		sun_en_readfactor[codec_input.hierachical_layer];
+		en_readfactor[codec_input.hierachical_layer];
 
 	large_bw_calculation_fp = (large_bw_calculation_fp +
 		dpb_compression_factor_cbcr - 1) / dpb_compression_factor_cbcr;
@@ -855,8 +1012,8 @@ static int calculate_bandwidth_encoder_iris4(
 	large_bw_calculation_fp = ((codec_input.bitdepth == CODEC_BITDEPTH_8) ?
 		frame420_y_bw_linear_8bpp : frame420_y_bw_no_ubwc_tile_10bpp) *
 		reconstructed_write_bw_factor_rd *
-		sun_en_writefactor[codec_input.hierachical_layer] /
-		sun_en_frame_num_parallel;
+		en_writefactor[codec_input.hierachical_layer] /
+		en_frame_num_parallel;
 
 	large_bw_calculation_fp = (large_bw_calculation_fp + 999) / 1000;
 
@@ -1030,6 +1187,10 @@ int msm_vidc_calculate_bandwidth(struct api_calculation_input codec_input,
 {
 	int rc = 0;
 
+	if (codec_input.codec == CODEC_APV) {
+		calculate_bandwidth_apv(codec_input, codec_output);
+		return rc;
+	}
 	if (codec_input.decoder_or_encoder == CODEC_DECODER) {
 		rc = calculate_bandwidth_decoder_iris4(codec_input, codec_output);
 	} else if (codec_input.decoder_or_encoder == CODEC_ENCODER) {
