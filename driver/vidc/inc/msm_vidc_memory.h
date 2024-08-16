@@ -63,7 +63,7 @@ struct msm_vidc_memory_ops {
 	void (*dma_buf_put_completely)(struct msm_vidc_inst *inst,
 				       struct msm_memory_dmabuf *buf);
 	struct dma_buf_attachment *(*dma_buf_attach)(struct msm_vidc_core *core,
-						     struct dma_buf *dbuf, struct device *dev);
+				struct dma_buf *dbuf, struct device *dev, bool delayed_unmap);
 	int (*dma_buf_detach)(struct msm_vidc_core *core, struct dma_buf *dbuf,
 			      struct dma_buf_attachment *attach);
 	struct sg_table

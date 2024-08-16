@@ -90,18 +90,6 @@ static int __acquire_regulator(struct msm_vidc_core *core,
 {
 	int rc = 0;
 
-	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
-	if (rc) {
-		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
-		goto fail_assert_xo_reset;
-	}
-
-	if (!regulator_is_enabled(rinfo->regulator)) {
-		d_vpr_e("%s: Regulator is not enabled %s\n",
-				__func__, rinfo->name);
-		return 0;
-	}
-
 	if (rinfo->hw_power_collapse) {
 		if (!rinfo->regulator) {
 			d_vpr_e("%s: invalid regulator\n", __func__);
@@ -152,10 +140,6 @@ static int __acquire_regulator(struct msm_vidc_core *core,
 	}
 
 exit:
-	rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
-	if (rc)
-		d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
-fail_assert_xo_reset:
 	return rc;
 }
 
@@ -163,18 +147,6 @@ static int __hand_off_regulator(struct msm_vidc_core *core,
 	struct regulator_info *rinfo)
 {
 	int rc = 0;
-
-	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
-	if (rc) {
-		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
-		goto fail_assert_xo_reset;
-	}
-
-	if (!regulator_is_enabled(rinfo->regulator)) {
-		d_vpr_e("%s: Regulator is not enabled %s\n",
-				__func__, rinfo->name);
-		return 0;
-	}
 
 	if (rinfo->hw_power_collapse) {
 		if (!rinfo->regulator) {
@@ -210,10 +182,6 @@ static int __hand_off_regulator(struct msm_vidc_core *core,
 	}
 
 exit:
-	rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
-	if (rc)
-		d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
-fail_assert_xo_reset:
 	return rc;
 }
 
@@ -234,29 +202,19 @@ static int __enable_regulator(struct msm_vidc_core *core, const char *reg_name)
 			continue;
 		found = true;
 
-		rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
-		if (rc) {
-			d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
-			goto fail_assert_xo_reset;
-		}
-
 		rc = regulator_enable(rinfo->regulator);
 		if (rc) {
 			d_vpr_e("%s: failed to enable %s, rc = %d\n",
 				__func__, rinfo->name, rc);
-			goto fail_regulator_enable;
+			goto exit;
 		}
 		if (!regulator_is_enabled(rinfo->regulator)) {
 			d_vpr_e("%s: regulator %s not enabled\n",
 				__func__, rinfo->name);
 			regulator_disable(rinfo->regulator);
 			rc = -EINVAL;
-			goto fail_regulator_enable;
+			goto exit;
 		}
-
-		rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
-		if (rc)
-			d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
 
 		d_vpr_h("%s: enabled regulator %s\n", __func__, rinfo->name);
 		break;
@@ -266,11 +224,7 @@ static int __enable_regulator(struct msm_vidc_core *core, const char *reg_name)
 		return -EINVAL;
 	}
 
-	return rc;
-
-fail_regulator_enable:
-	call_res_op(core, reset_control_release, core, "video_xo_reset");
-fail_assert_xo_reset:
+exit:
 	return rc;
 }
 
@@ -302,22 +256,12 @@ static int __disable_regulator(struct msm_vidc_core *core, const char *reg_name)
 		/* reset handoff done from core sub_state */
 		msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
 
-		rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
-		if (rc) {
-			d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
-			goto fail_assert_xo_reset;
-		}
-
 		rc = regulator_disable(rinfo->regulator);
 		if (rc) {
 			d_vpr_e("%s: failed to disable %s, rc = %d\n",
 				__func__, rinfo->name, rc);
-			goto fail_regulator_disable;
+			goto exit;
 		}
-
-		rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
-		if (rc)
-			d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
 
 		d_vpr_h("%s: disabled regulator %s\n", __func__, rinfo->name);
 		break;
@@ -327,11 +271,7 @@ static int __disable_regulator(struct msm_vidc_core *core, const char *reg_name)
 		return -EINVAL;
 	}
 
-	return rc;
-
-fail_regulator_disable:
-	call_res_op(core, reset_control_release, core, "video_xo_reset");
-fail_assert_xo_reset:
+exit:
 	return rc;
 }
 

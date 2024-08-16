@@ -914,6 +914,16 @@ static int __watchdog_iris35(struct msm_vidc_core *core, u32 intr_status)
 	return rc;
 }
 
+static int __hw_ctrl_gdsc_iris35(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_hw_ctrl, core);
+}
+
+static int __sw_ctrl_gdsc_iris35(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_sw_ctrl, core);
+}
+
 static int __noc_error_info_iris35(struct msm_vidc_core *core)
 {
 	u32 value;
@@ -1307,6 +1317,8 @@ static struct msm_vidc_venus_ops iris35_ops = {
 	.watchdog = __watchdog_iris35,
 	.noc_error_info = __noc_error_info_iris35,
 	.switch_gdsc_mode = __switch_gdsc_mode_iris35,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris35,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris35,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {

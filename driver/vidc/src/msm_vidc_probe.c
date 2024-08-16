@@ -645,6 +645,12 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
 
 	msm_vidc_core_deinit(core, true);
+	/**
+	 * Sometimes reverse(irq) thread will be running at this point,
+	 * So wait for irq thread completion to avoid use-after-free
+	 * crash issues with core.
+	 */
+	synchronize_irq(core->resource->irq);
 	venus_hfi_queue_deinit(core);
 	msm_vidc_deinitialize_media(core);
 	component_unbind_all(dev, core);
