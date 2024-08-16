@@ -20,6 +20,15 @@
 
 #define V4L2_META_FMT_VIDC                      v4l2_fourcc('Q', 'M', 'E', 'T')
 
+/* APV */
+#define V4L2_PIX_FMT_VIDC_APV                   v4l2_fourcc('A', 'P', 'V', '0')
+
+/* P210 (YCbCr 422) color format */
+#define V4L2_PIX_FMT_VIDC_P210                  v4l2_fourcc('2', '1', '0', ' ')
+
+/* P210C (YCbCr 422 compressed) color format */
+#define V4L2_PIX_FMT_VIDC_P210C                 v4l2_fourcc('2', '1', '0', 'C')
+
 #ifndef V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE
 #define V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE    (3)
 #endif
@@ -219,5 +228,32 @@ enum v4l2_mpeg_vidc_av1_tier {
 #define V4L2_CID_MPEG_VIDC_METADATA_HDR10_MAX_RGB_INFO       (VIDC_BASE + 0x4D)
 
 #define V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET               (VIDC_BASE + 0x4E)
+
+/* Profile information for APV */
+#define V4L2_CID_MPEG_VIDC_APV_PROFILE                       (VIDC_BASE + 0x60)
+enum v4l2_mpeg_vidc_apv_profile {
+	V4L2_MPEG_VIDC_APV_PROFILE_BASELINE = 0,
+};
+
+/* Level information for APV */
+#define V4L2_CID_MPEG_VIDC_APV_LEVEL                         (VIDC_BASE + 0x61)
+enum v4l2_mpeg_vidc_apv_level {
+	V4L2_MPEG_VIDC_APV_LEVEL_1_0   = 0,
+	V4L2_MPEG_VIDC_APV_LEVEL_1_1   = 1,
+	V4L2_MPEG_VIDC_APV_LEVEL_2_0   = 2,
+	V4L2_MPEG_VIDC_APV_LEVEL_2_1   = 3,
+	V4L2_MPEG_VIDC_APV_LEVEL_3_0   = 4,
+	V4L2_MPEG_VIDC_APV_LEVEL_3_1   = 5,
+	V4L2_MPEG_VIDC_APV_LEVEL_4_0   = 6,
+	V4L2_MPEG_VIDC_APV_LEVEL_4_1   = 7,
+	V4L2_MPEG_VIDC_APV_LEVEL_5_0   = 8,
+	V4L2_MPEG_VIDC_APV_LEVEL_5_1   = 9,
+};
+
+/* Minimum quantization parameter for APV */
+#define V4L2_CID_MPEG_VIDC_APV_MIN_QP                        (VIDC_BASE + 0x62)
+
+/* Maximum quantization parameter for APV */
+#define V4L2_CID_MPEG_VIDC_APV_MAX_QP                        (VIDC_BASE + 0x63)
 
 #endif

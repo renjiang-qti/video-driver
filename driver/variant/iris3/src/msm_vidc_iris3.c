@@ -1110,8 +1110,6 @@ adjust:
 	return 0;
 }
 
-
-
 static struct msm_vidc_venus_ops iris3_ops = {
 	.boot_firmware = __boot_firmware_iris3,
 	.raise_interrupt = __raise_interrupt_iris3,
@@ -1123,6 +1121,7 @@ static struct msm_vidc_venus_ops iris3_ops = {
 	.noc_error_info = __noc_error_info_iris3,
 	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris3,
 	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris3,
+	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {

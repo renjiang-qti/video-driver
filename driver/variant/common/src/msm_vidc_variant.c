@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/errno.h>
 #include <linux/iopoll.h>
+#include <linux/version.h>
+#if (KERNEL_VERSION(6, 3, 0) <= LINUX_VERSION_CODE)
+#include <linux/firmware/qcom/qcom_scm.h>
+#else
+#include <linux/qcom_scm.h>
+#endif
+#include <linux/soc/qcom/smem.h>
 
 #include "msm_vidc_core.h"
 #include "msm_vidc_driver.h"
@@ -13,7 +20,20 @@
 #include "msm_vidc_debug.h"
 #include "msm_vidc_variant.h"
 #include "msm_vidc_platform.h"
+#include "msm_vidc_events.h"
 #include "venus_hfi.h"
+
+enum video_memory_region {
+	VIDEO_REGION_SECURE_FW_REGION_ID    = 0,
+	VIDEO_REGION_VM0_SECURE_NP_ID       = 1,
+	VIDEO_REGION_VM1_SECURE_NP_ID       = 2,
+	VIDEO_REGION_VM2_SECURE_NP_ID       = 3,
+	VIDEO_REGION_VM3_SECURE_NP_ID       = 4,
+	VIDEO_REGION_VM0_NONSECURE_NP_ID    = 5,
+	VIDEO_REGION_VM1_NONSECURE_NP_ID    = 6,
+	VIDEO_REGION_VM2_NONSECURE_NP_ID    = 7,
+	VIDEO_REGION_VM3_NONSECURE_NP_ID    = 8
+};
 
 int __write_register(struct msm_vidc_core *core, u32 reg, u32 value)
 {
@@ -155,6 +175,73 @@ int __set_registers(struct msm_vidc_core *core)
 				reg_prst[cnt].value, reg_prst[cnt].mask);
 		if (rc)
 			return rc;
+	}
+
+	return rc;
+}
+
+int msm_vidc_mem_protect_video_regions_v1(struct msm_vidc_core *core)
+{
+	int rc = 0;
+	struct context_bank_info *cb;
+	u32 cp_start = 0, cp_size = 0, cp_nonpixel_start = 0, cp_nonpixel_size = 0;
+
+	venus_hfi_for_each_context_bank(core, cb) {
+		if (cb->region == MSM_VIDC_NON_SECURE) {
+			cp_size = cb->addr_range.start;
+
+			d_vpr_h("%s: cp_size: %#x\n",
+				__func__, cp_size);
+		}
+
+		if (cb->region == MSM_VIDC_SECURE_NONPIXEL) {
+			cp_nonpixel_start = cb->addr_range.start;
+			cp_nonpixel_size = cb->addr_range.size;
+
+			d_vpr_h("%s: cp_nonpixel_start: %#x size: %#x\n",
+				__func__, cp_nonpixel_start,
+				cp_nonpixel_size);
+		}
+	}
+
+	rc = qcom_scm_mem_protect_video_var(cp_start, cp_size,
+			cp_nonpixel_start, cp_nonpixel_size);
+	if (rc) {
+		d_vpr_e("Failed to protect memory(%d)\n", rc);
+		return rc;
+	}
+
+	trace_venus_hfi_var_done(cp_start, cp_size, cp_nonpixel_start,
+			cp_nonpixel_size);
+
+	return rc;
+}
+
+int msm_vidc_mem_protect_video_regions_v2(struct msm_vidc_core *core)
+{
+	int rc = 0;
+	struct context_bank_info *cb;
+	int region = -1, start = 0, size = 0;
+
+	venus_hfi_for_each_context_bank(core, cb) {
+
+		if (cb->region == MSM_VIDC_NON_SECURE)
+			region = VIDEO_REGION_VM0_NONSECURE_NP_ID;
+		else if (cb->region == MSM_VIDC_SECURE_NONPIXEL)
+			region = VIDEO_REGION_VM0_NONSECURE_NP_ID;
+		else
+			continue;
+
+		start = cb->addr_range.start;
+		size = cb->addr_range.size;
+
+		rc = qcom_scm_mem_protect_video_var(region, 0, start, size);
+		if (rc) {
+			d_vpr_e("%s Failed to protect memory(%d)\n", __func__, rc);
+			return rc;
+		}
+
+		trace_venus_hfi_var_done(region, 0, start, size);
 	}
 
 	return rc;

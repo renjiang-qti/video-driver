@@ -327,7 +327,8 @@ static inline bool is_linear_yuv_colorformat(enum msm_vidc_colorformat_type colo
 {
 	return colorformat == MSM_VIDC_FMT_NV12 ||
 		colorformat == MSM_VIDC_FMT_NV21 ||
-		colorformat == MSM_VIDC_FMT_P010;
+		colorformat == MSM_VIDC_FMT_P010 ||
+		colorformat == MSM_VIDC_FMT_P210;
 }
 
 static inline bool is_linear_rgba_colorformat(enum msm_vidc_colorformat_type colorformat)
@@ -344,13 +345,16 @@ static inline bool is_ubwc_colorformat(enum msm_vidc_colorformat_type colorforma
 {
 	return colorformat == MSM_VIDC_FMT_NV12C ||
 		colorformat == MSM_VIDC_FMT_TP10C ||
+		colorformat == MSM_VIDC_FMT_P210C ||
 		colorformat == MSM_VIDC_FMT_RGBA8888C;
 }
 
 static inline bool is_10bit_colorformat(enum msm_vidc_colorformat_type colorformat)
 {
 	return colorformat == MSM_VIDC_FMT_P010 ||
-		colorformat == MSM_VIDC_FMT_TP10C;
+		colorformat == MSM_VIDC_FMT_TP10C ||
+		colorformat == MSM_VIDC_FMT_P210 ||
+		colorformat == MSM_VIDC_FMT_P210C;
 }
 
 static inline bool is_8bit_colorformat(enum msm_vidc_colorformat_type colorformat)

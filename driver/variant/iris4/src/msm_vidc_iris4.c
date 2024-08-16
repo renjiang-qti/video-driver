@@ -1565,6 +1565,7 @@ static struct msm_vidc_venus_ops iris4_ops = {
 	.watchdog = __watchdog_iris4,
 	.noc_error_info = __noc_error_info_iris4,
 	.switch_gdsc_mode = __switch_gdsc_mode_iris4,
+	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v2,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
