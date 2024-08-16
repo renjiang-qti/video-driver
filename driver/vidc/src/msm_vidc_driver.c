@@ -99,6 +99,22 @@ exit:
 	return name;
 }
 
+static const char * const device_region_name_arr[] =
+	FOREACH_DEVICE_REGION(GENERATE_STRING);
+
+const char *device_region_name(enum msm_vidc_device_region region)
+{
+	const char *name = "UNKNOWN REGION";
+
+	if (region >= ARRAY_SIZE(device_region_name_arr))
+		goto exit;
+
+	name = device_region_name_arr[region];
+
+exit:
+	return name;
+}
+
 static const char * const inst_allow_name_arr[] =
 	FOREACH_ALLOW(GENERATE_STRING);
 
@@ -3018,6 +3034,7 @@ int msm_vidc_create_internal_buffer(struct msm_vidc_inst *inst,
 	mem->region = call_mem_op(core, buffer_region, inst, buffer_type);
 	mem->size = buffer->buffer_size;
 	mem->secure = is_secure_region(mem->region);
+	mem->delayed_unmap = true;
 	rc = call_mem_op(core, memory_alloc_map, core, mem);
 	if (rc) {
 		i_vpr_e(inst, "failed to alloc and map. %s: %s: size %8d\n",
