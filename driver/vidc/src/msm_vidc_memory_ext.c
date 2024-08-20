@@ -23,7 +23,7 @@ static bool is_non_secure_buffer(struct dma_buf *dmabuf)
 }
 
 static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_core *core,
-	struct dma_buf *dbuf, struct device *dev)
+	struct dma_buf *dbuf, struct device *dev, bool delayed_unmap)
 {
 	int rc = 0;
 	struct dma_buf_attachment *attach = NULL;
@@ -72,7 +72,8 @@ static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_co
 	 * Get the scatterlist for the given attachment
 	 * Mapping of sg is taken care by map attachment
 	 */
-	attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
+	if (delayed_unmap)
+		attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
 	if (is_sys_cache_present(core))
 		attach->dma_map_attrs |= 0UL /*TODO: define DMA_ATTR_IOMMU_USE_UPSTREAM_HINT*/;
 
@@ -273,7 +274,7 @@ static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_m
 	}
 
 	/* Prepare a dma buf for dma on the given device */
-	attach = msm_vidc_dma_buf_attach_ext(core, mem->dmabuf, cb->dev);
+	attach = msm_vidc_dma_buf_attach_ext(core, mem->dmabuf, cb->dev, mem->delayed_unmap);
 	if (IS_ERR_OR_NULL(attach)) {
 		rc = PTR_ERR(attach) ? PTR_ERR(attach) : -ENOMEM;
 		d_vpr_e("Failed to attach dmabuf\n");

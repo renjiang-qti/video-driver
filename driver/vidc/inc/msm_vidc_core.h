@@ -32,6 +32,8 @@ struct msm_vidc_venus_ops {
 	int (*watchdog)(struct msm_vidc_core *core, u32 intr_status);
 	int (*noc_error_info)(struct msm_vidc_core *core);
 	int (*switch_gdsc_mode)(struct msm_vidc_core *core, bool sw_mode);
+	int (*hw_ctrl_gdsc)(struct msm_vidc_core *core);
+	int (*sw_ctrl_gdsc)(struct msm_vidc_core *core);
 };
 
 struct msm_vidc_synx_fence_data {

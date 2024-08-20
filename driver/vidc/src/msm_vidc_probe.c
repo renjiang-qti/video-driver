@@ -50,6 +50,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,volcano-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2") ||
+		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc"));
 }
 
@@ -130,7 +131,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8650-vidc-v2"},
 	{.compatible = "qcom,sm8750-vidc"},
 	{.compatible = "qcom,sm8750-vidc-v2"},
-	{.compatible = "qcom,sm8850-vidc"},
+	{.compatible = "qcom,canoe-vidc"},
 	{.compatible = "qcom,cliffs-vidc"},
 	{.compatible = "qcom,volcano-vidc"},
 	{.compatible = "qcom,niobe-vidc"},

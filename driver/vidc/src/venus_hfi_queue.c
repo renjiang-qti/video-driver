@@ -546,6 +546,7 @@ int venus_hfi_queue_init(struct msm_vidc_core *core)
 	mem.size = TOTAL_QSIZE;
 	mem.secure = false;
 	mem.map_kernel = true;
+	mem.delayed_unmap = false;
 	rc = call_mem_op(core, memory_alloc_map, core, &mem);
 	if (rc) {
 		d_vpr_e("%s: alloc and map failed\n", __func__);
@@ -607,6 +608,7 @@ int venus_hfi_queue_init(struct msm_vidc_core *core)
 	mem.size = ALIGNED_SFR_SIZE;
 	mem.secure = false;
 	mem.map_kernel = true;
+	mem.delayed_unmap = false;
 	rc = call_mem_op(core, memory_alloc_map, core, &mem);
 	if (rc) {
 		d_vpr_e("%s: sfr alloc and map failed\n", __func__);
@@ -661,6 +663,7 @@ int venus_hfi_queue_init(struct msm_vidc_core *core)
 	mem.size = ALIGNED_MMAP_BUF_SIZE;
 	mem.secure = false;
 	mem.map_kernel = true;
+	mem.delayed_unmap = false;
 	rc = call_mem_op(core, memory_alloc_map, core, &mem);
 	if (rc) {
 		d_vpr_e("%s: mmap buffer alloc and map failed\n", __func__);

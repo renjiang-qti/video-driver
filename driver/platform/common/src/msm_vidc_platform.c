@@ -259,7 +259,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #endif
 #if defined(CONFIG_MSM_VIDC_CANOE)
 	{
-		.compat                     = "qcom,sm8850-vidc",
+		.compat                     = "qcom,canoe-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_canoe,
 		.init_platform              = msm_vidc_init_platform_canoe,
 		.init_iris                  = msm_vidc_init_iris4,

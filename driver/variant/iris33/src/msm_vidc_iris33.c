@@ -284,6 +284,7 @@ static int __power_off_iris33_hardware(struct msm_vidc_core *core)
 	int rc = 0, i;
 	u32 value = 0;
 	bool pwr_collapsed = false;
+	bool xo_reset_acquired = false;
 
 	/*
 	 * Incase hw power control is enabled, for any error case
@@ -363,12 +364,21 @@ static int __power_off_iris33_hardware(struct msm_vidc_core *core)
 		return rc;
 
 disable_power:
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
+		rc = 0;
+	} else {
+		xo_reset_acquired = true;
+	}
 	/* power down process */
 	rc = call_res_op(core, gdsc_off, core, "vcodec");
 	if (rc) {
 		d_vpr_e("%s: disable regulator vcodec failed\n", __func__);
 		rc = 0;
 	}
+	if (xo_reset_acquired)
+		call_res_op(core, reset_control_release, core, "video_xo_reset");
 
 	rc = call_res_op(core, clk_disable, core, "video_cc_mvs0_clk");
 	if (rc) {
@@ -383,6 +393,7 @@ static int __power_off_iris33_controller(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	int value = 0;
+	bool xo_reset_acquired = false;
 
 	/*
 	 * mask fal10_veto QLPAC error since fal10_veto can go 1
@@ -541,12 +552,21 @@ skip_video_xo_reset:
 		rc = 0;
 	}
 
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
+		rc = 0;
+	} else {
+		xo_reset_acquired = true;
+	}
 	/* power down process */
 	rc = call_res_op(core, gdsc_off, core, "iris-ctl");
 	if (rc) {
 		d_vpr_e("%s: disable regulator iris-ctl failed\n", __func__);
 		rc = 0;
 	}
+	if (xo_reset_acquired)
+		call_res_op(core, reset_control_release, core, "video_xo_reset");
 
 	/* Turn off GCC AXI clock */
 	rc = call_res_op(core, clk_disable, core, "gcc_video_axi0_clk");
@@ -598,10 +618,26 @@ static int __power_off_iris33(struct msm_vidc_core *core)
 static int __power_on_iris33_controller(struct msm_vidc_core *core)
 {
 	int rc = 0;
+	bool xo_reset_acquired = false;
+
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		goto fail_assert_xo_reset;
+	}
+	else {
+		xo_reset_acquired = true;
+	}
 
 	rc = call_res_op(core, gdsc_on, core, "iris-ctl");
 	if (rc)
 		goto fail_regulator;
+
+	rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
+		goto fail_reset_assert_axi;
+	}
+	xo_reset_acquired = false;
 
 	rc = call_res_op(core, reset_control_assert, core, "video_axi_reset");
 	if (rc)
@@ -639,16 +675,36 @@ fail_reset_assert_mvs0c:
 fail_reset_assert_axi:
 	call_res_op(core, gdsc_off, core, "iris-ctl");
 fail_regulator:
+	if (xo_reset_acquired) {
+		call_res_op(core, reset_control_release, core, "video_xo_reset");
+	}
+fail_assert_xo_reset:
 	return rc;
 }
 
 static int __power_on_iris33_hardware(struct msm_vidc_core *core)
 {
 	int rc = 0;
+	bool xo_reset_acquired = false;
+
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		goto fail_assert_xo_reset;
+	}
+	else {
+		xo_reset_acquired = true;
+	}
 
 	rc = call_res_op(core, gdsc_on, core, "vcodec");
 	if (rc)
 		goto fail_regulator;
+
+	rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
+		goto fail_clk_controller;
+	}
+	xo_reset_acquired = false;
 
 	rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_clk");
 	if (rc)
@@ -659,6 +715,9 @@ static int __power_on_iris33_hardware(struct msm_vidc_core *core)
 fail_clk_controller:
 	call_res_op(core, gdsc_off, core, "vcodec");
 fail_regulator:
+	if (xo_reset_acquired)
+		call_res_op(core, reset_control_release, core, "video_xo_reset");
+fail_assert_xo_reset:
 	return rc;
 }
 
@@ -893,6 +952,47 @@ static int __watchdog_iris33(struct msm_vidc_core *core, u32 intr_status)
 	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS33) {
 		d_vpr_e("%s: received watchdog interrupt\n", __func__);
 		rc = 1;
+	}
+
+	return rc;
+}
+
+static int __hw_ctrl_gdsc_iris33(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
+		goto fail_assert_xo_reset;
+	}
+
+	rc = call_res_op(core, gdsc_hw_ctrl, core);
+
+	rc = call_res_op(core, reset_control_release, core, "video_xo_reset");
+	if (rc)
+		d_vpr_e("%s: failed to release video_xo_reset reset\n", __func__);
+
+fail_assert_xo_reset:
+	return rc;
+}
+
+static int __sw_ctrl_gdsc_iris33(struct msm_vidc_core *core)
+{
+	int rc = 0;
+	bool xo_reset_acquired = false;
+
+	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
+	if (rc) {
+		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
+	} else {
+		xo_reset_acquired = true;
+	}
+
+	rc = call_res_op(core, gdsc_sw_ctrl, core);
+
+	if (xo_reset_acquired) {
+		call_res_op(core, reset_control_release, core, "video_xo_reset");
 	}
 
 	return rc;
@@ -1372,6 +1472,8 @@ static struct msm_vidc_venus_ops iris33_ops = {
 	.prepare_pc = __prepare_pc_iris33,
 	.watchdog = __watchdog_iris33,
 	.noc_error_info = __noc_error_info_iris33,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris33,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris33,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
