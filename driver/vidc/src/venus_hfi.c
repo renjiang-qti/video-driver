@@ -2125,7 +2125,8 @@ struct device_region_info *venus_hfi_get_device_region_info(
 		}
 	}
 	if (!match)
-		d_vpr_e("%s: device region %d not found\n", __func__, region);
+		d_vpr_h("%s: device region (%s) not found\n", __func__,
+			device_region_name(region));
 
 	return match;
 }

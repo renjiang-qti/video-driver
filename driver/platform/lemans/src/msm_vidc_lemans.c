@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
@@ -1257,7 +1257,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		V4L2_MPEG_VIDEO_H264_LEVEL_5_0,
 		V4L2_CID_MPEG_VIDEO_H264_LEVEL,
 		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LEVEL, ENC, HEVC | HEIC,
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_1,
@@ -1278,7 +1278,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_5,
 		V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
 		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LEVEL, DEC, H264,
 		V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
@@ -1405,7 +1405,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		V4L2_MPEG_VIDEO_HEVC_TIER_HIGH,
 		V4L2_CID_MPEG_VIDEO_HEVC_TIER,
 		HFI_PROP_TIER,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{HEVC_TIER, ENC | DEC, HEIC,
 		V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
@@ -1414,7 +1414,7 @@ static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
 		V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_TIER,
 		HFI_PROP_TIER,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LF_MODE, ENC, H264,
 		V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED,
@@ -1998,7 +1998,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		{PROFILE}},
 
 	{FRAME_RATE, ENC, CODECS_ALL,
-		{0},
+		{LEVEL},
 		NULL,
 		msm_vidc_set_q16},
 
@@ -2066,12 +2066,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		msm_vidc_set_req_sync_frame},
 
 	{BIT_RATE, ENC, H264,
-		{PEAK_BITRATE, BITRATE_BOOST, L0_BR},
+		{PEAK_BITRATE, BITRATE_BOOST, L0_BR, LEVEL},
 		msm_vidc_adjust_bitrate,
 		msm_vidc_set_bitrate},
 
 	{BIT_RATE, ENC, HEVC,
-		{PEAK_BITRATE, BITRATE_BOOST, L0_BR},
+		{PEAK_BITRATE, BITRATE_BOOST, L0_BR, LEVEL},
 		msm_vidc_adjust_bitrate,
 		msm_vidc_set_bitrate},
 
@@ -2200,7 +2200,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		msm_vidc_set_preprocess},
 
 	{BITRATE_BOOST, ENC, H264 | HEVC,
-		{0},
+		{LEVEL},
 		msm_vidc_adjust_bitrate_boost_iris3,
 		msm_vidc_set_vbr_related_properties},
 
@@ -2270,16 +2270,16 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		msm_vidc_set_frame_qp},
 
 	{LAYER_TYPE, ENC, H264,
-		{CONTENT_ADAPTIVE_CODING, LTR_COUNT}},
+		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, LEVEL}},
 
 	{LAYER_TYPE, ENC, HEVC,
 		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, OPEN_GOP}},
 
 	{LAYER_ENABLE, ENC, H264 | HEVC,
-		{CONTENT_ADAPTIVE_CODING}},
+		{CONTENT_ADAPTIVE_CODING, LEVEL}},
 
 	{ENH_LAYER_COUNT, ENC, H264,
-		{GOP_SIZE, B_FRAME, BIT_RATE, MIN_QUALITY, SLICE_MODE, LTR_COUNT},
+		{GOP_SIZE, B_FRAME, BIT_RATE, MIN_QUALITY, SLICE_MODE, LTR_COUNT, LEVEL},
 		msm_vidc_adjust_layer_count,
 		msm_vidc_set_layer_count_and_type},
 
@@ -2358,7 +2358,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		NULL,
 		msm_vidc_set_u32_enum},
 
-	{LEVEL, ENC, CODECS_ALL,
+	{LEVEL, ENC, H264 | HEVC,
+		{0},
+		msm_vidc_adjust_level_tier,
+		msm_vidc_set_level},
+
+	{LEVEL, ENC, HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_level},

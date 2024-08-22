@@ -99,6 +99,22 @@ exit:
 	return name;
 }
 
+static const char * const device_region_name_arr[] =
+	FOREACH_DEVICE_REGION(GENERATE_STRING);
+
+const char *device_region_name(enum msm_vidc_device_region region)
+{
+	const char *name = "UNKNOWN REGION";
+
+	if (region >= ARRAY_SIZE(device_region_name_arr))
+		goto exit;
+
+	name = device_region_name_arr[region];
+
+exit:
+	return name;
+}
+
 static const char * const inst_allow_name_arr[] =
 	FOREACH_ALLOW(GENERATE_STRING);
 
