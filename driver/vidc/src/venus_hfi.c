@@ -612,6 +612,7 @@ int __load_fw(struct msm_vidc_core *core)
 	trace_msm_v4l2_vidc_fw_load("END");
 
 	return rc;
+
 fail_load_fw:
 	__venus_power_off(core);
 fail_power:

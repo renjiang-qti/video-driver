@@ -1680,6 +1680,10 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		ctrl->val = inst->capabilities[LEVEL].value;
 		i_vpr_h(inst, "%s: level: %d\n", __func__, ctrl->val);
 		break;
+	case HEVC_TIER:
+		ctrl->val = inst->capabilities[HEVC_TIER].value;
+		i_vpr_h(inst, "%s: hevc_tier: %d\n", __func__, ctrl->val);
+		break;
 	default:
 		i_vpr_e(inst, "invalid ctrl %s id %d\n",
 			ctrl->name, ctrl->id);
@@ -5110,6 +5114,7 @@ static const char *get_codec_str(enum msm_vidc_codec_type type)
 {
 	switch (type) {
 	case MSM_VIDC_H264: return " avc";
+	case MSM_VIDC_APV:  return " apv";
 	case MSM_VIDC_HEVC: return "hevc";
 	case MSM_VIDC_VP9:  return " vp9";
 	case MSM_VIDC_AV1:  return " av1";
@@ -5441,6 +5446,9 @@ u32 msm_vidc_get_max_bitrate(struct msm_vidc_inst *inst)
 		else
 			max_bitrate = min(max_bitrate,
 				(u32)inst->capabilities[CABAC_MAX_BITRATE].max);
+	} else if (inst->codec == MSM_VIDC_APV) {
+		max_bitrate = min_t(u32, max_bitrate,
+			inst->capabilities[BIT_RATE].max);
 	}
 	if (max_bitrate == 0x7fffffff || !max_bitrate)
 		max_bitrate = min(max_bitrate, (u32)inst->capabilities[BIT_RATE].max);

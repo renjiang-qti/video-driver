@@ -34,6 +34,7 @@ struct msm_vidc_venus_ops {
 	int (*switch_gdsc_mode)(struct msm_vidc_core *core, bool sw_mode);
 	int (*hw_ctrl_gdsc)(struct msm_vidc_core *core);
 	int (*sw_ctrl_gdsc)(struct msm_vidc_core *core);
+	int (*scm_mem_protect)(struct msm_vidc_core *core);
 };
 
 struct msm_vidc_synx_fence_data {

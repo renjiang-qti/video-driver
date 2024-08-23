@@ -221,6 +221,11 @@ u32 get_hfi_codec(struct msm_vidc_inst *inst)
 			return HFI_CODEC_ENCODE_HEVC;
 		else
 			return HFI_CODEC_DECODE_HEVC;
+	case MSM_VIDC_APV:
+		if (is_encode_session(inst))
+			return HFI_CODEC_ENCODE_APV;
+		else
+			return HFI_CODEC_DECODE_APV;
 	case MSM_VIDC_VP9:
 		return HFI_CODEC_DECODE_VP9;
 	case MSM_VIDC_AV1:
@@ -251,6 +256,12 @@ u32 get_hfi_colorformat(struct msm_vidc_inst *inst,
 		break;
 	case MSM_VIDC_FMT_TP10C:
 		hfi_colorformat = HFI_COLOR_FMT_TP10_UBWC;
+		break;
+	case MSM_VIDC_FMT_P210:
+		hfi_colorformat = HFI_COLOR_FMT_P210;
+		break;
+	case MSM_VIDC_FMT_P210C:
+		hfi_colorformat = HFI_COLOR_FMT_P210_UBWC;
 		break;
 	case MSM_VIDC_FMT_RGBA8888:
 		hfi_colorformat = HFI_COLOR_FMT_RGBA8888;

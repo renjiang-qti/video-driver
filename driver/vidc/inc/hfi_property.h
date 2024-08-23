@@ -59,6 +59,8 @@ enum hfi_codec_type {
 	HFI_CODEC_DECODE_VP9   = 5,
 	HFI_CODEC_DECODE_MPEG2 = 6,
 	HFI_CODEC_DECODE_AV1   = 7,
+	HFI_CODEC_DECODE_APV   = 9,
+	HFI_CODEC_ENCODE_APV   = 10,
 };
 
 #define HFI_PROP_CODEC                                          0x03000100
@@ -72,6 +74,8 @@ enum hfi_color_format {
 	HFI_COLOR_FMT_RGBA8888      = 5,
 	HFI_COLOR_FMT_RGBA8888_UBWC = 6,
 	HFI_COLOR_FMT_NV21          = 7,
+	HFI_COLOR_FMT_P210          = 0xA,
+	HFI_COLOR_FMT_P210_UBWC     = 0xB,
 };
 
 #define HFI_PROP_COLOR_FORMAT                                   0x03000101
@@ -125,6 +129,10 @@ enum hfi_av1_profile_type {
 	HFI_AV1_PROFILE_MAIN = 0,
 	HFI_AV1_PROFILE_HIGH = 1,
 	HFI_AV1_PROFILE_PROF = 2,
+};
+
+enum hfi_apv_profile_type {
+	HFI_APV_PROFILE_BASELINE = 0,
 };
 
 #define HFI_PROP_PROFILE                                        0x03000107
@@ -216,6 +224,19 @@ enum hfi_av1_level_type {
 	HFI_AV1_LEVEL_7_2 = 22,
 	HFI_AV1_LEVEL_7_3 = 23,
 	HFI_AV1_LEVEL_MAX = 31,
+};
+
+enum hfi_apv_level_type {
+	HFI_APV_LEVEL_1_0 = 0,
+	HFI_APV_LEVEL_1_1 = 1,
+	HFI_APV_LEVEL_2_0 = 2,
+	HFI_APV_LEVEL_2_1 = 3,
+	HFI_APV_LEVEL_3_0 = 4,
+	HFI_APV_LEVEL_3_1 = 5,
+	HFI_APV_LEVEL_4_0 = 6,
+	HFI_APV_LEVEL_4_1 = 7,
+	HFI_APV_LEVEL_5_0 = 8,
+	HFI_APV_LEVEL_5_1 = 9,
 };
 
 enum hfi_codec_level_type {

@@ -18,7 +18,7 @@
  * Control to get fence fd from driver for the fence id
  * set via V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID
  */
-#define V4L2_CID_MPEG_VIDC_OUBUF_FENCE_FD                                    \
+#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_FD                                    \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3A)
 #define V4L2_CID_MPEG_VIDC_METADATA_PICTURE_TYPE                             \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3B)

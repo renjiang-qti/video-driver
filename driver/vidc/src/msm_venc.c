@@ -184,6 +184,9 @@ static int msm_venc_set_stride_scanline(struct msm_vidc_inst *inst,
 		color_format == MSM_VIDC_FMT_NV21) {
 		stride_uv = stride_y;
 		scanline_uv = scanline_y / 2;
+	} else if (color_format == MSM_VIDC_FMT_P210) {
+		stride_uv = stride_y;
+		scanline_uv = scanline_y;
 	}
 
 	payload[0] = stride_y << 16 | scanline_y;
@@ -1103,6 +1106,7 @@ int msm_venc_s_fmt_output(struct msm_vidc_inst *inst, struct v4l2_format *f)
 
 	codec_align = (codec == MSM_VIDC_HEVC ||
 		codec == MSM_VIDC_HEIC) ? 32 : 16;
+
 	/* use rotated width height if rotation is enabled */
 	width = inst->compose.width;
 	height = inst->compose.height;

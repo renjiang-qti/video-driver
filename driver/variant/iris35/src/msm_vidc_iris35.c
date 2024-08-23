@@ -1319,6 +1319,7 @@ static struct msm_vidc_venus_ops iris35_ops = {
 	.switch_gdsc_mode = __switch_gdsc_mode_iris35,
 	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris35,
 	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris35,
+	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
