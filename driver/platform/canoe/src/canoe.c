@@ -209,7 +209,7 @@ static const struct msm_platform_core_capability core_data_canoe[] = {
 	{MAX_MBPS_B_FRAME, 1958400}, /* 3840x2176/256 MBs@60fps */
 	{MAX_MBPS_ALL_INTRA, 1044480}, /* 4096x2176/256 MBs@30fps */
 	{MAX_ENH_LAYER_COUNT, 5},
-	{NUM_VPP_PIPE, 4},
+	{NUM_VPP_PIPE, 2},
 	{SW_PC, 1},
 	{FW_UNLOAD, 0},
 	{HW_RESPONSE_TIMEOUT, HW_RESPONSE_TIMEOUT_VALUE}, /* 1000 ms */
@@ -1221,8 +1221,8 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	{PIPE, DEC | ENC, CODECS_ALL,
 		MSM_VIDC_PIPE_1,
-		MSM_VIDC_PIPE_4, 1,
-		MSM_VIDC_PIPE_4,
+		MSM_VIDC_PIPE_2, 1,
+		MSM_VIDC_PIPE_2,
 		0,
 		HFI_PROP_PIPE},
 
