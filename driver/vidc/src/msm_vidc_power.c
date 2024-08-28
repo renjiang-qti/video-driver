@@ -279,6 +279,10 @@ int msm_vidc_scale_buses(struct msm_vidc_inst *inst)
 			else
 				vote_data->color_formats[0] = MSM_VIDC_FMT_NV12;
 
+			/* APV decoder supports only P210C for DPB buffers */
+			if (inst->codec == MSM_VIDC_APV)
+				vote_data->color_formats[0] = MSM_VIDC_FMT_P210C;
+
 			vote_data->color_formats[1] = color_format;
 		} else if (inst->codec == MSM_VIDC_AV1 &&
 			inst->capabilities[FILM_GRAIN].value) {

@@ -934,7 +934,8 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 	{CSC, ENC, CODECS_ALL,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_CSC,
-		HFI_PROP_CSC},
+		HFI_PROP_CSC,
+		CAP_FLAG_OUTPUT_PORT},
 
 	{CSC_CUSTOM_MATRIX, ENC, CODECS_ALL,
 		0, 1, 1, 0,
@@ -1530,7 +1531,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		V4L2_MPEG_VIDEO_HEVC_TIER_HIGH,
 		V4L2_CID_MPEG_VIDEO_HEVC_TIER,
 		HFI_PROP_TIER,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{HEVC_TIER, ENC | DEC, HEIC,
 		V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
@@ -1539,7 +1540,7 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		V4L2_MPEG_VIDEO_HEVC_TIER_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_TIER,
 		HFI_PROP_TIER,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{LF_MODE, ENC, H264,
 		V4L2_MPEG_VIDEO_H264_LOOP_FILTER_MODE_ENABLED,

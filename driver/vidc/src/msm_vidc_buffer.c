@@ -78,6 +78,7 @@ u32 msm_vidc_output_min_count(struct msm_vidc_inst *inst)
 	switch (inst->codec) {
 	case MSM_VIDC_H264:
 	case MSM_VIDC_HEVC:
+	case MSM_VIDC_APV:
 		output_min_count = 4;
 		break;
 	case MSM_VIDC_VP9:
@@ -169,9 +170,18 @@ u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
 {
 	u32 count = 0;
 
-	if (is_encode_session(inst))
-		return 1;
-
+	if (is_encode_session(inst)) {
+		/* APV encoder needs ARP, NON_COMV only */
+		if (inst->codec == MSM_VIDC_APV) {
+			if (buffer_type == MSM_VIDC_BUF_ARP ||
+				buffer_type == MSM_VIDC_BUF_NON_COMV)
+				return 1;
+			else
+				return 0;
+		} else {
+			return 1;
+		}
+	}
 	if (is_decode_session(inst)) {
 		/* mpeg2 decode only needs line and persist internal buffers */
 		if (buffer_type == MSM_VIDC_BUF_LINE ||
@@ -254,7 +264,8 @@ u32 msm_vidc_decoder_input_size(struct msm_vidc_inst *inst)
 
 	 /* multiply by 10/8 (1.25) to get size for 10 bit case */
 	if (codec == MSM_VIDC_VP9 || codec == MSM_VIDC_AV1 ||
-		codec == MSM_VIDC_HEVC || codec == MSM_VIDC_HEIC)
+		codec == MSM_VIDC_HEVC || codec == MSM_VIDC_HEIC ||
+		codec == MSM_VIDC_APV)
 		frame_size = frame_size + (frame_size >> 2);
 
 	i_vpr_h(inst, "set input buffer size to %d\n", frame_size);
@@ -333,6 +344,7 @@ u32 msm_vidc_enc_delivery_mode_based_output_buf_size(struct msm_vidc_inst *inst,
 		return frame_size;
 
 	lcu_size = (f->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_HEVC) ? 32 : 16;
+
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 	width_in_lcus = (width + lcu_size - 1) / lcu_size;

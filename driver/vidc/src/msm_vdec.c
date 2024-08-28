@@ -929,6 +929,9 @@ static int msm_vdec_subscribe_input_port_settings_change(struct msm_vidc_inst *i
 	} else if (inst->codec == MSM_VIDC_MPEG2) {
 		subscribe_psc_size = core->platform->data.psc_mpeg2_tbl_size;
 		psc = core->platform->data.psc_mpeg2_tbl;
+	} else if (inst->codec == MSM_VIDC_APV) {
+		subscribe_psc_size = core->platform->data.psc_apv_tbl_size;
+		psc = core->platform->data.psc_apv_tbl;
 	} else {
 		i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 		psc = NULL;
@@ -1001,6 +1004,9 @@ static int msm_vdec_subscribe_property(struct msm_vidc_inst *inst,
 		} else if (inst->codec == MSM_VIDC_AV1) {
 			subscribe_prop_size = core->platform->data.dec_input_prop_size_av1;
 			subcribe_prop = core->platform->data.dec_input_prop_av1;
+		} else if (inst->codec == MSM_VIDC_APV) {
+			subscribe_prop_size = core->platform->data.dec_input_prop_size_apv;
+			subcribe_prop = core->platform->data.dec_input_prop_apv;
 		} else {
 			i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 			subcribe_prop = NULL;
@@ -1033,6 +1039,9 @@ static int msm_vdec_subscribe_property(struct msm_vidc_inst *inst,
 		} else if (inst->codec == MSM_VIDC_AV1) {
 			subscribe_prop_size = core->platform->data.dec_output_prop_size_av1;
 			subcribe_prop = core->platform->data.dec_output_prop_av1;
+		} else if (inst->codec == MSM_VIDC_APV) {
+			subscribe_prop_size = core->platform->data.dec_output_prop_size_apv;
+			subcribe_prop = core->platform->data.dec_output_prop_apv;
 		} else {
 			i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 			subcribe_prop = NULL;
@@ -1670,6 +1679,9 @@ static int msm_vdec_subscribe_output_port_settings_change(struct msm_vidc_inst *
 	} else if (inst->codec == MSM_VIDC_MPEG2) {
 		subscribe_psc_size = core->platform->data.psc_mpeg2_tbl_size;
 		psc = core->platform->data.psc_mpeg2_tbl;
+	} else if (inst->codec == MSM_VIDC_APV) {
+		subscribe_psc_size = core->platform->data.psc_apv_tbl_size;
+		psc = core->platform->data.psc_apv_tbl;
 	} else {
 		i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 		psc = NULL;

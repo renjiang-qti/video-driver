@@ -55,6 +55,11 @@ static const char *const mpeg_video_hevc_profile[] = {
 	NULL,
 };
 
+static const char *const mpeg_vidc_apv_profile[] = {
+	"Baseline",
+	NULL,
+};
+
 static const char * const av1_profile[] = {
 	"Main",
 	"High",
@@ -90,6 +95,20 @@ static const char * const av1_level[] = {
 	NULL,
 };
 
+static const char * const mpeg_vidc_apv_level[] = {
+	"1.0",
+	"1.1",
+	"2.0",
+	"2.1",
+	"3.0",
+	"3.1",
+	"4.0",
+	"4.1",
+	"5.0",
+	"5.1",
+	NULL,
+};
+
 static const char * const av1_tier[] = {
 	"Main",
 	"High",
@@ -118,6 +137,8 @@ static const char * const *msm_vidc_get_qmenu_type(
 	case PROFILE:
 		if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
 			return mpeg_video_hevc_profile;
+		} else if (inst->codec == MSM_VIDC_APV) {
+			return mpeg_vidc_apv_profile;
 		} else if (inst->codec == MSM_VIDC_AV1) {
 			return av1_profile;
 		} else {
@@ -128,6 +149,8 @@ static const char * const *msm_vidc_get_qmenu_type(
 	case LEVEL:
 		if (inst->codec == MSM_VIDC_AV1) {
 			return av1_level;
+		} else if (inst->codec == MSM_VIDC_APV) {
+			return mpeg_vidc_apv_level;
 		} else {
 			i_vpr_e(inst, "%s: invalid codec type %d for cap id %d\n",
 				__func__, inst->codec, cap_id);
