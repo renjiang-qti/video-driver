@@ -975,8 +975,76 @@ static int msm_vidc_pm_resume(struct device *dev)
 	return 0;
 }
 
+static int msm_vidc_pm_freeze(struct device *dev)
+{
+	int rc = 0;
+	struct msm_vidc_core *core;
+
+	/*
+	 * Bail out if
+	 * - driver possibly not probed yet
+	 * - not the main device. We don't support power management on
+	 *   subdevices (e.g. context banks)
+	 */
+	if (!dev || !dev->driver || !is_video_device(dev))
+		return 0;
+
+	core = dev_get_drvdata(dev);
+	if (!core) {
+		d_vpr_e("%s: invalid core\n", __func__);
+		return -EINVAL;
+	}
+
+	/* check if chipset supports freeze */
+	if (!core->capabilities[SUPPORTS_FREEZE].value)
+		return -EOPNOTSUPP;
+
+	core_lock(core, __func__);
+	if (!list_empty(&core->instances)) {
+		d_vpr_e("%s: video session running. skip freeze\n", __func__);
+		rc = -ECANCELED;
+		goto unlock;
+	}
+
+	d_vpr_h("%s: deiniting the core\n", __func__);
+	rc = msm_vidc_core_deinit_locked(core, true);
+	if (rc)
+		d_vpr_e("%s: failed to deinit core\n", __func__);
+
+unlock:
+	core_unlock(core, __func__);
+	return rc;
+}
+
+static int msm_vidc_pm_restore(struct device *dev)
+{
+	struct msm_vidc_core *core;
+
+	if (!dev || !dev->driver || !is_video_device(dev))
+		return 0;
+
+	core = dev_get_drvdata(dev);
+	if (!core) {
+		d_vpr_e("%s: invalid core\n", __func__);
+		return -EINVAL;
+	}
+
+	/* check if chipset supports freeze */
+	if (!core->capabilities[SUPPORTS_FREEZE].value)
+		return -EOPNOTSUPP;
+
+	d_vpr_h("%s: successful\n", __func__);
+	/*
+	 * core_init will be anyways called as part of next session_open,
+	 * so return pm_restore from here.
+	 */
+	return 0;
+}
+
 static const struct dev_pm_ops msm_vidc_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(msm_vidc_pm_suspend, msm_vidc_pm_resume)
+	.freeze = msm_vidc_pm_freeze,
+	.restore = msm_vidc_pm_restore,
 };
 
 struct platform_driver msm_vidc_driver = {
