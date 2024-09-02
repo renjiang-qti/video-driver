@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -27,6 +27,8 @@
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"
 #include "msm_vidc_iris35.h"
+#include "msm_vidc_tuna.h"
+#include "msm_vidc_iris33.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
 #include "msm_vidc_pineapple.h"
@@ -122,6 +124,11 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_sun,
 		.init_platform              = msm_vidc_init_platform_sun,
 		.init_iris                  = msm_vidc_init_iris35,
+	},
+	{
+		.compat                     = "qcom,tuna-vidc",
+		.init_platform              = msm_vidc_init_platform_tuna,
+		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
