@@ -80,7 +80,7 @@ static int msm_vidc_init_codec(struct msm_vidc_inst *inst,
 		codec_input->codec = CODEC_AV1;
 		codec_input->lcu_size =
 			inst->capabilities[SUPER_BLOCK].value ? 128 : 64;
-	}  else if (inst->codec == MSM_VIDC_APV) {
+	} else if (inst->codec == MSM_VIDC_APV) {
 		codec_input->codec = CODEC_APV;
 		codec_input->lcu_size = 16;
 	} else {
@@ -97,8 +97,7 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 	enum msm_vidc_port_type port;
 	u32 color_fmt, tile_rows_columns = 0;
 
-	/* (civirakt) - To change to sun target */
-	codec_input->chipset_gen = MSM_SUN;
+	codec_input->chipset_gen = MSM_CANOE;
 
 	rc = msm_vidc_init_codec(inst, &codec_input);
 	if (rc)
@@ -185,8 +184,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	if (!d)
 		return -EINVAL;
 
-	/* (civirakt) - To change to sun target */
-	codec_input->chipset_gen = MSM_SUN;
+	codec_input->chipset_gen = MSM_CANOE;
 
 	rc = msm_vidc_init_codec(inst, &codec_input);
 	if (rc)
@@ -197,6 +195,8 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	codec_input->frame_rate = d->fps;
 	codec_input->frame_width = d->input_width;
 	codec_input->frame_height = d->input_height;
+	codec_input->opb_frame_width = d->input_width;
+	codec_input->opb_frame_height = d->input_height;
 
 	if (d->work_mode == MSM_VIDC_STAGE_1) {
 		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_1S;
