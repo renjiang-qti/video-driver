@@ -5,12 +5,15 @@
  */
 
 #define CREATE_TRACE_POINTS
+#include <media/videobuf2-core.h>
+
 #include "msm_vidc_debug.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_internal.h"
+#include "resources.h"
 #include "msm_vidc_events.h"
 
 extern struct msm_vidc_core *g_core;

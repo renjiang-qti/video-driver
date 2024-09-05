@@ -7,12 +7,14 @@
 #ifndef _MSM_VIDC_INST_H_
 #define _MSM_VIDC_INST_H_
 
+#include <linux/videodev2.h>
+#include <media/v4l2-fh.h>
+#include <media/v4l2-ctrls.h>
+
 #include "msm_vidc_internal.h"
 #include "msm_vidc_memory.h"
 #include "msm_vidc_state.h"
 #include "hfi_property.h"
-
-struct msm_vidc_inst;
 
 #define call_session_op(c, op, ...)			\
 	(((c) && (c)->session_ops && (c)->session_ops->op) ? \

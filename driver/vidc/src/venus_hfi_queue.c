@@ -4,12 +4,15 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/types.h>
+
 #include "venus_hfi_queue.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_memory.h"
 #include "msm_vidc_platform.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 static void __set_queue_hdr_defaults(struct hfi_queue_header *q_hdr)
 {

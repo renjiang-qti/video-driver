@@ -7,8 +7,6 @@
 #ifndef _MSM_VIDC_VARIANT_H_
 #define _MSM_VIDC_VARIANT_H_
 
-#include <linux/types.h>
-
 struct msm_vidc_core;
 
 int __write_register_masked(struct msm_vidc_core *core, u32 reg, u32 value,

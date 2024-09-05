@@ -7,7 +7,7 @@
 #ifndef _MSM_VIDC_NIOBE_H_
 #define _MSM_VIDC_NIOBE_H_
 
-#include "msm_vidc_core.h"
+struct msm_vidc_core;
 
 #if defined(CONFIG_MSM_VIDC_NIOBE)
 int msm_vidc_get_platform_data_niobe(struct msm_vidc_core *core);

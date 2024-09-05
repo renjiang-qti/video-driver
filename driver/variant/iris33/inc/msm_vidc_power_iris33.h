@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __H_MSM_VIDC_POWER_IRIS3_3_H__
 #define __H_MSM_VIDC_POWER_IRIS3_3_H__
 
-#include "msm_vidc_inst.h"
-#include "msm_vidc_power.h"
+struct msm_vidc_inst;
+struct vidc_bus_vote_data;
 
 #define ENABLE_LEGACY_POWER_CALCULATIONS  0
 

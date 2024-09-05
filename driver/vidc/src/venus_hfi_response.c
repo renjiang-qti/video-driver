@@ -4,9 +4,12 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/of_address.h>
+#include <linux/irqreturn.h>
+#include <linux/types.h>
 
+#include "msm_vidc_internal.h"
 #include "hfi_packet.h"
+#include "hfi_command.h"
 #include "venus_hfi.h"
 #include "venus_hfi_response.h"
 #include "msm_vidc_debug.h"

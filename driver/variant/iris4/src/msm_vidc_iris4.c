@@ -4,7 +4,10 @@
  * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/delay.h>
 #include <linux/reset.h>
+#include <media/videobuf2-core.h>
+
 #include "msm_vidc_iris4.h"
 #include "msm_vidc_buffer_iris4.h"
 #include "msm_vidc_power_iris4.h"
@@ -18,6 +21,7 @@
 #include "msm_vidc_debug.h"
 #include "msm_vidc_variant.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 #define VIDEO_ARCH_LX 1
 

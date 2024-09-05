@@ -4,6 +4,9 @@
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <media/v4l2-mem2mem.h>
+#include <media/videobuf2-v4l2.h>
+
 #include "msm_vidc_v4l2.h"
 #include "msm_vidc_internal.h"
 #include "msm_vidc_core.h"

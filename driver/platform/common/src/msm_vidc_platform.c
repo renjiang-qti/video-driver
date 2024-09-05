@@ -4,23 +4,24 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/io.h>
-#include <linux/of.h>
+#include <media/v4l2-ioctl.h>
+#include <media/v4l2-mem2mem.h>
+#include <media/videobuf2-core.h>
 
 #include "msm_vidc_platform.h"
-#include "msm_vidc_debug.h"
 #include "msm_vidc_v4l2.h"
 #include "msm_vidc_vb2.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_debug.h"
-#include "msm_vidc_internal.h"
 #include "msm_vidc_memory.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_fence.h"
 #include "hfi_packet.h"
 #include "hfi_property.h"
+#include "hfi_command.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"

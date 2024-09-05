@@ -7,12 +7,8 @@
 #ifndef __MSM_VIDC_DEBUG__
 #define __MSM_VIDC_DEBUG__
 
-#include <linux/types.h>
-#include <linux/errno.h>
+#include <linux/bits.h>
 #include <linux/debugfs.h>
-#include <linux/delay.h>
-#include <linux/module.h>
-#include <linux/moduleparam.h>
 
 struct msm_vidc_core;
 struct msm_vidc_inst;

@@ -6,7 +6,8 @@
 #ifndef _MSM_VIDC_PLATFORM_EXT_H_
 #define _MSM_VIDC_PLATFORM_EXT_H_
 
-#include "msm_vidc_control.h"
+struct v4l2_ctrl;
+enum msm_vidc_inst_capability_type;
 
 /* Enables Output buffer fence id via input metadata */
 #define V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE                             \

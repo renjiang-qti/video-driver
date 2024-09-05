@@ -4,22 +4,18 @@
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/workqueue.h>
-#include <linux/module.h>
-#include <linux/io.h>
-#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/component.h>
-#include <linux/interrupt.h>
+#include <linux/debugfs.h>
 #include <linux/iommu.h>
 #include <linux/version.h>
-#include <linux/stringify.h>
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 16, 0))
 #include <linux/dma-iommu.h>
 #endif
 #ifdef CONFIG_MSM_MMRM
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
+#include <media/v4l2-mem2mem.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
@@ -30,6 +26,7 @@
 #include "msm_vidc_memory.h"
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 #define BASE_DEVICE_NUMBER 32
 

@@ -4,6 +4,10 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/version.h>
+#include <media/videobuf2-core.h>
+#include <media/videobuf2-v4l2.h>
+
 #include "msm_vidc_vb2.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
@@ -15,6 +19,7 @@
 #include "msm_venc.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_platform.h"
+#include "resources.h"
 
 extern struct msm_vidc_core *g_core;
 

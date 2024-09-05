@@ -7,14 +7,10 @@
 #ifndef _VENUS_HFI_H_
 #define _VENUS_HFI_H_
 
-#include <linux/irqreturn.h>
-#include <linux/clk.h>
-#include <linux/regulator/consumer.h>
-#include <linux/clk-provider.h>
-
 #include "msm_vidc_internal.h"
-#include "msm_vidc_inst.h"
-#include "msm_vidc_core.h"
+
+struct msm_vidc_core;
+struct msm_vidc_inst;
 
 #define VIDC_MAX_PC_SKIP_COUNT	10
 

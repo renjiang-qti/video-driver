@@ -7,9 +7,6 @@
 #ifndef __HFI_BUFFER_IRIS4__
 #define __HFI_BUFFER_IRIS4__
 
-#include <linux/types.h>
-#include "hfi_property.h"
-
 typedef u8      HFI_U8;
 typedef s8      HFI_S8;
 typedef u16     HFI_U16;

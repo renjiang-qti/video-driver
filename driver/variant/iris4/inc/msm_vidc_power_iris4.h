@@ -7,8 +7,8 @@
 #ifndef __H_MSM_VIDC_POWER_IRIS4_H__
 #define __H_MSM_VIDC_POWER_IRIS4_H__
 
-#include "msm_vidc_inst.h"
-#include "msm_vidc_power.h"
+struct msm_vidc_inst;
+struct vidc_bus_vote_data;
 
 #define ENABLE_LEGACY_POWER_CALCULATIONS  0
 

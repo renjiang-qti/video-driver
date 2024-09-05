@@ -1,14 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VDEC_H_
 #define _MSM_VDEC_H_
 
-#include "msm_vidc_inst.h"
-#include "msm_vidc_core.h"
+struct msm_vidc_inst;
+struct msm_vidc_buffer;
+struct vb2_buffer;
+struct v4l2_format;
+struct v4l2_selection;
+struct v4l2_event_subscription;
+struct v4l2_fmtdesc;
+enum msm_vidc_port_type;
 
 int msm_vdec_streamoff_input(struct msm_vidc_inst *inst);
 int msm_vdec_streamon_input(struct msm_vidc_inst *inst);

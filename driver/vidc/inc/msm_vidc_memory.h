@@ -7,10 +7,14 @@
 #ifndef _MSM_VIDC_MEMORY_H_
 #define _MSM_VIDC_MEMORY_H_
 
-#include "msm_vidc_internal.h"
-
 struct msm_vidc_core;
 struct msm_vidc_inst;
+struct msm_vidc_mem;
+struct dma_buf;
+struct dma_buf_attachment;
+struct sg_table;
+enum msm_vidc_buffer_type;
+enum msm_memory_pool_type;
 
 #define MSM_MEM_POOL_PACKET_SIZE 1024
 

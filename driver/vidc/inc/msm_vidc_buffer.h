@@ -7,7 +7,8 @@
 #ifndef __H_MSM_VIDC_BUFFER_H__
 #define __H_MSM_VIDC_BUFFER_H__
 
-#include "msm_vidc_inst.h"
+struct msm_vidc_inst;
+enum msm_vidc_buffer_type;
 
 #define MIN_DEC_INPUT_BUFFERS  4
 #define MIN_DEC_OUTPUT_BUFFERS 4

@@ -7,7 +7,7 @@
 #ifndef _MSM_VIDC_MEMORY_EXT_H_
 #define _MSM_VIDC_MEMORY_EXT_H_
 
-#include "msm_vidc_memory.h"
+struct msm_vidc_memory_ops;
 
 const struct msm_vidc_memory_ops *get_mem_ops_ext(void);
 

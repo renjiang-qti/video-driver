@@ -3,6 +3,7 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
+#include <linux/types.h>
 
 #include "msm_vidc_buffer_iris4.h"
 #include "msm_vidc_buffer.h"

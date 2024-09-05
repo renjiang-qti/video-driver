@@ -22,6 +22,7 @@
 #include "msm_vidc_platform.h"
 #include "msm_vidc_events.h"
 #include "venus_hfi.h"
+#include "resources.h"
 
 enum video_memory_region {
 	VIDEO_REGION_SECURE_FW_REGION_ID    = 0,
@@ -221,14 +222,15 @@ int msm_vidc_mem_protect_video_regions_v2(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	struct context_bank_info *cb;
-	int region = -1, start = 0, size = 0;
+	int region = -1;
+	u32 start = 0, size = 0;
 
 	venus_hfi_for_each_context_bank(core, cb) {
 
 		if (cb->region == MSM_VIDC_NON_SECURE)
 			region = VIDEO_REGION_VM0_NONSECURE_NP_ID;
 		else if (cb->region == MSM_VIDC_SECURE_NONPIXEL)
-			region = VIDEO_REGION_VM0_NONSECURE_NP_ID;
+			region = VIDEO_REGION_VM0_SECURE_NP_ID;
 		else
 			continue;
 

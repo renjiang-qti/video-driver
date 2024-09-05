@@ -7,9 +7,6 @@
 #ifndef _MSM_VIDC_PLATFORM_H_
 #define _MSM_VIDC_PLATFORM_H_
 
-#include <linux/platform_device.h>
-#include <media/v4l2-ctrls.h>
-
 #include "msm_vidc_internal.h"
 #include "msm_vidc_core.h"
 

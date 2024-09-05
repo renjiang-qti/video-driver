@@ -7,11 +7,16 @@
 #ifndef _HFI_PACKET_H_
 #define _HFI_PACKET_H_
 
-#include "msm_vidc_internal.h"
-#include "msm_vidc_inst.h"
-#include "msm_vidc_core.h"
-#include "hfi_command.h"
-#include "hfi_property.h"
+struct msm_vidc_inst;
+struct msm_vidc_core;
+enum msm_vidc_port_type;
+enum msm_vidc_buffer_type;
+enum hfi_buffer_type;
+enum hfi_packet_port_type;
+enum msm_vidc_colorformat_type;
+enum msm_vidc_domain_type;
+struct msm_vidc_buffer;
+struct hfi_buffer;
 
 u32 get_hfi_port(struct msm_vidc_inst *inst,
 		 enum msm_vidc_port_type port);

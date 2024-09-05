@@ -7,7 +7,8 @@
 #ifndef __H_MSM_VIDC_BUFFER_IRIS4_H__
 #define __H_MSM_VIDC_BUFFER_IRIS4_H__
 
-#include "msm_vidc_inst.h"
+struct msm_vidc_inst;
+enum msm_vidc_buffer_type;
 
 int msm_buffer_size_iris4(struct msm_vidc_inst *inst,
 		enum msm_vidc_buffer_type buffer_type);

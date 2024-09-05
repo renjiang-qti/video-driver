@@ -4,14 +4,13 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/iommu.h>
-#include <linux/soc/qcom/smem.h>
-#include <linux/irqreturn.h>
-#include <linux/of_address.h>
-#include <linux/firmware.h>
 #include <linux/soc/qcom/llcc-qcom.h>
-#include <linux/iopoll.h>
+#include <linux/dma-fence.h>
+#include <linux/iosys-map.h>
+#include <linux/dma-direction.h>
+#include <media/videobuf2-core.h>
 
+#include "msm_vidc_internal.h"
 #include "venus_hfi.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_control.h"
@@ -21,11 +20,13 @@
 #include "msm_vidc_debug.h"
 #include "msm_vidc_driver.h"
 #include "hfi_packet.h"
+#include "hfi_command.h"
 #include "venus_hfi_response.h"
 #include "venus_hfi_queue.h"
 #include "msm_vidc_events.h"
 #include "msm_vidc_state.h"
 #include "firmware.h"
+#include "resources.h"
 
 #define update_offset(offset, val)		((offset) += (val))
 #define update_timestamp(ts, val) \

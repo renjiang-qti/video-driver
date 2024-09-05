@@ -21,6 +21,7 @@
 #include "msm_vidc_debug.h"
 #include "msm_vidc_platform.h"
 #include "firmware.h"
+#include "resources.h"
 
 #define MAX_FIRMWARE_NAME_SIZE	128
 

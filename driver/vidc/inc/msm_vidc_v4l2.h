@@ -1,17 +1,32 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_V4L2_H_
 #define _MSM_VIDC_V4L2_H_
 
-#include <linux/poll.h>
-#include <linux/fs.h>
-#include <media/v4l2-dev.h>
-#include <media/v4l2-ioctl.h>
-#include <media/v4l2-ctrls.h>
+struct v4l2_selection;
+struct v4l2_streamparm;
+struct v4l2_capability;
+struct v4l2_fmtdesc;
+struct v4l2_format;
+struct v4l2_requestbuffers;
+struct v4l2_buffer;
+struct v4l2_create_buffers;
+struct v4l2_event_subscription;
+struct v4l2_decoder_cmd;
+struct v4l2_encoder_cmd;
+struct v4l2_frmsizeenum;
+struct v4l2_frmivalenum;
+struct v4l2_queryctrl;
+struct v4l2_querymenu;
+struct v4l2_fh;
+struct poll_table_struct;
+struct media_request;
+struct file;
+enum v4l2_buf_type;
 
 int msm_v4l2_open(struct file *filp);
 int msm_v4l2_close(struct file *filp);

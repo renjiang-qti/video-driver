@@ -4,7 +4,10 @@
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/types.h>
+
 #include "hfi_packet.h"
+#include "hfi_command.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_driver.h"

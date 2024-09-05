@@ -4,10 +4,15 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/delay.h>
 #include <linux/iommu.h>
 #include <linux/workqueue.h>
-#include "msm_media_info.h"
+#include <linux/dma-buf.h>
+#include <media/videobuf2-core.h>
+#include <media/v4l2-mem2mem.h>
+#include <media/v4l2-event.h>
 
+#include "msm_media_info.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_internal.h"
@@ -21,8 +26,10 @@
 #include "msm_venc.h"
 #include "msm_vidc_fence.h"
 #include "venus_hfi.h"
+#include "hfi_command.h"
 #include "venus_hfi_response.h"
 #include "hfi_packet.h"
+#include "resources.h"
 #include "msm_vidc_events.h"
 
 extern struct msm_vidc_core *g_core;

@@ -4,8 +4,10 @@
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include "msm_media_info.h"
+#include <media/v4l2-event.h>
+#include <media/videobuf2-core.h>
 
+#include "msm_media_info.h"
 #include "msm_venc.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
@@ -16,6 +18,7 @@
 #include "msm_vidc_debug.h"
 #include "venus_hfi.h"
 #include "hfi_packet.h"
+#include "hfi_command.h"
 #include "msm_vidc_platform.h"
 
 static const u32 msm_venc_input_set_prop[] = {

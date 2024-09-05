@@ -7,7 +7,8 @@
 #ifndef _MSM_VIDC_IRIS4_H_
 #define _MSM_VIDC_IRIS4_H_
 
-#include "msm_vidc_core.h"
+struct msm_vidc_core;
+struct v4l2_ctrl;
 
 #if defined(CONFIG_MSM_VIDC_CANOE)
 int msm_vidc_init_iris4(struct msm_vidc_core *core);

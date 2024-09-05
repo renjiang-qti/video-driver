@@ -7,7 +7,11 @@
 #ifndef __VENUS_HFI_RESPONSE_H__
 #define __VENUS_HFI_RESPONSE_H__
 
-#include "hfi_packet.h"
+struct msm_vidc_core;
+struct msm_vidc_inst;
+struct hfi_buffer;
+struct hfi_header;
+struct hfi_packet;
 
 int handle_response(struct msm_vidc_core *core,
 		    void *response);

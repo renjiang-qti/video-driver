@@ -4,9 +4,10 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include "msm_media_info.h"
-#include <linux/v4l2-common.h>
+#include <media/v4l2-event.h>
+#include <media/videobuf2-core.h>
 
+#include "msm_media_info.h"
 #include "msm_vdec.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
@@ -18,6 +19,7 @@
 #include "msm_vidc_platform.h"
 #include "msm_vidc_memory.h"
 #include "venus_hfi.h"
+#include "hfi_command.h"
 #include "hfi_packet.h"
 
 /* TODO: update based on clips */

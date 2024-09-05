@@ -4,6 +4,8 @@
  * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/types.h>
+
 #include "msm_vidc_power_iris3.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_inst.h"
@@ -11,6 +13,7 @@
 #include "msm_vidc_debug.h"
 #include "perf_static_model.h"
 #include "msm_vidc_power.h"
+#include "resources.h"
 
 static u64 __calculate_decoder(struct vidc_bus_vote_data *d);
 static u64 __calculate_encoder(struct vidc_bus_vote_data *d);

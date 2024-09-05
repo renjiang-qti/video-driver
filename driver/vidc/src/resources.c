@@ -6,6 +6,8 @@
 
 #include <linux/sort.h>
 #include <linux/clk.h>
+#include <linux/clk-provider.h>
+#include <linux/delay.h>
 #include <linux/pm_runtime.h>
 #include <linux/pm_domain.h>
 #include <linux/pm_opp.h>
@@ -16,6 +18,7 @@
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
 
+#include "resources.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_power.h"
 #include "msm_vidc_debug.h"

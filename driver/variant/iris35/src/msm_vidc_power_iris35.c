@@ -4,6 +4,8 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/types.h>
+
 #include "msm_vidc_power_iris35.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_inst.h"
@@ -11,6 +13,7 @@
 #include "msm_vidc_debug.h"
 #include "perf_static_model.h"
 #include "msm_vidc_power.h"
+#include "resources.h"
 
 #define VPP_MIN_FREQ_MARGIN_PERCENT                   5 /* to be tuned */
 

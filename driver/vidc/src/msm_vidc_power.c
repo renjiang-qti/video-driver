@@ -4,6 +4,8 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/bits.h>
+
 #include "msm_vidc_power.h"
 #include "msm_vidc_internal.h"
 #include "msm_vidc_debug.h"
@@ -13,6 +15,7 @@
 #include "msm_vidc_platform.h"
 #include "msm_vidc_buffer.h"
 #include "venus_hfi.h"
+#include "resources.h"
 #include "msm_vidc_events.h"
 
 /* Q16 Format */

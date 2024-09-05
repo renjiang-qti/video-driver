@@ -5,6 +5,8 @@
 
 #include <soc/qcom/of_common.h>
 
+#include "msm_vidc_internal.h"
+#include "msm_vidc_inst.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_pineapple.h"
 #include "msm_vidc_platform.h"

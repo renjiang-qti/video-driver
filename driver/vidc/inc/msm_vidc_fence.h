@@ -6,8 +6,10 @@
 #ifndef __H_MSM_VIDC_FENCE_H__
 #define __H_MSM_VIDC_FENCE_H__
 
-#include "msm_vidc_inst.h"
-#include "msm_vidc_buffer.h"
+struct msm_vidc_core;
+struct msm_vidc_inst;
+struct msm_vidc_fence;
+enum msm_vidc_buffer_type;
 
 void populate_fence_name(struct msm_vidc_inst *inst,
 	struct msm_vidc_fence *f, bool override_tl);

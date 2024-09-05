@@ -12,6 +12,7 @@
 
 #include <media/v4l2_vidc_extensions.h>
 #include "msm_vidc_pineapple.h"
+#include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_internal.h"

@@ -7,22 +7,16 @@
 #ifndef _MSM_VIDC_INTERNAL_H_
 #define _MSM_VIDC_INTERNAL_H_
 
-#include <linux/version.h>
-#include <linux/bits.h>
-#include <linux/workqueue.h>
-#include <linux/spinlock.h>
-#include <linux/sync_file.h>
 #include <linux/dma-fence.h>
-#include <media/v4l2-dev.h>
-#include <media/v4l2-device.h>
-#include <media/v4l2-ioctl.h>
-#include <media/v4l2-event.h>
-#include <media/v4l2-ctrls.h>
-#include <media/v4l2-mem2mem.h>
-#include <media/videobuf2-core.h>
-#include <media/videobuf2-v4l2.h>
+#include <linux/dma-direction.h>
+#include <linux/version.h>
+#if (KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE)
+#include <linux/iosys-map.h>
+#elif (KERNEL_VERSION(5, 11, 0) <= LINUX_VERSION_CODE)
+#include <linux/dma-buf-map.h>
+#endif
 
-struct msm_vidc_inst;
+struct v4l2_ctrl;
 
 /* start of vidc specific colorspace definitions */
 /*

@@ -1,14 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_CONTROL_H_
 #define _MSM_VIDC_CONTROL_H_
 
-#include "msm_vidc_internal.h"
-#include "msm_vidc_inst.h"
+struct msm_vidc_inst;
+struct v4l2_ctrl;
+enum msm_vidc_inst_capability_type;
 
 int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init);
 int msm_vidc_ctrl_handler_deinit(struct msm_vidc_inst *inst);

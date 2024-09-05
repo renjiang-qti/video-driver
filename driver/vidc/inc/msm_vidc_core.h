@@ -7,14 +7,11 @@
 #ifndef _MSM_VIDC_CORE_H_
 #define _MSM_VIDC_CORE_H_
 
-#include <linux/platform_device.h>
+#include <media/v4l2-device.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_state.h"
 #include "venus_hfi_queue.h"
-#include "resources.h"
-
-struct msm_vidc_core;
 
 #define MAX_EVENTS   30
 

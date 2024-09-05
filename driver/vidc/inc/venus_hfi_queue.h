@@ -1,15 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _VENUS_HFI_QUEUE_H_
 #define _VENUS_HFI_QUEUE_H_
-
-#include <linux/types.h>
-
-#include "msm_vidc_internal.h"
 
 #define HFI_MASK_QHDR_TX_TYPE			0xff000000
 #define HFI_MASK_QHDR_RX_TYPE			0x00ff0000

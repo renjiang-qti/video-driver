@@ -6,6 +6,8 @@
 
 #include <soc/qcom/of_common.h>
 
+#include "msm_vidc_internal.h"
+#include "msm_vidc_inst.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_canoe.h"
 #include "msm_vidc_platform.h"
@@ -583,7 +585,8 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	{CSC, ENC, CODECS_ALL,
 		0, 1, 1, 0,
 		0,
-		HFI_PROP_CSC},
+		HFI_PROP_CSC,
+		CAP_FLAG_OUTPUT_PORT},
 
 	{LOWLATENCY_MODE, ENC, H264 | HEVC,
 		0, 1, 1, 0,

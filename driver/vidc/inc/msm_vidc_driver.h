@@ -7,15 +7,13 @@
 #ifndef _MSM_VIDC_DRIVER_H_
 #define _MSM_VIDC_DRIVER_H_
 
-#include <linux/workqueue.h>
-#include <linux/iommu.h>
-#include "msm_vidc_internal.h"
-#include "msm_vidc_core.h"
 #include "msm_vidc_inst.h"
 
 #define MSM_VIDC_SESSION_INACTIVE_THRESHOLD_MS 1000
 
 enum msm_vidc_debugfs_event;
+struct vb2_buffer;
+struct iommu_domain;
 
 static inline bool is_decode_session(struct msm_vidc_inst *inst)
 {

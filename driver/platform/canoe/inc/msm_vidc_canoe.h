@@ -7,7 +7,7 @@
 #ifndef _MSM_VIDC_CANOE_H_
 #define _MSM_VIDC_CANOE_H_
 
-#include "msm_vidc_core.h"
+struct msm_vidc_core;
 
 #if defined(CONFIG_MSM_VIDC_CANOE)
 int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core);
