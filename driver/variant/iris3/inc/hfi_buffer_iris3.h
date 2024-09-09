@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __HFI_BUFFER_IRIS3__
@@ -1308,12 +1308,8 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		} \
 		if (ltr_count) \
 			num_ref = num_ref + ltr_count; \
-		if (_total_hb_layers > 1) { \
-			if (codec_standard == HFI_CODEC_ENCODE_HEVC) \
-				num_ref = (_total_hb_layers); \
-			else if (codec_standard == HFI_CODEC_ENCODE_AVC) \
-				num_ref = (1 << (_total_hb_layers - 2)) + 1; \
-		} \
+		if (_total_hb_layers > 1)  \
+			num_ref = _total_hb_layers; \
 		num_recon = num_ref + 1; \
 	} while (0)
 
