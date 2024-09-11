@@ -82,6 +82,7 @@ struct msm_vidc_inst {
 	void                              *core;
 	struct kref                        kref;
 	u32                                session_id;
+	u32                                device_id;
 	u8                                 debug_str[24];
 	void                              *packet;
 	u32                                packet_size;

@@ -431,9 +431,9 @@ static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
 	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_LINE_H264E(size, width, height, is_tenbit, num_vpp_pipes);
+		HFI_BUFFER_LINE_H264E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_LINE_H265E(size, width, height, is_tenbit, num_vpp_pipes);
+		HFI_BUFFER_LINE_H265E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
