@@ -659,6 +659,8 @@ enum hfi_view_id {
 
 #define HFI_PROP_DOWNSCALE_RESOLUTION                           0x030001AC
 
+#define HFI_PROP_EVA_SV_STAT_INFO                               0x030001AD
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000
