@@ -323,9 +323,9 @@ static struct msm_platform_core_capability core_data_niobe[] = {
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
-	{SUPPORTS_SYNX_V2_FENCE, 0},
+	{SUPPORTS_SYNX_V2_FENCE, 1},
 	{SUPPORTS_REQUESTS, 0},
-	{SUPPORTS_REMOTE_PROC, 0},
+	{SUPPORTS_REMOTE_PROC, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
