@@ -623,7 +623,7 @@ static int msm_vidc_component_master_bind(struct device *dev)
 
 	pr_info("boot_kpi: video driver ready\n");
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 
@@ -653,7 +653,7 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	msm_vidc_deinitialize_media(core);
 	component_unbind_all(dev, core);
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 }
 
 static const struct component_ops msm_vidc_component_ops = {
@@ -699,7 +699,7 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 
 	dev_set_drvdata(&pdev->dev, NULL);
 	g_core = NULL;
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 }
@@ -843,7 +843,7 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		goto master_add_failed;
 	}
 
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return rc;
 
@@ -998,7 +998,7 @@ static int __init msm_vidc_init(void)
 		d_vpr_e("Failed to register platform driver\n");
 		return rc;
 	}
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 
 	return 0;
 }
@@ -1008,7 +1008,7 @@ static void __exit msm_vidc_exit(void)
 	d_vpr_h("%s()\n", __func__);
 
 	platform_driver_unregister(&msm_vidc_driver);
-	d_vpr_h("%s(): succssful\n", __func__);
+	d_vpr_h("%s(): successful\n", __func__);
 }
 
 module_init(msm_vidc_init);
