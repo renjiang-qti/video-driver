@@ -655,6 +655,8 @@ enum hfi_view_id {
 
 #define HFI_PROP_PAIRED_YUV                                     0x030001AA
 
+#define HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO      0x030001AB
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000

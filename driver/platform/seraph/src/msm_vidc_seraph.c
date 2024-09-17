@@ -336,6 +336,9 @@ static const struct msm_platform_core_capability core_data_seraph[] = {
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
 	{SUPPORTS_REQUESTS, 0},
+	{SUPPORTS_SYNX_V2_FENCE, 1},
+	{SUPPORTS_REMOTE_PROC, 1},
+	{SUPPORTS_FREEZE, 1},
 };
 
 static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
@@ -3118,6 +3121,14 @@ int msm_vidc_init_platform_seraph(struct msm_vidc_core *core)
 	if (!core->res_ops) {
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
+	}
+	if (core->capabilities[SUPPORTS_SYNX_V2_FENCE].value) {
+		core->fence_ops = get_synx_fence_ops();
+		if (!core->fence_ops) {
+			core->capabilities[SUPPORTS_SYNX_V2_FENCE].value = 0;
+			d_vpr_e("%s: invalid synx fence ops\n", __func__);
+			return -EINVAL;
+		}
 	}
 	rc = msm_vidc_seraph_check_ddr_type();
 	if (rc)
