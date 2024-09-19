@@ -96,11 +96,12 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 {
 	enum msm_vidc_port_type port;
 	u32 color_fmt, tile_rows_columns = 0;
+	int rc = 0;
 
 	/* (civirakt) - To change to sun target */
 	codec_input->chipset_gen = MSM_SUN;
 
-	rc = msm_vidc_init_codec(inst, &codec_input);
+	rc = msm_vidc_init_codec(inst, codec_input);
 	if (rc)
 		return rc;
 
@@ -181,6 +182,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 {
 	u32 complexity_factor_int = 0, complexity_factor_frac = 0, tile_rows_columns = 0;
 	bool opb_compression_enabled = false;
+	int rc = 0;
 
 	if (!d)
 		return -EINVAL;
@@ -188,7 +190,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	/* (civirakt) - To change to sun target */
 	codec_input->chipset_gen = MSM_SUN;
 
-	rc = msm_vidc_init_codec(inst, &codec_input);
+	rc = msm_vidc_init_codec(inst, codec_input);
 	if (rc)
 		return rc;
 

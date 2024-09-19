@@ -6,7 +6,6 @@
 
 #include <linux/clk.h>
 #include <linux/clk/qcom.h>
-#include <linux/remoteproc/qcom_rproc.h>
 
 #ifdef CONFIG_MSM_MMRM
 #include <linux/soc/qcom/msm_mmrm.h>
@@ -476,34 +475,6 @@ static int __clock_set_flag_ext(struct msm_vidc_core *core,
 	return 0;
 }
 
-static int __rproc_set_state_ext(struct msm_vidc_core *core, bool state)
-{
-	int rc = 0;
-
-	if (!core->capabilities[SUPPORTS_REMOTE_PROC].value)
-		return 0;
-
-	if ((state && is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE)) ||
-	    (!state && !is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE))) {
-		d_vpr_e("%s: unexpected. state %d, substate %d\n", __func__,
-			state, is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE));
-		return -EINVAL;
-	}
-
-	rc = rproc_set_state(core->rproc, state);
-	if (rc) {
-		d_vpr_e("%s: failed to %s\n", __func__, state ? "enable" : "disable");
-		return rc;
-	}
-
-	if (state)
-		msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_RPROC_ENABLE, __func__);
-	else
-		msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE, 0, __func__);
-
-	return rc;
-}
-
 const struct msm_vidc_resources_ops *get_res_ops_ext(struct msm_vidc_core *core)
 {
 	const struct msm_vidc_resources_ops *res_ops = get_resources_ops();
@@ -525,7 +496,6 @@ const struct msm_vidc_resources_ops *get_res_ops_ext(struct msm_vidc_core *core)
 
 	res_ops_ext.set_clks         = __set_clocks_ext;
 	res_ops_ext.clk_set_flag     = __clock_set_flag_ext;
-	res_ops_ext.rproc_set_state  = __rproc_set_state_ext;
 
 	return &res_ops_ext;
 }

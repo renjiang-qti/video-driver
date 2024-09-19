@@ -6,7 +6,6 @@
 
 #include <dt-bindings/clock/qcom,gcc-niobe.h>
 #include <dt-bindings/clock/qcom,videocc-niobe.h>
-#include <linux/remoteproc/qcom_rproc.h>
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
@@ -2967,45 +2966,6 @@ int msm_vidc_niobe_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_get_rproc_handle(struct msm_vidc_core *core)
-{
-	struct device *dev = &core->pdev->dev;
-	struct rproc *rproc = NULL;
-	phandle soccp_ph;
-	int rc = 0;
-
-	rc = of_property_read_u32(dev->of_node, "qcom,vidc,soccp-controller", &soccp_ph);
-	if (rc) {
-		d_vpr_e("%s: failed to read property\n", __func__);
-		rc = -ENOENT;
-		goto error;
-	}
-
-	rproc = rproc_get_by_phandle(soccp_ph);
-	if (!rproc) {
-		d_vpr_e("%s: rproc get failed %u\n", __func__, soccp_ph);
-		rc = -EINVAL;
-		goto error;
-	}
-
-	/* ensure rproc fw is up, if not, defer video-driver probe */
-	if (rproc->state != RPROC_RUNNING) {
-		d_vpr_e("%s: rproc %s is not up(%d), retry again\n",
-			__func__, rproc->name, rproc->state);
-		rc = -EAGAIN;
-		goto error;
-	}
-	core->rproc = rproc;
-
-	d_vpr_h("%s: rproc %s is up and ready\n", __func__, rproc->name);
-	return rc;
-error:
-	d_vpr_e("%s failed. Disable rproc support\n", __func__);
-	core->capabilities[SUPPORTS_REMOTE_PROC].value = 0;
-
-	return rc;
-}
-
 int msm_vidc_get_platform_data_niobe(struct msm_vidc_core *core)
 {
 	d_vpr_h("%s: initialize niobe data\n", __func__);
@@ -3036,11 +2996,6 @@ int msm_vidc_init_platform_niobe(struct msm_vidc_core *core)
 			d_vpr_e("%s: invalid synx fence ops\n", __func__);
 			return -EINVAL;
 		}
-	}
-	if (core->capabilities[SUPPORTS_REMOTE_PROC].value) {
-		rc = msm_vidc_get_rproc_handle(core);
-		if (rc)
-			return rc;
 	}
 	rc = msm_vidc_niobe_check_ddr_type();
 	if (rc)
