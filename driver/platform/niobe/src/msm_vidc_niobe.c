@@ -327,6 +327,7 @@ static struct msm_platform_core_capability core_data_niobe[] = {
 	{SUPPORTS_SYNX_V2_FENCE, 1},
 	{SUPPORTS_REQUESTS, 0},
 	{SUPPORTS_REMOTE_PROC, 1},
+	{SUPPORTS_FREEZE, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_niobe[] = {

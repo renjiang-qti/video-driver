@@ -660,6 +660,7 @@ enum msm_vidc_core_capability_type {
 	SUPPORTS_SYNX_V2_FENCE,
 	SSR_TYPE,
 	SUPPORTS_REMOTE_PROC,
+	SUPPORTS_FREEZE,
 	CORE_CAP_MAX,
 };
 
