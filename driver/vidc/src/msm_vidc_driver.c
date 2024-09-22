@@ -6,6 +6,7 @@
 
 #include <linux/delay.h>
 #include <linux/iommu.h>
+#include <linux/string.h>
 #include <linux/workqueue.h>
 #include <linux/dma-buf.h>
 #include <media/videobuf2-core.h>
@@ -90,19 +91,25 @@ exit:
 	return name;
 }
 
-static const char * const buf_region_name_arr[] =
-	FOREACH_BUF_REGION(GENERATE_STRING);
-
 const char *buf_region_name(enum msm_vidc_buffer_region region)
 {
 	const char *name = "UNKNOWN REGION";
 
-	if (region >= ARRAY_SIZE(buf_region_name_arr))
-		goto exit;
+	if (region & MSM_VIDC_NON_SECURE)
+		name = "NON_SECURE";
+	else if (region & MSM_VIDC_NON_SECURE_BITSTREAM)
+		name = "NON_SECURE_BITSTREAM";
+	else if (region & MSM_VIDC_NON_SECURE_PIXEL)
+		name = "NON_SECURE_PIXEL";
+	else if (region & MSM_VIDC_SECURE_PIXEL)
+		name = "SECURE_PIXEL";
+	else if (region & MSM_VIDC_SECURE_NONPIXEL)
+		name = "SECURE_NONPIXEL";
+	else if (region & MSM_VIDC_SECURE_BITSTREAM)
+		name = "SECURE_BITSTREAM";
+	else
+		name = "NONE";
 
-	name = buf_region_name_arr[region];
-
-exit:
 	return name;
 }
 
@@ -4255,7 +4262,7 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 	struct dma_buf *dbuf;
 	struct inode *f_inode;
 	unsigned long inode_num;
-	u64 size_kb_arr[MSM_VIDC_REGION_MAX];
+	u64 size_kb_arr[ilog2(MSM_VIDC_REGION_MAX)];
 	char region_size_arr[400];
 	long ref_count;
 	int len = 0, i = 0;
@@ -4305,7 +4312,7 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 			/* capture total mappings of each cb */
 			if (buf->region < MSM_VIDC_REGION_MAX) {
 				if ((buf->attach && buf->sg_table) || is_internal_buffer(buf->type))
-					size_kb_arr[buf->region] += buf->buffer_size;
+					size_kb_arr[ilog2(buf->region)] += buf->buffer_size;
 			}
 
 			i_vpr_e(inst,
@@ -4321,9 +4328,9 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 	/* Print mapping details */
 	map_str = region_size_arr;
 	map_str_len = ARRAY_SIZE(region_size_arr);
-	for (i = 1; i < MSM_VIDC_REGION_MAX; i++) {
+	for (i = 1; i < ilog2(MSM_VIDC_REGION_MAX); i++) {
 		len = scnprintf(map_str, map_str_len, "%s %lld kb ",
-			buf_region_name(i), size_kb_arr[i] / 1024);
+			buf_region_name(BIT(i)), size_kb_arr[i] / 1024);
 		map_str_len -= len;
 		map_str += len;
 	}
@@ -5827,7 +5834,7 @@ struct context_bank_info *msm_vidc_get_context_bank_for_region(
 	}
 
 	venus_hfi_for_each_context_bank(core, cb) {
-		if (cb->region == region) {
+		if (cb->region & region) {
 			match = cb;
 			break;
 		}

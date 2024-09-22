@@ -439,8 +439,9 @@ static inline bool is_session_error(struct msm_vidc_inst *inst)
 
 static inline bool is_secure_region(enum msm_vidc_buffer_region region)
 {
-	return !(region == MSM_VIDC_NON_SECURE ||
-			region == MSM_VIDC_NON_SECURE_PIXEL);
+	return !(region & MSM_VIDC_NON_SECURE ||
+		 region & MSM_VIDC_NON_SECURE_BITSTREAM ||
+		 region & MSM_VIDC_NON_SECURE_PIXEL);
 }
 
 static inline bool is_enc_slice_delivery_mode(struct msm_vidc_inst *inst)

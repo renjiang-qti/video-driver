@@ -454,16 +454,6 @@ enum msm_vidc_metadata_bits {
 	ALLOW(MSM_VIDC_IGNORE)                    \
 }
 
-#define FOREACH_BUF_REGION(BUF_REGION) {          \
-	BUF_REGION(REGION_NONE)                   \
-	BUF_REGION(NON_SECURE)                    \
-	BUF_REGION(NON_SECURE_PIXEL)              \
-	BUF_REGION(SECURE_PIXEL)                  \
-	BUF_REGION(SECURE_NONPIXEL)               \
-	BUF_REGION(SECURE_BITSTREAM)              \
-	BUF_REGION(REGION_MAX)                    \
-}
-
 #define FOREACH_DEVICE_REGION(DEVICE_REGION) {    \
 	DEVICE_REGION(DEVICE_REGION_NONE)         \
 	DEVICE_REGION(AON)                        \
@@ -526,7 +516,16 @@ enum msm_vidc_buffer_attributes {
 	MSM_VIDC_ATTR_RELEASE_ELIGIBLE          = BIT(6),
 };
 
-enum msm_vidc_buffer_region FOREACH_BUF_REGION(GENERATE_MSM_VIDC_ENUM);
+enum msm_vidc_buffer_region {
+	MSM_VIDC_REGION_NONE                    = BIT(0),
+	MSM_VIDC_NON_SECURE                     = BIT(1),
+	MSM_VIDC_NON_SECURE_BITSTREAM           = BIT(2),
+	MSM_VIDC_NON_SECURE_PIXEL               = BIT(3),
+	MSM_VIDC_SECURE_NONPIXEL                = BIT(4),
+	MSM_VIDC_SECURE_BITSTREAM               = BIT(5),
+	MSM_VIDC_SECURE_PIXEL                   = BIT(6),
+	MSM_VIDC_REGION_MAX                     = BIT(7),
+};
 
 enum msm_vidc_device_region FOREACH_DEVICE_REGION(GENERATE_MSM_VIDC_ENUM);
 
