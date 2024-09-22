@@ -8,6 +8,7 @@
 
 #include "venus_hfi_queue.h"
 #include "msm_vidc_core.h"
+#include "msm_vidc_driver.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_memory.h"
 #include "msm_vidc_platform.h"
@@ -512,7 +513,7 @@ static int venus_hfi_iommu_map_registers(struct msm_vidc_core *core,
 	mem.device_addr = dev_reg->dev_addr;
 	rc = call_mem_op(core, iommu_map, core, &mem);
 	if (rc) {
-		d_vpr_e("%s: %u map failed\n", __func__, reg_region);
+		d_vpr_e("%s: %s map failed\n", __func__, device_region_name(reg_region));
 		goto fail_alloc_queue;
 	}
 	core_mem->align_device_addr = mem.device_addr;

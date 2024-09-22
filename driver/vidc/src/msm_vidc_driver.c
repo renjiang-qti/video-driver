@@ -4753,8 +4753,9 @@ void msm_vidc_destroy_buffers(struct msm_vidc_inst *inst)
 			continue;
 		list_for_each_entry_safe(buf, dummy, &buffers->list, list) {
 			i_vpr_h(inst,
-				"destroying internal buffer: type %d idx %d fd %d addr %#llx size %d\n",
-				buf->type, buf->index, buf->fd, buf->device_addr, buf->buffer_size);
+				"destroying internal buffer: %s: idx %d fd %d addr %#llx size %d\n",
+				buf_name(buf->type), buf->index, buf->fd,
+				buf->device_addr, buf->buffer_size);
 			msm_vidc_destroy_internal_buffer(inst, buf);
 		}
 	}

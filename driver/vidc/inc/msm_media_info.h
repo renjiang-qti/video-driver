@@ -53,6 +53,7 @@ static inline unsigned int video_y_stride_bytes(unsigned int colorformat,
 		break;
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 256;
 		stride = MSM_MEDIA_ALIGN(width * 2, alignment);
 		break;
@@ -84,6 +85,7 @@ static inline unsigned int video_y_stride_pix(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 128;
 		stride = MSM_MEDIA_ALIGN(width, alignment);
 		break;
@@ -128,6 +130,7 @@ static inline unsigned int video_uv_stride_bytes(unsigned int colorformat,
 		break;
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 256;
 		stride = MSM_MEDIA_ALIGN(width * 2, alignment);
 		break;
@@ -159,6 +162,7 @@ static inline unsigned int video_uv_stride_pix(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 128;
 		stride = MSM_MEDIA_ALIGN(width, alignment);
 		break;
@@ -193,10 +197,11 @@ static inline unsigned int video_y_scanlines(unsigned int colorformat,
 	case MSM_VIDC_FMT_NV21:
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_P010:
-	case MSM_VIDC_FMT_P210:
 		alignment = 32;
 		break;
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 16;
 		break;
 	default:
@@ -228,6 +233,7 @@ static inline unsigned int video_uv_scanlines(unsigned int colorformat,
 	case MSM_VIDC_FMT_TP10C:
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		alignment = 16;
 		break;
 	case MSM_VIDC_FMT_NV12C:
@@ -237,7 +243,7 @@ static inline unsigned int video_uv_scanlines(unsigned int colorformat,
 		goto invalid_input;
 	}
 
-	if (colorformat == MSM_VIDC_FMT_P210)
+	if (colorformat == MSM_VIDC_FMT_P210 || colorformat == MSM_VIDC_FMT_P210C)
 		sclines = MSM_MEDIA_ALIGN(height, alignment);
 	else
 		sclines = MSM_MEDIA_ALIGN((height + 1) >> 1, alignment);
@@ -263,6 +269,7 @@ static inline unsigned int video_y_meta_stride(unsigned int colorformat,
 
 	switch (colorformat) {
 	case MSM_VIDC_FMT_NV12C:
+	case MSM_VIDC_FMT_P210C:
 		y_tile_width = 32;
 		break;
 	case MSM_VIDC_FMT_TP10C:
@@ -299,6 +306,7 @@ static inline unsigned int video_y_meta_scanlines(unsigned int colorformat,
 		y_tile_height = 8;
 		break;
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210C:
 		y_tile_height = 4;
 		break;
 	default:
@@ -329,6 +337,7 @@ static inline unsigned int video_uv_meta_stride(unsigned int colorformat,
 
 	switch (colorformat) {
 	case MSM_VIDC_FMT_NV12C:
+	case MSM_VIDC_FMT_P210C:
 		uv_tile_width = 16;
 		break;
 	case MSM_VIDC_FMT_TP10C:
@@ -365,6 +374,7 @@ static inline unsigned int video_uv_meta_scanlines(unsigned int colorformat,
 		uv_tile_height = 8;
 		break;
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210C:
 		uv_tile_height = 4;
 		break;
 	default:
@@ -581,6 +591,7 @@ static inline unsigned int video_buffer_size(unsigned int colorformat,
 		}
 		break;
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210C:
 		y_ubwc_plane = MSM_MEDIA_ALIGN(y_stride * y_sclines, 4096);
 		uv_ubwc_plane = MSM_MEDIA_ALIGN(uv_stride * uv_sclines, 4096);
 		y_meta_stride = video_y_meta_stride(colorformat, pix_width);
