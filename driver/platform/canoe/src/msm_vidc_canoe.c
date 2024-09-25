@@ -2989,12 +2989,16 @@ static const struct clk_table canoe_clk_table[] = {
 	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0 },
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
 	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
-	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0 },
 	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1 },
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1 },
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1 },
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1 },
 };
 
 /* name, exclusive_release */
@@ -3189,7 +3193,7 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.freq_tbl_size = ARRAY_SIZE(canoe_freq_table),
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
-	.fwname = "vpu35_4v",
+	.fwname = "vpu40_2v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 
