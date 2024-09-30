@@ -1170,6 +1170,36 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
 	} while (0)
 
+/*
+ * APV Encoder Output Bitstream Buffer definition
+ * TOTAL_TILE_INFO_SIZE: sizeof(apv_dma_se_tile_info_t) * 400;
+ * TOTAL_STATS_INFO_SIZE:
+ * SE2DMA Stats In Bytes = (NUM_WORDS_APV_SE2DMA_STATS * Word_Size) >> 3,
+ * (SE2DMA Stats In Bytes) * (3 / 2)
+ */
+#define FW_APVE_BIN_DEP_SIZE (3)
+#define FW_APVE_TOTAL_TILE_INFO_SIZE \
+				HFI_ALIGN(256 + 32 * 400, 256)
+#define FW_APVE_TOTAL_STATS_INFO_SIZE \
+				HFI_ALIGN(1272, 256)
+#define	FW_APVE_FRAME_HEADER (4 + 26 + 192)
+#define	FW_APVE_TILE_HEADER (24 * 400)
+#define FW_APVE_HDR10P_AUX_SIZE	(4096 + 256)
+#define HFI_BUFFER_BITSTREAM_ENC_APVE(size, frame_width, frame_height) \
+		do { \
+			HFI_U32 aligned_width, aligned_height, bitstream_size; \
+			aligned_width = HFI_ALIGN(frame_width, 32); \
+			aligned_height = HFI_ALIGN(frame_height, 32); \
+			bitstream_size = FW_APVE_FRAME_HEADER \
+				+ FW_APVE_TILE_HEADER \
+				+ (aligned_width * aligned_height \
+				* FW_APVE_BIN_DEP_SIZE * 2) \
+				+ FW_APVE_TOTAL_TILE_INFO_SIZE \
+				+ FW_APVE_TOTAL_STATS_INFO_SIZE \
+				+ FW_APVE_HDR10P_AUX_SIZE; \
+			size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
+		} while (0)
+
 #define HFI_IRIS3_ENC_TILE_SIZE_INFO(tile_size, tile_count, last_tile_size, \
 				frame_width_coded, codec_standard) \
 	do { \
@@ -1683,6 +1713,26 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		HFI_BUFFER_NON_COMV_ENC(_size, frame_width, frame_height, \
 			num_vpp_pipes_enc, 32, HFI_CODEC_ENCODE_HEVC, profile); \
 		_size += SIZE_ONE_SLICE_BUF; \
+	} while (0)
+
+/*
+ * APV Encoder Internal Buffer calculations for Tile Info / HW Stats /HDR10P
+ *  TILE_INFO_SIZE: sizeof(apv_dma_se_tile_info_t) * 400;
+ *  STATS_INFO_SIZE:
+ *  SE2DMA Stats In Bytes = (NUM_WORDS_APV_SE2DMA_STATS * Word_Size) >> 3,
+ *  (SE2DMA Stats In Bytes) * (3 / 2)
+ *  HDR10P_SIZE: 4K * 2(number of LUT);
+ */
+#define HFI_BUFFER_NON_COMV_APVE(_size) \
+	do { \
+		HFI_U32 tileinfo_size = FW_APVE_TOTAL_TILE_INFO_SIZE; \
+		HFI_U32 stats_size = FW_APVE_TOTAL_STATS_INFO_SIZE; \
+		HFI_U32 q_matrix_size = HFI_ALIGN(192, 256); \
+		HFI_U32 hdr10p_lut_size = (2 * FW_APVE_HDR10P_AUX_SIZE); \
+		HFI_U32 hdr10p_stats_size = FW_APVE_HDR10P_AUX_SIZE; \
+		_size = (tileinfo_size + stats_size + q_matrix_size); \
+		_size += (hdr10p_lut_size + hdr10p_stats_size); \
+		_size *= 4; \
 	} while (0)
 
 #define SIZE_ENC_REF_BUFFER(size, frame_width, frame_height) \
