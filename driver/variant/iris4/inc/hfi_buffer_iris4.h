@@ -1141,6 +1141,26 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		SIZE_AV1D_METADATA * AV1D_NUM_HW_PIC_BUF), VENUS_DMA_ALIGNMENT); \
 	} while (0)
 
+/*
+ * APV decoder internal buffer definition
+ */
+#define APV_QMATRIX_SIZE                     192 //8 * 8 *3
+
+#define APV_MAX_TILE_ROWS                    20
+#define APV_MAX_TILE_COLS                    20
+#define APV_TILE_INFO_SIZE                   32 //sizeof(apv_dma_se_tile_info)
+#define APV_MAX_TILE_INFO_SIZE  (APV_TILE_INFO_SIZE * APV_MAX_TILE_COLS * APV_MAX_TILE_ROWS)
+
+/* FW prepares Quantization matrix and tile info in single buffer and it is consumed by VPP */
+#define APV_SIZE_QM_ALIGN      (HFI_ALIGN(APV_QMATRIX_SIZE + APV_MAX_TILE_INFO_SIZE, 256))
+
+#define APV_NUM_HW_PIC_BUF 16
+#define APV_NUM_SLIST APV_NUM_HW_PIC_BUF
+
+#define HFI_BUFFER_PERSIST_APVD(_size) { \
+		_size = (HFI_ALIGN(APV_NUM_SLIST * APV_SIZE_QM_ALIGN, VENUS_DMA_ALIGNMENT)) \
+	}
+
 #define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \
 			rc_type, is_ten_bit) \
 	do { \
@@ -1257,6 +1277,11 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		HFI_BUFFER_INPUT_METADATA_ENC(size_metadata, frame_width, \
 			frame_height, is_roi_enabled, 32); \
 	} while (0)
+
+#define HFI_BUFFER_INPUT_METADATA_APVE(size_metadata, frame_width, \
+		frame_height, is_roi_enabled, is_rpu_enabled) \
+	HFI_BUFFER_INPUT_METADATA_ENC(size_metadata, frame_width, \
+		frame_height, is_roi_enabled, is_rpu_enabled, 32) \
 
 #define HFI_BUFFER_ARP_ENC(size) \
 	do { \
