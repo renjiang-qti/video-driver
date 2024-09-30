@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <dt-bindings/clock/qcom,gcc-canoe.h>
-#include <dt-bindings/clock/qcom,videocc-canoe.h>
+#include <dt-bindings/clock/qcom,gcc-seraph.h>
+#include <dt-bindings/clock/qcom,videocc-seraph.h>
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
 
 #include <media/v4l2_vidc_extensions.h>
-#include "msm_vidc_canoe.h"
+#include "msm_vidc_seraph.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
@@ -31,9 +30,7 @@
 #define MAX_BASE_LAYER_PRIORITY_ID 63
 #define MAX_OP_POINT            31
 #define MAX_BITRATE             245000000
-#define APV_MAX_BITRATE         3300000000 /* 3.3 Gpbs */
 #define DEFAULT_BITRATE         20000000
-#define APV_DEFAULT_BITRATE     1000000000
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
 #define MAXIMUM_DEC_FPS         960
@@ -53,11 +50,10 @@
 #define VP9     MSM_VIDC_VP9
 #define AV1     MSM_VIDC_AV1
 #define HEIC    MSM_VIDC_HEIC
-#define APV     MSM_VIDC_APV
-#define CODECS_ALL     (H264 | HEVC | VP9 | HEIC | AV1 | APV)
+#define CODECS_ALL     (H264 | HEVC | VP9 | HEIC | AV1)
 #define MAXIMUM_OVERRIDE_VP9_FPS 200
 
-static struct codec_info codec_data_canoe[] = {
+static struct codec_info codec_data_seraph[] = {
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_H264,
 		.vidc_codec  = MSM_VIDC_H264,
@@ -83,14 +79,9 @@ static struct codec_info codec_data_canoe[] = {
 		.vidc_codec  = MSM_VIDC_HEIC,
 		.pixfmt_name = "HEIC",
 	},
-	{
-		.v4l2_codec  = V4L2_PIX_FMT_VIDC_APV,
-		.vidc_codec  = MSM_VIDC_APV,
-		.pixfmt_name = "APV",
-	},
 };
 
-static struct color_format_info color_format_data_canoe[] = {
+static struct color_format_info color_format_data_seraph[] = {
 	{
 		.v4l2_color_format = V4L2_PIX_FMT_NV12,
 		.vidc_color_format = MSM_VIDC_FMT_NV12,
@@ -138,7 +129,7 @@ static struct color_format_info color_format_data_canoe[] = {
 	},
 };
 
-static struct color_primaries_info color_primaries_data_canoe[] = {
+static struct color_primaries_info color_primaries_data_seraph[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
 		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
@@ -189,7 +180,7 @@ static struct color_primaries_info color_primaries_data_canoe[] = {
 	},
 };
 
-static struct transfer_char_info transfer_char_data_canoe[] = {
+static struct transfer_char_info transfer_char_data_seraph[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
 		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
@@ -256,7 +247,7 @@ static struct transfer_char_info transfer_char_data_canoe[] = {
 	},
 };
 
-static struct matrix_coeff_info matrix_coeff_data_canoe[] = {
+static struct matrix_coeff_info matrix_coeff_data_seraph[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
 		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
@@ -303,10 +294,10 @@ static struct matrix_coeff_info matrix_coeff_data_canoe[] = {
 	},
 };
 
-static const struct msm_platform_core_capability core_data_canoe[] = {
+static const struct msm_platform_core_capability core_data_seraph[] = {
 	/* {type, value} */
-	{ENC_CODECS, H264 | HEVC | HEIC | APV},
-	{DEC_CODECS, H264 | HEVC | VP9 | AV1 | HEIC | APV},
+	{ENC_CODECS, H264 | HEVC | HEIC},
+	{DEC_CODECS, H264 | HEVC | VP9 | AV1 | HEIC},
 	{MAX_SESSION_COUNT, 16},
 	{MAX_NUM_720P_SESSIONS, 16},
 	{MAX_NUM_1080P_SESSIONS, 16},
@@ -347,7 +338,7 @@ static const struct msm_platform_core_capability core_data_canoe[] = {
 	{SUPPORTS_REQUESTS, 0},
 };
 
-static int msm_vidc_set_ring_buffer_count_canoe(void *instance,
+static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
 	enum msm_vidc_inst_capability_type cap_id)
 {
 	int rc = 0;
@@ -411,7 +402,7 @@ static int msm_vidc_set_ring_buffer_count_canoe(void *instance,
 	return rc;
 }
 
-static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
+static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 	/* {cap, domain, codec,
 	 *      min, max, step_or_mask, value,
 	 *      v4l2_id,
@@ -428,19 +419,19 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 8192, 1, 1920},
 
-	{FRAME_WIDTH, ENC, HEVC | APV, 96, 8192, 1, 1920},
+	{FRAME_WIDTH, ENC, HEVC, 96, 8192, 1, 1920},
 
 	{FRAME_WIDTH, ENC, HEIC, 128, 16384, 1, 16384},
 
 	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 
-	{LOSSLESS_FRAME_WIDTH, ENC, HEVC | APV, 96, 4096, 1, 1920},
+	{LOSSLESS_FRAME_WIDTH, ENC, HEVC, 96, 4096, 1, 1920},
 
 	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
 
 	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 
-	{SECURE_FRAME_WIDTH, ENC, HEVC | APV, 96, 4096, 1, 1920},
+	{SECURE_FRAME_WIDTH, ENC, HEVC, 96, 4096, 1, 1920},
 
 	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 8192, 1, 1080},
 
@@ -448,19 +439,19 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 8192, 1, 1080},
 
-	{FRAME_HEIGHT, ENC, HEVC | APV, 96, 8192, 1, 1080},
+	{FRAME_HEIGHT, ENC, HEVC, 96, 8192, 1, 1080},
 
 	{FRAME_HEIGHT, ENC, HEIC, 128, 16384, 1, 16384},
 
 	{LOSSLESS_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 
-	{LOSSLESS_FRAME_HEIGHT, ENC, HEVC | APV, 96, 4096, 1, 1080},
+	{LOSSLESS_FRAME_HEIGHT, ENC, HEVC, 96, 4096, 1, 1080},
 
 	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
 
 	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 
-	{SECURE_FRAME_HEIGHT, ENC, HEVC | APV, 96, 4096, 1, 1080},
+	{SECURE_FRAME_HEIGHT, ENC, HEVC, 96, 4096, 1, 1080},
 
 	{PIX_FMTS, ENC | DEC, H264,
 		MSM_VIDC_FMT_NV12,
@@ -488,19 +479,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C,
 		MSM_VIDC_FMT_NV12C},
 
-	{PIX_FMTS, ENC, APV,
-		MSM_VIDC_FMT_TP10C,
-		MSM_VIDC_FMT_P210,
-		MSM_VIDC_FMT_P010 | MSM_VIDC_FMT_TP10C |
-		MSM_VIDC_FMT_P210 | MSM_VIDC_FMT_P210C,
-		MSM_VIDC_FMT_TP10C},
-
-	{PIX_FMTS, DEC, APV,
-		MSM_VIDC_FMT_P210C,
-		MSM_VIDC_FMT_P210,
-		MSM_VIDC_FMT_P210C | MSM_VIDC_FMT_P210,
-		MSM_VIDC_FMT_P210C},
-
 	{MIN_BUFFERS_INPUT, ENC | DEC, CODECS_ALL, 0, 64, 1, 4,
 		V4L2_CID_MIN_BUFFERS_FOR_OUTPUT,
 		0,
@@ -520,7 +498,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	/* (8192 * 4320) / 256 */
 	{MBPF, ENC, CODECS_ALL, 64, 138240, 1, 138240},
 
-	{MBPF, ENC, HEVC | APV, 36, 138240, 1, 138240},
+	{MBPF, ENC, HEVC, 36, 138240, 1, 138240},
 
 	/* ((16384x16384)/256) */
 	{MBPF, ENC, HEIC, 36, 1048576, 1, 1048576},
@@ -538,12 +516,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	/* Batch Mode Decode */
 	/* TODO: update with new values based on updated voltage corner */
-	{BATCH_MBPF, DEC, H264 | HEVC | VP9 | AV1 | APV, 64, 34816, 1, 34816},
+	{BATCH_MBPF, DEC, H264 | HEVC | VP9 | AV1, 64, 34816, 1, 34816},
 
 	/* (4096 * 2304) / 256 */
-	{BATCH_FPS, DEC, H264 | HEVC | VP9 | AV1 | APV, 1, 120, 1, 120},
+	{BATCH_FPS, DEC, H264 | HEVC | VP9 | AV1, 1, 120, 1, 120},
 
-	{SECURE_MBPF, ENC | DEC, H264 | HEVC | VP9 | AV1 | APV, 64, 36864, 1, 36864},
+	{SECURE_MBPF, ENC | DEC, H264 | HEVC | VP9 | AV1, 64, 36864, 1, 36864},
 
 	{SECURE_MBPF, ENC, HEVC, 36, 36864, 1, 36864},
 
@@ -597,7 +575,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		(MINIMUM_FPS << 16), INT_MAX,
 		1, (DEFAULT_FPS << 16)},
 
-	{SCALE_FACTOR, ENC, H264 | HEVC | APV, 1, 8, 1, 8},
+	{SCALE_FACTOR, ENC, H264 | HEVC, 1, 8, 1, 8},
 
 	{MB_CYCLES_VSP, ENC, CODECS_ALL, 25, 25, 1, 25},
 
@@ -626,7 +604,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		INVALID_CLIENT_ID, INT_MAX, 1, INVALID_CLIENT_ID,
 		V4L2_CID_MPEG_VIDC_CLIENT_ID},
 
-	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1 | APV,
+	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_SECURE,
 		HFI_PROP_SECURE,
@@ -738,7 +716,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_ROTATION,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{SUPER_FRAME, ENC, H264 | HEVC | APV,
+	{SUPER_FRAME, ENC, H264 | HEVC,
 		0, 32, 1, 0,
 		V4L2_CID_MPEG_VIDC_SUPERFRAME, 0,
 		CAP_FLAG_DYNAMIC_ALLOWED},
@@ -833,13 +811,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{BIT_RATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
-		V4L2_CID_MPEG_VIDEO_BITRATE,
-		HFI_PROP_TOTAL_BITRATE,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
-			CAP_FLAG_DYNAMIC_ALLOWED},
-
 	{BITRATE_MODE, ENC, H264,
 		V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
 		V4L2_MPEG_VIDEO_BITRATE_MODE_CBR,
@@ -866,15 +837,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		V4L2_MPEG_VIDEO_BITRATE_MODE_CQ,
 		BIT(V4L2_MPEG_VIDEO_BITRATE_MODE_CQ),
 		V4L2_MPEG_VIDEO_BITRATE_MODE_CQ,
-		V4L2_CID_MPEG_VIDEO_BITRATE_MODE,
-		HFI_PROP_RATE_CONTROL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	{BITRATE_MODE, ENC, APV,
-		V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
-		V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
-		BIT(V4L2_MPEG_VIDEO_BITRATE_MODE_VBR),
-		V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
 		V4L2_CID_MPEG_VIDEO_BITRATE_MODE,
 		HFI_PROP_RATE_CONTROL,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
@@ -909,7 +871,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		0,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{FRAME_RC_ENABLE, ENC, H264 | HEVC | HEIC | APV,
+	{FRAME_RC_ENABLE, ENC, H264 | HEVC | HEIC,
 		0, 1, 1, 1,
 		V4L2_CID_MPEG_VIDEO_FRAME_RC_ENABLE},
 
@@ -1054,7 +1016,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_AUD,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{TIME_DELTA_BASED_RC, ENC, H264 | HEVC | APV,
+	{TIME_DELTA_BASED_RC, ENC, H264 | HEVC,
 		0, 1, 1, 1,
 		V4L2_CID_MPEG_VIDC_TIME_DELTA_BASED_RC,
 		HFI_PROP_TIME_DELTA_BASED_RATE_CONTROL,
@@ -1107,13 +1069,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{PEAK_BITRATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
-		V4L2_CID_MPEG_VIDEO_BITRATE_PEAK,
-		HFI_PROP_TOTAL_PEAK_BITRATE,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
-			CAP_FLAG_DYNAMIC_ALLOWED},
-
 	{MIN_FRAME_QP, ENC, H264,
 		MIN_QP_8BIT, MAX_QP, 1, MIN_QP_8BIT,
 		V4L2_CID_MPEG_VIDEO_H264_MIN_QP,
@@ -1123,12 +1078,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	{MIN_FRAME_QP, ENC, HEVC | HEIC,
 		MIN_QP_10BIT, MAX_QP, 1, MIN_QP_10BIT,
 		V4L2_CID_MPEG_VIDEO_HEVC_MIN_QP,
-		HFI_PROP_MIN_QP_PACKED,
-		CAP_FLAG_OUTPUT_PORT},
-
-	{MIN_FRAME_QP, ENC, APV,
-		MIN_QP_10BIT, MAX_QP, 1, MIN_QP_10BIT,
-		V4L2_CID_MPEG_VIDC_APV_MIN_QP,
 		HFI_PROP_MIN_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
@@ -1165,12 +1114,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	{MAX_FRAME_QP, ENC, HEVC | HEIC,
 		MIN_QP_10BIT, MAX_QP, 1, MAX_QP,
 		V4L2_CID_MPEG_VIDEO_HEVC_MAX_QP,
-		HFI_PROP_MAX_QP_PACKED,
-		CAP_FLAG_OUTPUT_PORT},
-
-	{MAX_FRAME_QP, ENC, APV,
-		MIN_QP_10BIT, MAX_QP, 1, MAX_QP,
-		V4L2_CID_MPEG_VIDC_APV_MAX_QP,
 		HFI_PROP_MAX_QP_PACKED,
 		CAP_FLAG_OUTPUT_PORT},
 
@@ -1419,15 +1362,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_PROFILE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{PROFILE, ENC | DEC, APV,
-		V4L2_MPEG_VIDC_APV_PROFILE_BASELINE,
-		V4L2_MPEG_VIDC_APV_PROFILE_BASELINE,
-		BIT(V4L2_MPEG_VIDC_APV_PROFILE_BASELINE),
-		V4L2_MPEG_VIDC_APV_PROFILE_BASELINE,
-		V4L2_CID_MPEG_VIDC_APV_PROFILE,
-		HFI_PROP_PROFILE,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
 	{PROFILE, DEC, VP9,
 		V4L2_MPEG_VIDEO_VP9_PROFILE_0,
 		V4L2_MPEG_VIDEO_VP9_PROFILE_2,
@@ -1494,24 +1428,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_LEVEL,
 		CAP_FLAG_VOLATILE | CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{LEVEL, ENC, APV,
-		V4L2_MPEG_VIDC_APV_LEVEL_1_0,
-		V4L2_MPEG_VIDC_APV_LEVEL_5_1,
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_1_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_1_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_2_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_2_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_3_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_3_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_4_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_4_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_5_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_5_1),
-		V4L2_MPEG_VIDC_APV_LEVEL_5_0,
-		V4L2_CID_MPEG_VIDC_APV_LEVEL,
-		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
 	{LEVEL, DEC, H264,
 		V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 		V4L2_MPEG_VIDEO_H264_LEVEL_6_2,
@@ -1558,24 +1474,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		BIT(V4L2_MPEG_VIDEO_HEVC_LEVEL_6_2),
 		V4L2_MPEG_VIDEO_HEVC_LEVEL_6_1,
 		V4L2_CID_MPEG_VIDEO_HEVC_LEVEL,
-		HFI_PROP_LEVEL,
-		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	{LEVEL, DEC, APV,
-		V4L2_MPEG_VIDC_APV_LEVEL_1_0,
-		V4L2_MPEG_VIDC_APV_LEVEL_5_1,
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_1_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_1_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_2_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_2_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_3_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_3_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_4_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_4_1) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_5_0) |
-		BIT(V4L2_MPEG_VIDC_APV_LEVEL_5_1),
-		V4L2_MPEG_VIDC_APV_LEVEL_5_0,
-		V4L2_CID_MPEG_VIDC_APV_LEVEL,
 		HFI_PROP_LEVEL,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
@@ -1737,7 +1635,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_8X8_TRANSFORM,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264 | APV,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
 		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET_MASK,
 		1, MAX_CHROMA_QP_OFFSET,
 		V4L2_CID_MPEG_VIDEO_H264_CHROMA_QP_INDEX_OFFSET,
@@ -1795,24 +1693,10 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		0,
 		HFI_PROP_STAGE},
 
-	{STAGE, DEC|ENC, APV,
-		MSM_VIDC_STAGE_1,
-		MSM_VIDC_STAGE_1, 1,
-		MSM_VIDC_STAGE_1,
-		0,
-		HFI_PROP_STAGE},
-
 	{PIPE, DEC|ENC, H264 | HEVC | VP9 | HEIC | AV1,
 		MSM_VIDC_PIPE_1,
 		MSM_VIDC_PIPE_2, 1,
 		MSM_VIDC_PIPE_2,
-		0,
-		HFI_PROP_PIPE},
-
-	{PIPE, DEC|ENC, APV,
-		MSM_VIDC_PIPE_1,
-		MSM_VIDC_PIPE_1, 1,
-		MSM_VIDC_PIPE_1,
 		0,
 		HFI_PROP_PIPE},
 
@@ -1845,10 +1729,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		CAP_FLAG_VOLATILE},
 
 	{BIT_DEPTH, DEC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
-		0,
-		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
-
-	{BIT_DEPTH, DEC, APV, BIT_DEPTH_10, BIT_DEPTH_10, 1, BIT_DEPTH_10,
 		0,
 		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
 
@@ -2131,7 +2011,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_DOLBY_RPU_METADATA,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_EVA_STATS, ENC, H264 | HEVC | APV,
+	{META_EVA_STATS, ENC, H264 | HEVC,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE |
 		MSM_VIDC_META_DYN_ENABLE | MSM_VIDC_META_TX_INPUT,
@@ -2260,7 +2140,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		CAP_FLAG_NONE},
 };
 
-static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
+static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_seraph[] = {
 	/* {cap, domain, codec,
 	 *      children,
 	 *      adjust, set}
@@ -2280,11 +2160,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{PIX_FMTS, DEC, HEVC | HEIC,
 		{PROFILE}},
 
-	{PIX_FMTS, ENC | DEC, APV,
-		{0},
-		NULL,
-		NULL},
-
 	{FRAME_RATE, ENC, CODECS_ALL,
 		{LEVEL},
 		NULL,
@@ -2301,9 +2176,9 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{ENC_RING_BUFFER_COUNT, ENC, H264,
 		{0},
 		NULL,
-		msm_vidc_set_ring_buffer_count_canoe},
+		msm_vidc_set_ring_buffer_count_seraph},
 
-	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1 | APV,
+	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		NULL,
 		msm_vidc_set_u32},
@@ -2359,7 +2234,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL,
 		msm_vidc_set_rotation},
 
-	{SUPER_FRAME, ENC, H264 | HEVC | APV,
+	{SUPER_FRAME, ENC, H264 | HEVC,
 		{INPUT_BUF_HOST_MAX_COUNT, OUTPUT_BUF_HOST_MAX_COUNT},
 		NULL,
 		NULL},
@@ -2414,11 +2289,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_bitrate,
 		msm_vidc_set_bitrate},
 
-	{BIT_RATE, ENC, APV,
-		{PEAK_BITRATE, BITRATE_BOOST},
-		NULL,
-		msm_vidc_set_bitrate},
-
 	{BITRATE_MODE, ENC, H264,
 		{LTR_COUNT, IR_PERIOD, TIME_DELTA_BASED_RC, I_FRAME_QP,
 			P_FRAME_QP, B_FRAME_QP, ENH_LAYER_COUNT, BIT_RATE,
@@ -2435,11 +2305,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
 			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
 			META_TRANSCODING_STAT_INFO, OPEN_GOP},
-		msm_vidc_adjust_bitrate_mode,
-		msm_vidc_set_u32_enum},
-
-	{BITRATE_MODE, ENC, APV,
-		{BIT_RATE, PEAK_BITRATE, META_EVA_STATS, TIME_DELTA_BASED_RC},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -2573,12 +2438,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL,
 		msm_vidc_set_cbr_related_properties},
 
-	{PEAK_BITRATE, ENC, H264 | HEVC | APV,
+	{PEAK_BITRATE, ENC, H264 | HEVC,
 		{0},
 		msm_vidc_adjust_peak_bitrate,
 		msm_vidc_set_cbr_related_properties},
 
-	{MIN_FRAME_QP, ENC, H264 | APV,
+	{MIN_FRAME_QP, ENC, H264,
 		{0},
 		NULL,
 		msm_vidc_set_min_qp},
@@ -2588,7 +2453,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_hevc_min_qp,
 		msm_vidc_set_min_qp},
 
-	{MAX_FRAME_QP, ENC, H264 | APV,
+	{MAX_FRAME_QP, ENC, H264,
 		{0},
 		NULL,
 		msm_vidc_set_max_qp},
@@ -2718,11 +2583,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL,
 		msm_vidc_set_u32_enum},
 
-	{PROFILE, ENC | DEC, APV,
-		{0},
-		NULL,
-		msm_vidc_set_u32_enum},
-
 	{LEVEL, DEC, CODECS_ALL,
 		{0},
 		NULL,
@@ -2768,7 +2628,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_transform_8x8,
 		msm_vidc_set_u32},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264 | APV,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
 		{0},
 		msm_vidc_adjust_chroma_qp_index_offset,
 		msm_vidc_set_chroma_qp_index_offset},
@@ -2798,7 +2658,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_input_buf_host_max_count,
 		msm_vidc_set_u32},
 
-	{INPUT_BUF_HOST_MAX_COUNT, ENC, H264 | HEVC | APV,
+	{INPUT_BUF_HOST_MAX_COUNT, ENC, H264 | HEVC,
 		{0},
 		msm_vidc_adjust_input_buf_host_max_count,
 		msm_vidc_set_u32},
@@ -2808,7 +2668,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_output_buf_host_max_count,
 		msm_vidc_set_u32},
 
-	{OUTPUT_BUF_HOST_MAX_COUNT, ENC, H264 | HEVC | APV,
+	{OUTPUT_BUF_HOST_MAX_COUNT, ENC, H264 | HEVC,
 		{0},
 		msm_vidc_adjust_output_buf_host_max_count,
 		msm_vidc_set_u32},
@@ -2848,7 +2708,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL,
 		msm_vidc_set_u32},
 
-	{THUMBNAIL_MODE, DEC, HEIC | APV,
+	{THUMBNAIL_MODE, DEC, HEIC,
 		{0},
 		NULL,
 		msm_vidc_set_u32},
@@ -2888,7 +2748,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_all_intra,
 		NULL},
 
-	{META_EVA_STATS, ENC, HEVC | APV,
+	{META_EVA_STATS, ENC, HEVC,
 		{0},
 		msm_vidc_adjust_eva_stats,
 		NULL},
@@ -2950,41 +2810,40 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 };
 
 /* Default UBWC config for LPDDR5 */
-static struct msm_vidc_ubwc_config_data ubwc_config_canoe[] = {
+static struct msm_vidc_ubwc_config_data ubwc_config_seraph[] = {
 	UBWC_CONFIG(8, 32, 16, 0, 1, 1, 1),
 };
 
-static struct msm_vidc_format_capability format_data_canoe = {
-	.codec_info = codec_data_canoe,
-	.codec_info_size = ARRAY_SIZE(codec_data_canoe),
-	.color_format_info = color_format_data_canoe,
-	.color_format_info_size = ARRAY_SIZE(color_format_data_canoe),
-	.color_prim_info = color_primaries_data_canoe,
-	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_canoe),
-	.transfer_char_info = transfer_char_data_canoe,
-	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_canoe),
-	.matrix_coeff_info = matrix_coeff_data_canoe,
-	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_canoe),
+static struct msm_vidc_format_capability format_data_seraph = {
+	.codec_info = codec_data_seraph,
+	.codec_info_size = ARRAY_SIZE(codec_data_seraph),
+	.color_format_info = color_format_data_seraph,
+	.color_format_info_size = ARRAY_SIZE(color_format_data_seraph),
+	.color_prim_info = color_primaries_data_seraph,
+	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_seraph),
+	.transfer_char_info = transfer_char_data_seraph,
+	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_seraph),
+	.matrix_coeff_info = matrix_coeff_data_seraph,
+	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_seraph),
 };
 
 /* name, min_kbps, max_kbps */
-static const struct bw_table canoe_bw_table[] = {
+static const struct bw_table seraph_bw_table[] = {
 	{ "venus-cnoc",  1000, 1000     },
 	{ "venus-ddr",   1000, 15000000 },
 	{ "venus-llcc",  1000, 15000000 },
 };
 
 /* name */
-static const struct pd_table canoe_pd_table[] = {
+static const struct pd_table seraph_pd_table[] = {
 	{ "iris-ctl" },
 	{ "vcodec"   },
 	{ "vpp0"     },
 	{ "vpp1"     },
-	{ "apv"      },
 };
 
 /* name, clock id, scaling */
-static const struct clk_table canoe_clk_table[] = {
+static const struct clk_table seraph_clk_table[] = {
 	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
 	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
@@ -3002,7 +2861,7 @@ static const struct clk_table canoe_clk_table[] = {
 };
 
 /* name, exclusive_release */
-static const struct clk_rst_table canoe_clk_reset_table[] = {
+static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_axi1_reset",                   0  },
 	{ "video_axi0_reset",                   0  },
 	{ "video_mvs0c_freerun_reset",          0  },
@@ -3010,27 +2869,27 @@ static const struct clk_rst_table canoe_clk_reset_table[] = {
 };
 
 /* name, llcc_id */
-static const struct subcache_table canoe_subcache_table[] = {
+static const struct subcache_table seraph_subcache_table[] = {
 	{ "vidsc0",     LLCC_VIDSC0 },
 	{ "vidvsp",     LLCC_VIDVSP },
 };
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
-const struct context_bank_table canoe_context_bank_table[] = {
-	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
-	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
-	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
-	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
-	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
+const struct context_bank_table seraph_context_bank_table[] = {
+	{"qcom,vidc,cb-ns",            0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns-pxl",        0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
+	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
+	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
+	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
 };
 
 /* freq */
-static struct freq_table canoe_freq_table[] = {
-    {800000000}, {630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
+static struct freq_table seraph_freq_table[] = {
+	{800000000}, {630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
-static const struct reg_preset_table canoe_reg_preset_table[] = {
+static const struct reg_preset_table seraph_reg_preset_table[] = {
 	{ 0xB0088, 0x0,        0xFFFFFFFF},
 	{ 0x13030, 0x33332211, 0xFFFFFFFF},
 	{ 0x13034, 0x44444444, 0xFFFFFFFF},
@@ -3046,7 +2905,7 @@ static const struct reg_preset_table canoe_reg_preset_table[] = {
 };
 
 /* decoder properties */
-static const u32 canoe_vdec_psc_avc[] = {
+static const u32 seraph_vdec_psc_avc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_CODED_FRAMES,
@@ -3058,7 +2917,7 @@ static const u32 canoe_vdec_psc_avc[] = {
 	HFI_PROP_MAX_NUM_REORDER_FRAMES,
 };
 
-static const u32 canoe_vdec_psc_hevc[] = {
+static const u32 seraph_vdec_psc_hevc[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -3070,7 +2929,7 @@ static const u32 canoe_vdec_psc_hevc[] = {
 	HFI_PROP_MAX_NUM_REORDER_FRAMES,
 };
 
-static const u32 canoe_vdec_psc_apv[] = {
+static const u32 seraph_vdec_psc_vp9[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -3079,16 +2938,7 @@ static const u32 canoe_vdec_psc_apv[] = {
 	HFI_PROP_LEVEL,
 };
 
-static const u32 canoe_vdec_psc_vp9[] = {
-	HFI_PROP_BITSTREAM_RESOLUTION,
-	HFI_PROP_CROP_OFFSETS,
-	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
-	HFI_PROP_BUFFER_FW_MIN_OUTPUT_COUNT,
-	HFI_PROP_PROFILE,
-	HFI_PROP_LEVEL,
-};
-
-static const u32 canoe_vdec_psc_av1[] = {
+static const u32 seraph_vdec_psc_av1[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
 	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
@@ -3101,30 +2951,25 @@ static const u32 canoe_vdec_psc_av1[] = {
 	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
-static const u32 canoe_vdec_input_properties_avc[] = {
+static const u32 seraph_vdec_input_properties_avc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 canoe_vdec_input_properties_hevc[] = {
+static const u32 seraph_vdec_input_properties_hevc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 canoe_vdec_input_properties_apv[] = {
-	HFI_PROP_NO_OUTPUT,
-	HFI_PROP_SUBFRAME_INPUT,
-};
-
-static const u32 canoe_vdec_input_properties_vp9[] = {
+static const u32 seraph_vdec_input_properties_vp9[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
 };
 
-static const u32 canoe_vdec_input_properties_av1[] = {
+static const u32 seraph_vdec_input_properties_av1[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
@@ -3132,7 +2977,7 @@ static const u32 canoe_vdec_input_properties_av1[] = {
 	HFI_PROP_AV1_UNIFORM_TILE_SPACING,
 };
 
-static const u32 canoe_vdec_output_properties_avc[] = {
+static const u32 seraph_vdec_output_properties_avc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
@@ -3140,107 +2985,101 @@ static const u32 canoe_vdec_output_properties_avc[] = {
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 canoe_vdec_output_properties_hevc[] = {
+static const u32 seraph_vdec_output_properties_hevc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 canoe_vdec_output_properties_apv[] = {
-	HFI_PROP_WORST_COMPRESSION_RATIO,
-	HFI_PROP_WORST_COMPLEXITY_FACTOR,
-	HFI_PROP_PICTURE_TYPE,
-};
-
-static const u32 canoe_vdec_output_properties_vp9[] = {
+static const u32 seraph_vdec_output_properties_vp9[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 canoe_vdec_output_properties_av1[] = {
+static const u32 seraph_vdec_output_properties_av1[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_FENCE_OUTPUT,
 };
 
-static const u32 canoe_msm_vidc_ssr_type[] = {
+static const u32 seraph_msm_vidc_ssr_type[] = {
 	HFI_SSR_TYPE_SW_ERR_FATAL,
 };
 
-static const struct msm_vidc_platform_data canoe_data = {
+static const struct msm_vidc_platform_data seraph_data = {
 	/* resources dependent on other module */
-	.bw_tbl = canoe_bw_table,
-	.bw_tbl_size = ARRAY_SIZE(canoe_bw_table),
-	.pd_tbl = canoe_pd_table,
-	.pd_tbl_size = ARRAY_SIZE(canoe_pd_table),
-	.clk_tbl = canoe_clk_table,
-	.clk_tbl_size = ARRAY_SIZE(canoe_clk_table),
-	.clk_rst_tbl = canoe_clk_reset_table,
-	.clk_rst_tbl_size = ARRAY_SIZE(canoe_clk_reset_table),
-	.subcache_tbl = canoe_subcache_table,
-	.subcache_tbl_size = ARRAY_SIZE(canoe_subcache_table),
+	.bw_tbl = seraph_bw_table,
+	.bw_tbl_size = ARRAY_SIZE(seraph_bw_table),
+	.pd_tbl = seraph_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(seraph_pd_table),
+	.clk_tbl = seraph_clk_table,
+	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
+	.clk_rst_tbl = seraph_clk_reset_table,
+	.clk_rst_tbl_size = ARRAY_SIZE(seraph_clk_reset_table),
+	.subcache_tbl = seraph_subcache_table,
+	.subcache_tbl_size = ARRAY_SIZE(seraph_subcache_table),
 
 	/* populate context bank */
-	.context_bank_tbl = canoe_context_bank_table,
-	.context_bank_tbl_size = ARRAY_SIZE(canoe_context_bank_table),
+	.context_bank_tbl = seraph_context_bank_table,
+	.context_bank_tbl_size = ARRAY_SIZE(seraph_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = canoe_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(canoe_freq_table),
-	.reg_prst_tbl = canoe_reg_preset_table,
-	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
+	.freq_tbl = seraph_freq_table,
+	.freq_tbl_size = ARRAY_SIZE(seraph_freq_table),
+	.reg_prst_tbl = seraph_reg_preset_table,
+	.reg_prst_tbl_size = ARRAY_SIZE(seraph_reg_preset_table),
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 
 	/* caps related resorces */
-	.core_data = core_data_canoe,
-	.core_data_size = ARRAY_SIZE(core_data_canoe),
-	.inst_cap_data = instance_cap_data_canoe,
-	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_canoe),
-	.inst_cap_dependency_data = instance_cap_dependency_data_canoe,
-	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_canoe),
+	.core_data = core_data_seraph,
+	.core_data_size = ARRAY_SIZE(core_data_seraph),
+	.inst_cap_data = instance_cap_data_seraph,
+	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_seraph),
+	.inst_cap_dependency_data = instance_cap_dependency_data_seraph,
+	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_seraph),
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_canoe,
-	.format_data = &format_data_canoe,
+	.ubwc_config = ubwc_config_seraph,
+	.format_data = &format_data_seraph,
 
 	/* decoder properties related*/
-	.psc_avc_tbl = canoe_vdec_psc_avc,
-	.psc_avc_tbl_size = ARRAY_SIZE(canoe_vdec_psc_avc),
-	.psc_hevc_tbl = canoe_vdec_psc_hevc,
-	.psc_hevc_tbl_size = ARRAY_SIZE(canoe_vdec_psc_hevc),
-	.psc_vp9_tbl = canoe_vdec_psc_vp9,
-	.psc_vp9_tbl_size = ARRAY_SIZE(canoe_vdec_psc_vp9),
-	.psc_av1_tbl = canoe_vdec_psc_av1,
-	.psc_av1_tbl_size = ARRAY_SIZE(canoe_vdec_psc_av1),
-	.dec_input_prop_avc = canoe_vdec_input_properties_avc,
-	.dec_input_prop_hevc = canoe_vdec_input_properties_hevc,
-	.dec_input_prop_vp9 = canoe_vdec_input_properties_vp9,
-	.dec_input_prop_av1 = canoe_vdec_input_properties_av1,
-	.dec_input_prop_size_avc = ARRAY_SIZE(canoe_vdec_input_properties_avc),
-	.dec_input_prop_size_hevc = ARRAY_SIZE(canoe_vdec_input_properties_hevc),
-	.dec_input_prop_size_vp9 = ARRAY_SIZE(canoe_vdec_input_properties_vp9),
-	.dec_input_prop_size_av1 = ARRAY_SIZE(canoe_vdec_input_properties_av1),
-	.dec_output_prop_avc = canoe_vdec_output_properties_avc,
-	.dec_output_prop_hevc = canoe_vdec_output_properties_hevc,
-	.dec_output_prop_vp9 = canoe_vdec_output_properties_vp9,
-	.dec_output_prop_av1 = canoe_vdec_output_properties_av1,
-	.dec_output_prop_size_avc = ARRAY_SIZE(canoe_vdec_output_properties_avc),
-	.dec_output_prop_size_hevc = ARRAY_SIZE(canoe_vdec_output_properties_hevc),
-	.dec_output_prop_size_vp9 = ARRAY_SIZE(canoe_vdec_output_properties_vp9),
-	.dec_output_prop_size_av1 = ARRAY_SIZE(canoe_vdec_output_properties_av1),
+	.psc_avc_tbl = seraph_vdec_psc_avc,
+	.psc_avc_tbl_size = ARRAY_SIZE(seraph_vdec_psc_avc),
+	.psc_hevc_tbl = seraph_vdec_psc_hevc,
+	.psc_hevc_tbl_size = ARRAY_SIZE(seraph_vdec_psc_hevc),
+	.psc_vp9_tbl = seraph_vdec_psc_vp9,
+	.psc_vp9_tbl_size = ARRAY_SIZE(seraph_vdec_psc_vp9),
+	.psc_av1_tbl = seraph_vdec_psc_av1,
+	.psc_av1_tbl_size = ARRAY_SIZE(seraph_vdec_psc_av1),
+	.dec_input_prop_avc = seraph_vdec_input_properties_avc,
+	.dec_input_prop_hevc = seraph_vdec_input_properties_hevc,
+	.dec_input_prop_vp9 = seraph_vdec_input_properties_vp9,
+	.dec_input_prop_av1 = seraph_vdec_input_properties_av1,
+	.dec_input_prop_size_avc = ARRAY_SIZE(seraph_vdec_input_properties_avc),
+	.dec_input_prop_size_hevc = ARRAY_SIZE(seraph_vdec_input_properties_hevc),
+	.dec_input_prop_size_vp9 = ARRAY_SIZE(seraph_vdec_input_properties_vp9),
+	.dec_input_prop_size_av1 = ARRAY_SIZE(seraph_vdec_input_properties_av1),
+	.dec_output_prop_avc = seraph_vdec_output_properties_avc,
+	.dec_output_prop_hevc = seraph_vdec_output_properties_hevc,
+	.dec_output_prop_vp9 = seraph_vdec_output_properties_vp9,
+	.dec_output_prop_av1 = seraph_vdec_output_properties_av1,
+	.dec_output_prop_size_avc = ARRAY_SIZE(seraph_vdec_output_properties_avc),
+	.dec_output_prop_size_hevc = ARRAY_SIZE(seraph_vdec_output_properties_hevc),
+	.dec_output_prop_size_vp9 = ARRAY_SIZE(seraph_vdec_output_properties_vp9),
+	.dec_output_prop_size_av1 = ARRAY_SIZE(seraph_vdec_output_properties_av1),
 
-	.msm_vidc_ssr_type = canoe_msm_vidc_ssr_type,
-	.msm_vidc_ssr_type_size = ARRAY_SIZE(canoe_msm_vidc_ssr_type),
+	.msm_vidc_ssr_type = seraph_msm_vidc_ssr_type,
+	.msm_vidc_ssr_type_size = ARRAY_SIZE(seraph_msm_vidc_ssr_type),
 };
 
-static int msm_vidc_canoe_check_ddr_type(void)
+static int msm_vidc_seraph_check_ddr_type(void)
 {
 	u32 ddr_type;
 
@@ -3249,25 +3088,25 @@ static int msm_vidc_canoe_check_ddr_type(void)
 		ddr_type != DDR_TYPE_LPDDR5X) {
 		d_vpr_e("%s: wrong ddr type %d\n", __func__, ddr_type);
 		return -EINVAL;
-	} else {
-		d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	}
+
+	d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	return 0;
 }
 
-int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_seraph(struct msm_vidc_core *core)
 {
-	d_vpr_h("%s: initialize canoe data\n", __func__);
-	core->platform->data = canoe_data;
+	d_vpr_h("%s: initialize seraph data\n", __func__);
+	core->platform->data = seraph_data;
 
 	return 0;
 }
 
-int msm_vidc_init_platform_canoe(struct msm_vidc_core *core)
+int msm_vidc_init_platform_seraph(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
-	d_vpr_h("%s: initialize canoe ops\n", __func__);
+	d_vpr_h("%s: initialize seraph ops\n", __func__);
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ext ops\n", __func__);
@@ -3278,7 +3117,7 @@ int msm_vidc_init_platform_canoe(struct msm_vidc_core *core)
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
 	}
-	rc = msm_vidc_canoe_check_ddr_type();
+	rc = msm_vidc_seraph_check_ddr_type();
 	if (rc)
 		return rc;
 
