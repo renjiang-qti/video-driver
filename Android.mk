@@ -20,9 +20,11 @@ KBUILD_OPTIONS := VIDEO_ROOT=$(VIDEO_BLD_DIR)
 
 KBUILD_OPTIONS += $(VIDEO_SELECT)
 
+ifneq ($(TARGET_BOARD_PLATFORM),canoe)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(shell pwd)/$(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(PWD)/$(call intermediates-dir-for,DLKM,synx-driver-symvers)/Module.symvers
+endif
 ###########################################################
 
 DLKM_DIR   := device/qcom/common/dlkm
@@ -41,10 +43,12 @@ LOCAL_MODULE_DDK_BUILD    := true
 LOCAL_MODULE_DDK_SUBTARGET_REGEX := "video.*"
 LOCAL_MODULE_KO_DIRS      := msm_video/msm_video.ko
 
+ifneq ($(TARGET_BOARD_PLATFORM),canoe)
 LOCAL_REQUIRED_MODULES    := mmrm-module-symvers
 LOCAL_REQUIRED_MODULES    += hw-fence-module-symvers
 LOCAL_ADDITIONAL_DEPENDENCIES := $(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
 LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
+endif
 
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
