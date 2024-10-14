@@ -1430,6 +1430,17 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 	inst->crop.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width -
 		((subsc_params.crop_offsets[1] >> 16) & 0xFFFF) - inst->crop.left;
 
+	/*
+	 * crop params are not subscribed for APV decoder,
+	 * so keep crop values equal to resolution always
+	 */
+	if (inst->codec == MSM_VIDC_APV) {
+		inst->crop.top = 0;
+		inst->crop.left = 0;
+		inst->crop.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
+		inst->crop.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+	}
+
 	msm_vidc_update_cap_value(inst, PROFILE, subsc_params.profile, __func__);
 	msm_vidc_update_cap_value(inst, LEVEL, subsc_params.level, __func__);
 	msm_vidc_update_cap_value(inst, HEVC_TIER, subsc_params.tier, __func__);

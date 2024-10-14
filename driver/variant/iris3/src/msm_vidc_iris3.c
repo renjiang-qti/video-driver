@@ -20,6 +20,7 @@
 #include "msm_vidc_state.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_variant.h"
+#include "msm_vidc_fence.h"
 #include "venus_hfi.h"
 #include "resources.h"
 
@@ -554,9 +555,9 @@ static int __power_off_iris3(struct msm_vidc_core *core)
 	if (!call_venus_op(core, watchdog, core, core->intr_status))
 		disable_irq_nosync(core->resource->irq);
 
-	rc = call_res_op(core, rproc_set_state, core, false);
+	rc = call_fence_op(core, fence_enable_resources, core, false);
 	if (rc)
-		d_vpr_e("%s: failed to set rproc state\n", __func__);
+		d_vpr_e("%s: failed to disable soccp power vote\n", __func__);
 
 	msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE, 0, __func__);
 
@@ -629,10 +630,10 @@ static int __power_on_iris3(struct msm_vidc_core *core)
 		return -EINVAL;
 	}
 
-	rc = call_res_op(core, rproc_set_state, core, true);
+	rc = call_fence_op(core, fence_enable_resources, core, true);
 	if (rc) {
-		d_vpr_e("%s: failed to set rproc state\n", __func__);
-		goto fail_rproc_set_state;
+		d_vpr_e("%s: failed to enable soccp power vote\n", __func__);
+		goto fail_fence_enable_resources;
 	}
 
 	/* Vote for all hardware resources */
@@ -686,8 +687,8 @@ fail_power_on_hardware:
 fail_power_on_controller:
 	call_res_op(core, set_bw, core, 0, 0);
 fail_vote_buses:
-	call_res_op(core, rproc_set_state, core, false);
-fail_rproc_set_state:
+	call_fence_op(core, fence_enable_resources, core, false);
+fail_fence_enable_resources:
 	msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE, 0, __func__);
 	return rc;
 }
