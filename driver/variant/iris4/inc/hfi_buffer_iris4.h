@@ -1141,6 +1141,26 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		SIZE_AV1D_METADATA * AV1D_NUM_HW_PIC_BUF), VENUS_DMA_ALIGNMENT); \
 	} while (0)
 
+/*
+ * APV decoder internal buffer definition
+ */
+#define APV_QMATRIX_SIZE                     192 //8 * 8 *3
+
+#define APV_MAX_TILE_ROWS                    20
+#define APV_MAX_TILE_COLS                    20
+#define APV_TILE_INFO_SIZE                   32 //sizeof(apv_dma_se_tile_info)
+#define APV_MAX_TILE_INFO_SIZE  (APV_TILE_INFO_SIZE * APV_MAX_TILE_COLS * APV_MAX_TILE_ROWS)
+
+/* FW prepares Quantization matrix and tile info in single buffer and it is consumed by VPP */
+#define APV_SIZE_QM_ALIGN      (HFI_ALIGN(APV_QMATRIX_SIZE + APV_MAX_TILE_INFO_SIZE, 256))
+
+#define APV_NUM_HW_PIC_BUF 16
+#define APV_NUM_SLIST APV_NUM_HW_PIC_BUF
+
+#define HFI_BUFFER_PERSIST_APVD(_size) { \
+		_size = (HFI_ALIGN(APV_NUM_SLIST * APV_SIZE_QM_ALIGN, VENUS_DMA_ALIGNMENT)) \
+	}
+
 #define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \
 			rc_type, is_ten_bit) \
 	do { \
@@ -1169,6 +1189,36 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		} \
 		size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
 	} while (0)
+
+/*
+ * APV Encoder Output Bitstream Buffer definition
+ * TOTAL_TILE_INFO_SIZE: sizeof(apv_dma_se_tile_info_t) * 400;
+ * TOTAL_STATS_INFO_SIZE:
+ * SE2DMA Stats In Bytes = (NUM_WORDS_APV_SE2DMA_STATS * Word_Size) >> 3,
+ * (SE2DMA Stats In Bytes) * (3 / 2)
+ */
+#define FW_APVE_BIN_DEP_SIZE (3)
+#define FW_APVE_TOTAL_TILE_INFO_SIZE \
+				HFI_ALIGN(256 + 32 * 400, 256)
+#define FW_APVE_TOTAL_STATS_INFO_SIZE \
+				HFI_ALIGN(1272, 256)
+#define	FW_APVE_FRAME_HEADER (4 + 26 + 192)
+#define	FW_APVE_TILE_HEADER (24 * 400)
+#define FW_APVE_HDR10P_AUX_SIZE	(4096 + 256)
+#define HFI_BUFFER_BITSTREAM_ENC_APVE(size, frame_width, frame_height) \
+		do { \
+			HFI_U32 aligned_width, aligned_height, bitstream_size; \
+			aligned_width = HFI_ALIGN(frame_width, 32); \
+			aligned_height = HFI_ALIGN(frame_height, 32); \
+			bitstream_size = FW_APVE_FRAME_HEADER \
+				+ FW_APVE_TILE_HEADER \
+				+ (aligned_width * aligned_height \
+				* FW_APVE_BIN_DEP_SIZE * 2) \
+				+ FW_APVE_TOTAL_TILE_INFO_SIZE \
+				+ FW_APVE_TOTAL_STATS_INFO_SIZE \
+				+ FW_APVE_HDR10P_AUX_SIZE; \
+			size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
+		} while (0)
 
 #define HFI_IRIS3_ENC_TILE_SIZE_INFO(tile_size, tile_count, last_tile_size, \
 				frame_width_coded, codec_standard) \
@@ -1257,6 +1307,11 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		HFI_BUFFER_INPUT_METADATA_ENC(size_metadata, frame_width, \
 			frame_height, is_roi_enabled, 32); \
 	} while (0)
+
+#define HFI_BUFFER_INPUT_METADATA_APVE(size_metadata, frame_width, \
+		frame_height, is_roi_enabled, is_rpu_enabled) \
+	HFI_BUFFER_INPUT_METADATA_ENC(size_metadata, frame_width, \
+		frame_height, is_roi_enabled, is_rpu_enabled, 32) \
 
 #define HFI_BUFFER_ARP_ENC(size) \
 	do { \
@@ -1683,6 +1738,26 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		HFI_BUFFER_NON_COMV_ENC(_size, frame_width, frame_height, \
 			num_vpp_pipes_enc, 32, HFI_CODEC_ENCODE_HEVC, profile); \
 		_size += SIZE_ONE_SLICE_BUF; \
+	} while (0)
+
+/*
+ * APV Encoder Internal Buffer calculations for Tile Info / HW Stats /HDR10P
+ *  TILE_INFO_SIZE: sizeof(apv_dma_se_tile_info_t) * 400;
+ *  STATS_INFO_SIZE:
+ *  SE2DMA Stats In Bytes = (NUM_WORDS_APV_SE2DMA_STATS * Word_Size) >> 3,
+ *  (SE2DMA Stats In Bytes) * (3 / 2)
+ *  HDR10P_SIZE: 4K * 2(number of LUT);
+ */
+#define HFI_BUFFER_NON_COMV_APVE(_size) \
+	do { \
+		HFI_U32 tileinfo_size = FW_APVE_TOTAL_TILE_INFO_SIZE; \
+		HFI_U32 stats_size = FW_APVE_TOTAL_STATS_INFO_SIZE; \
+		HFI_U32 q_matrix_size = HFI_ALIGN(192, 256); \
+		HFI_U32 hdr10p_lut_size = (2 * FW_APVE_HDR10P_AUX_SIZE); \
+		HFI_U32 hdr10p_stats_size = FW_APVE_HDR10P_AUX_SIZE; \
+		_size = (tileinfo_size + stats_size + q_matrix_size); \
+		_size += (hdr10p_lut_size + hdr10p_stats_size); \
+		_size *= 4; \
 	} while (0)
 
 #define SIZE_ENC_REF_BUFFER(size, frame_width, frame_height) \

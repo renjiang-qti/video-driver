@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_RESOURCES_H_
@@ -286,7 +286,6 @@ struct msm_vidc_resources_ops {
 	int (*clk_reset_residency_stats)(struct msm_vidc_core *core);
 	int (*clk_update_residency_stats)(struct msm_vidc_core *core,
 					  struct clock_info *cl, u64 rate);
-	int (*rproc_set_state)(struct msm_vidc_core *core, bool state);
 };
 
 const struct msm_vidc_resources_ops *get_resources_ops(void);
