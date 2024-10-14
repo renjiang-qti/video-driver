@@ -43,6 +43,7 @@ struct msm_vidc_fence_ops {
 	int (*fence_release)(struct msm_vidc_inst *inst,
 		struct msm_vidc_fence *fence, bool is_error);
 	void (*fence_recover)(struct msm_vidc_core *core);
+	int (*fence_enable_resources)(struct msm_vidc_core *core, bool state);
 };
 
 const struct msm_vidc_fence_ops *get_dma_fence_ops(void);

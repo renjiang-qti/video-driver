@@ -230,6 +230,8 @@ static u32 msm_vidc_decoder_persist_size_iris4(struct msm_vidc_inst *inst)
 				inst->capabilities[FRAME_HEIGHT].max, 16);
 		else
 			HFI_BUFFER_PERSIST_AV1D(size, 0, 0, 0);
+	} else if (inst->codec == MSM_VIDC_APV) {
+		HFI_BUFFER_PERSIST_APVD(size);
 	}
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
@@ -244,6 +246,11 @@ static u32 msm_vidc_decoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 	u32 width, height;
 	u32 interlace = 0;
 	struct v4l2_format *f;
+
+	if (inst->codec == MSM_VIDC_APV) {
+		i_vpr_l(inst, "%s: size %d for APV codec\n", __func__, size);
+		return size;
+	}
 
 	/*
 	 * For legacy codecs (non-AV1), DPB is calculated only
@@ -351,7 +358,8 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 		hfi_codec = HFI_CODEC_ENCODE_AVC;
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		hfi_codec = HFI_CODEC_ENCODE_HEVC;
-
+	else if (inst->codec == MSM_VIDC_APV)
+		hfi_codec = HFI_CODEC_ENCODE_APV;
 	HFI_IRIS3_ENC_RECON_BUF_COUNT(num_buf_recon, n_bframe, ltr_count,
 			hp_layers, hb_layers, is_hybrid_hp, hfi_codec);
 
@@ -398,7 +406,7 @@ static u32 msm_vidc_encoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes, profile);
 	else if (inst->codec == MSM_VIDC_APV)
-		HFI_BUFFER_NON_COMV_APVE(size, width, height, num_vpp_pipes, profile);
+		HFI_BUFFER_NON_COMV_APVE(size);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -420,6 +428,7 @@ static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 	is_tenbit = (pixfmt == MSM_VIDC_FMT_P010 || pixfmt == MSM_VIDC_FMT_TP10C);
+	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
 		HFI_BUFFER_LINE_H264E(size, width, height, is_tenbit, num_vpp_pipes);
@@ -443,6 +452,7 @@ static u32 msm_vidc_encoder_dpb_size_iris4(struct msm_vidc_inst *inst)
 
 	pixfmt = inst->capabilities[PIX_FMTS].value;
 	is_tenbit = (pixfmt == MSM_VIDC_FMT_P010 || pixfmt == MSM_VIDC_FMT_TP10C);
+	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
 		HFI_BUFFER_DPB_H264E(size, width, height);
@@ -678,6 +688,8 @@ static int msm_buffer_delivery_mode_based_min_count_iris4(struct msm_vidc_inst *
 		hfi_codec = HFI_CODEC_ENCODE_AVC;
 	else if (inst->codec == MSM_VIDC_HEVC)
 		hfi_codec = HFI_CODEC_ENCODE_HEVC;
+	else if (inst->codec == MSM_VIDC_APV)
+		hfi_codec = HFI_CODEC_ENCODE_APV;
 
 	HFI_IRIS3_ENC_MB_BASED_MULTI_SLICE_COUNT(total_num_slices, width, height,
 			hfi_codec, max_mbs_per_slice);

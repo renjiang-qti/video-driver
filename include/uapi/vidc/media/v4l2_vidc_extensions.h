@@ -32,6 +32,9 @@
 #ifndef V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE
 #define V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE    (3)
 #endif
+#ifndef V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW
+#define V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW    (4)
+#endif
 
 /* vendor controls start */
 #ifdef V4L2_CTRL_CLASS_CODEC
@@ -255,5 +258,8 @@ enum v4l2_mpeg_vidc_apv_level {
 
 /* Maximum quantization parameter for APV */
 #define V4L2_CID_MPEG_VIDC_APV_MAX_QP                        (VIDC_BASE + 0x63)
+
+/* Control to send the view ID of multiview buffer to FW*/
+#define V4L2_CID_MPEG_VIDC_METADATA_VIEW_ID                  (VIDC_BASE + 0x64)
 
 #endif
