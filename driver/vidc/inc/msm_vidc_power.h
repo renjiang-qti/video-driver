@@ -83,6 +83,7 @@ static inline bool __ubwc(enum msm_vidc_colorformat_type f)
 	switch (f) {
 	case MSM_VIDC_FMT_NV12C:
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210C:
 		return true;
 	default:
 		return false;
@@ -99,6 +100,8 @@ static inline int __bpp(enum msm_vidc_colorformat_type f)
 		return 8;
 	case MSM_VIDC_FMT_P010:
 	case MSM_VIDC_FMT_TP10C:
+	case MSM_VIDC_FMT_P210:
+	case MSM_VIDC_FMT_P210C:
 		return 10;
 	default:
 		d_vpr_e("Unsupported colorformat (%x)", f);
