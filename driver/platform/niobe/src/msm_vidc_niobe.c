@@ -6,7 +6,6 @@
 
 #include <dt-bindings/clock/qcom,gcc-niobe.h>
 #include <dt-bindings/clock/qcom,videocc-niobe.h>
-#include <linux/remoteproc/qcom_rproc.h>
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
@@ -1275,13 +1274,26 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 		HFI_PROP_PROFILE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{PROFILE, ENC | DEC, HEVC | HEIC,
+	{PROFILE, ENC | DEC, HEIC,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
 		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE),
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
+		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
+		HFI_PROP_PROFILE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+
+	{PROFILE, ENC | DEC, HEVC,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
+		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW,
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE) |
+		BIT(V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW),
 		V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		V4L2_CID_MPEG_VIDEO_HEVC_PROFILE,
 		HFI_PROP_PROFILE,
@@ -1839,6 +1851,14 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 		0, MSM_VIDC_META_DISABLE,
 		V4L2_CID_MPEG_VIDC_METADATA_TRANSCODE_STAT_INFO,
 		HFI_PROP_TRANSCODING_STAT_INFO,
+		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
+	{META_VIEW_ID, ENC, HEVC,
+		MSM_VIDC_META_DISABLE,
+		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT,
+		0, MSM_VIDC_META_DISABLE,
+		V4L2_CID_MPEG_VIDC_METADATA_VIEW_ID,
+		HFI_PROP_VIEW_ID,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
 	{META_PICTURE_TYPE, DEC, CODECS_ALL,
@@ -2967,45 +2987,6 @@ int msm_vidc_niobe_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_get_rproc_handle(struct msm_vidc_core *core)
-{
-	struct device *dev = &core->pdev->dev;
-	struct rproc *rproc = NULL;
-	phandle soccp_ph;
-	int rc = 0;
-
-	rc = of_property_read_u32(dev->of_node, "qcom,vidc,soccp-controller", &soccp_ph);
-	if (rc) {
-		d_vpr_e("%s: failed to read property\n", __func__);
-		rc = -ENOENT;
-		goto error;
-	}
-
-	rproc = rproc_get_by_phandle(soccp_ph);
-	if (!rproc) {
-		d_vpr_e("%s: rproc get failed %u\n", __func__, soccp_ph);
-		rc = -EINVAL;
-		goto error;
-	}
-
-	/* ensure rproc fw is up, if not, defer video-driver probe */
-	if (rproc->state != RPROC_RUNNING) {
-		d_vpr_e("%s: rproc %s is not up(%d), retry again\n",
-			__func__, rproc->name, rproc->state);
-		rc = -EAGAIN;
-		goto error;
-	}
-	core->rproc = rproc;
-
-	d_vpr_h("%s: rproc %s is up and ready\n", __func__, rproc->name);
-	return rc;
-error:
-	d_vpr_e("%s failed. Disable rproc support\n", __func__);
-	core->capabilities[SUPPORTS_REMOTE_PROC].value = 0;
-
-	return rc;
-}
-
 int msm_vidc_get_platform_data_niobe(struct msm_vidc_core *core)
 {
 	d_vpr_h("%s: initialize niobe data\n", __func__);
@@ -3036,11 +3017,6 @@ int msm_vidc_init_platform_niobe(struct msm_vidc_core *core)
 			d_vpr_e("%s: invalid synx fence ops\n", __func__);
 			return -EINVAL;
 		}
-	}
-	if (core->capabilities[SUPPORTS_REMOTE_PROC].value) {
-		rc = msm_vidc_get_rproc_handle(core);
-		if (rc)
-			return rc;
 	}
 	rc = msm_vidc_niobe_check_ddr_type();
 	if (rc)

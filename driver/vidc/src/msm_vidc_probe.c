@@ -48,6 +48,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2") ||
 		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,seraph-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc"));
 }
 
@@ -129,6 +130,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,sm8750-vidc"},
 	{.compatible = "qcom,sm8750-vidc-v2"},
 	{.compatible = "qcom,canoe-vidc"},
+	{.compatible = "qcom,seraph-vidc"},
 	{.compatible = "qcom,cliffs-vidc"},
 	{.compatible = "qcom,volcano-vidc"},
 	{.compatible = "qcom,niobe-vidc"},
@@ -713,7 +715,7 @@ static int msm_vidc_remove_context_bank(struct platform_device *pdev)
 	return 0;
 }
 
-static int msm_vidc_remove(struct platform_device *pdev)
+static int __remove(struct platform_device *pdev)
 {
 	/*
 	 * Sub devices remove will be triggered by of_platform_depopulate()
@@ -729,6 +731,18 @@ static int msm_vidc_remove(struct platform_device *pdev)
 	WARN_ON(1);
 	return -EINVAL;
 }
+
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+static void msm_vidc_remove(struct platform_device *pdev)
+{
+	__remove(pdev);
+}
+#else
+static int msm_vidc_remove(struct platform_device *pdev)
+{
+	return __remove(pdev);
+}
+#endif
 
 static int msm_vidc_probe_video_device(struct platform_device *pdev)
 {

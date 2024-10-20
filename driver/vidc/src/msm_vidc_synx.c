@@ -300,6 +300,34 @@ static int msm_vidc_synx_fence_destroy(struct msm_vidc_inst *inst,
 	return rc;
 }
 
+static int msm_vidc_synx_fence_enable_resources(struct msm_vidc_core *core, bool state)
+{
+	int rc = 0;
+
+	if (!core->capabilities[SUPPORTS_REMOTE_PROC].value)
+		return 0;
+
+	if ((state && is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE)) ||
+	    (!state && !is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE))) {
+		d_vpr_e("%s: unexpected. state %d, substate %d\n", __func__,
+			state, is_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE));
+		return -EINVAL;
+	}
+
+	rc = synx_enable_resources(MSM_VIDC_SYNX_FENCE_CLIENT_ID, SYNX_RESOURCE_SOCCP, state);
+	if (rc) {
+		d_vpr_e("%s: failed to %s\n", __func__, state ? "enable" : "disable");
+		return rc;
+	}
+
+	if (state)
+		msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_RPROC_ENABLE, __func__);
+	else
+		msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_RPROC_ENABLE, 0, __func__);
+
+	return rc;
+}
+
 static int msm_vidc_synx_fence_release(struct msm_vidc_inst *inst,
 	struct msm_vidc_fence *fence, bool is_error)
 {
@@ -343,15 +371,16 @@ const struct msm_vidc_fence_ops *get_synx_fence_ops(void)
 {
 	static struct msm_vidc_fence_ops synx_ops;
 
-	synx_ops.fence_register      = msm_vidc_synx_fence_register;
-	synx_ops.fence_deregister    = msm_vidc_synx_fence_deregister;
-	synx_ops.fence_create        = msm_vidc_synx_fence_create;
-	synx_ops.fence_import        = msm_vidc_synx_fence_import;
-	synx_ops.fence_create_fd     = msm_vidc_synx_fence_create_fd;
-	synx_ops.fence_signal        = msm_vidc_synx_fence_signal;
-	synx_ops.fence_destroy       = msm_vidc_synx_fence_destroy;
-	synx_ops.fence_release       = msm_vidc_synx_fence_release;
-	synx_ops.fence_recover       = msm_vidc_synx_fence_recover;
+	synx_ops.fence_register          = msm_vidc_synx_fence_register;
+	synx_ops.fence_deregister        = msm_vidc_synx_fence_deregister;
+	synx_ops.fence_create            = msm_vidc_synx_fence_create;
+	synx_ops.fence_import            = msm_vidc_synx_fence_import;
+	synx_ops.fence_create_fd         = msm_vidc_synx_fence_create_fd;
+	synx_ops.fence_signal            = msm_vidc_synx_fence_signal;
+	synx_ops.fence_destroy           = msm_vidc_synx_fence_destroy;
+	synx_ops.fence_release           = msm_vidc_synx_fence_release;
+	synx_ops.fence_recover           = msm_vidc_synx_fence_recover;
+	synx_ops.fence_enable_resources  = msm_vidc_synx_fence_enable_resources;
 
 	return &synx_ops;
 }

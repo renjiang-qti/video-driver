@@ -30,19 +30,23 @@
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8000800010
 #define MAX_BASE_LAYER_PRIORITY_ID 63
 #define MAX_OP_POINT            31
-#define MAX_BITRATE             245000000
+#define MAX_BITRATE             400000000
+#define MAX_BITRATE_HEVC        180000000
+#define MAX_BITRATE_H264        220000000
 #define APV_MAX_BITRATE         3300000000 /* 3.3 Gpbs */
 #define DEFAULT_BITRATE         20000000
 #define APV_DEFAULT_BITRATE     1000000000
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
-#define MAXIMUM_DEC_FPS         960
+#define MAXIMUM_DEC_FPS         480
 #define MAX_QP                  51
 #define DEFAULT_QP              20
 #define MAX_CONSTANT_QUALITY    100
 #define MIN_SLICE_BYTE_SIZE     512
-#define MAX_SLICE_BYTE_SIZE       \
-	((MAX_BITRATE) >> 3)
+#define MAX_SLICE_BYTE_SIZE_H264       \
+	((MAX_BITRATE_H264) >> 3)
+#define MAX_SLICE_BYTE_SIZE_HEVC       \
+	((MAX_BITRATE_HEVC) >> 3)
 #define MAX_SLICE_MB_SIZE         \
 	(((4096 + 15) >> 4) * ((2304 + 15) >> 4))
 
@@ -826,8 +830,15 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	/* Enc: Keeping CABAC and CAVLC as same bitrate.
 	 * Dec: there's no use of Bitrate cap
 	 */
-	{BIT_RATE, ENC, H264 | HEVC,
-		1, MAX_BITRATE, 1, DEFAULT_BITRATE,
+	{BIT_RATE, ENC, H264,
+		1, MAX_BITRATE_H264, 1, DEFAULT_BITRATE,
+		V4L2_CID_MPEG_VIDEO_BITRATE,
+		HFI_PROP_TOTAL_BITRATE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
+			CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{BIT_RATE, ENC, HEVC,
+		1, MAX_BITRATE_HEVC, 1, DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -886,10 +897,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		220000000, 1, 220000000},
 
 	{ALLINTRA_MAX_BITRATE, ENC, H264 | HEVC, 0,
-		245000000, 1, 245000000},
+		400000000, 1, 400000000},
 
-	{LOWLATENCY_MAX_BITRATE, ENC, H264 | HEVC, 0,
+	{LOWLATENCY_MAX_BITRATE, ENC, H264, 0,
 		70000000, 1, 70000000},
+
+	{LOWLATENCY_MAX_BITRATE, ENC, HEVC, 0,
+		80000000, 1, 80000000},
 
 	{NUM_COMV, DEC, CODECS_ALL,
 		0, INT_MAX, 1, 0},
@@ -1712,8 +1726,15 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		0,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{SLICE_MAX_BYTES, ENC, H264 | HEVC,
-		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE,
+	{SLICE_MAX_BYTES, ENC, H264,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_H264,
+		1, MIN_SLICE_BYTE_SIZE,
+		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
+		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	{SLICE_MAX_BYTES, ENC, HEVC,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_HEVC,
 		1, MIN_SLICE_BYTE_SIZE,
 		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
 		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
@@ -3072,7 +3093,6 @@ static const u32 canoe_vdec_psc_hevc[] = {
 
 static const u32 canoe_vdec_psc_apv[] = {
 	HFI_PROP_BITSTREAM_RESOLUTION,
-	HFI_PROP_CROP_OFFSETS,
 	HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
 	HFI_PROP_BUFFER_FW_MIN_OUTPUT_COUNT,
 	HFI_PROP_PROFILE,
@@ -3219,22 +3239,28 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.psc_vp9_tbl_size = ARRAY_SIZE(canoe_vdec_psc_vp9),
 	.psc_av1_tbl = canoe_vdec_psc_av1,
 	.psc_av1_tbl_size = ARRAY_SIZE(canoe_vdec_psc_av1),
+	.psc_apv_tbl = canoe_vdec_psc_apv,
+	.psc_apv_tbl_size = ARRAY_SIZE(canoe_vdec_psc_apv),
 	.dec_input_prop_avc = canoe_vdec_input_properties_avc,
 	.dec_input_prop_hevc = canoe_vdec_input_properties_hevc,
 	.dec_input_prop_vp9 = canoe_vdec_input_properties_vp9,
 	.dec_input_prop_av1 = canoe_vdec_input_properties_av1,
+	.dec_input_prop_apv = canoe_vdec_input_properties_apv,
 	.dec_input_prop_size_avc = ARRAY_SIZE(canoe_vdec_input_properties_avc),
 	.dec_input_prop_size_hevc = ARRAY_SIZE(canoe_vdec_input_properties_hevc),
 	.dec_input_prop_size_vp9 = ARRAY_SIZE(canoe_vdec_input_properties_vp9),
 	.dec_input_prop_size_av1 = ARRAY_SIZE(canoe_vdec_input_properties_av1),
+	.dec_input_prop_size_apv = ARRAY_SIZE(canoe_vdec_input_properties_apv),
 	.dec_output_prop_avc = canoe_vdec_output_properties_avc,
 	.dec_output_prop_hevc = canoe_vdec_output_properties_hevc,
 	.dec_output_prop_vp9 = canoe_vdec_output_properties_vp9,
 	.dec_output_prop_av1 = canoe_vdec_output_properties_av1,
+	.dec_output_prop_apv = canoe_vdec_output_properties_apv,
 	.dec_output_prop_size_avc = ARRAY_SIZE(canoe_vdec_output_properties_avc),
 	.dec_output_prop_size_hevc = ARRAY_SIZE(canoe_vdec_output_properties_hevc),
 	.dec_output_prop_size_vp9 = ARRAY_SIZE(canoe_vdec_output_properties_vp9),
 	.dec_output_prop_size_av1 = ARRAY_SIZE(canoe_vdec_output_properties_av1),
+	.dec_output_prop_size_apv = ARRAY_SIZE(canoe_vdec_output_properties_apv),
 
 	.msm_vidc_ssr_type = canoe_msm_vidc_ssr_type,
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(canoe_msm_vidc_ssr_type),

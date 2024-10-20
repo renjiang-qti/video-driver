@@ -42,6 +42,10 @@
 #include "msm_vidc_canoe.h"
 #include "msm_vidc_iris4.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_SERAPH)
+#include "msm_vidc_seraph.h"
+#include "msm_vidc_iris4.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -263,6 +267,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,canoe-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_canoe,
 		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_SERAPH)
+	{
+		.compat                     = "qcom,seraph-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_seraph,
+		.init_platform              = msm_vidc_init_platform_seraph,
 		.init_iris                  = msm_vidc_init_iris4,
 	},
 #endif
@@ -873,6 +885,9 @@ int msm_vidc_adjust_profile(void *instance, struct v4l2_ctrl *ctrl)
 		/* 8 bit profile for 8 bit color format */
 		if (is_image_session(inst))
 			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_STILL_PICTURE;
+		else if (inst->capabilities[PROFILE].value ==
+				V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW)
+			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW;
 		else
 			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN;
 	}
