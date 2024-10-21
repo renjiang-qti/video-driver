@@ -262,4 +262,7 @@ enum v4l2_mpeg_vidc_apv_level {
 /* Control to send the view ID of multiview buffer to FW*/
 #define V4L2_CID_MPEG_VIDC_METADATA_VIEW_ID                  (VIDC_BASE + 0x64)
 
+/* Control to send multiview output buffer pair info to FW*/
+#define V4L2_CID_MPEG_VIDC_METADATA_VIEW_PAIR                (VIDC_BASE + 0x65)
+
 #endif

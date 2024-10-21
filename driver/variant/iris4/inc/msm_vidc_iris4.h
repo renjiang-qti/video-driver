@@ -10,7 +10,7 @@
 struct msm_vidc_core;
 struct v4l2_ctrl;
 
-#if defined(CONFIG_MSM_VIDC_CANOE)
+#if defined(CONFIG_MSM_VIDC_CANOE) || defined(CONFIG_MSM_VIDC_SERAPH)
 int msm_vidc_init_iris4(struct msm_vidc_core *core);
 int msm_vidc_adjust_bitrate_boost_iris4(void *instance, struct v4l2_ctrl *ctrl);
 #else
