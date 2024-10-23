@@ -51,6 +51,14 @@ typedef HFI_U32 HFI_BOOL;
 #define HFI_COLOR_FORMAT_YUV420_TP10_UBWC_Y_TILE_WIDTH (48)
 #define HFI_COLOR_FORMAT_YUV420_TP10_UBWC_UV_TILE_HEIGHT (4)
 #define HFI_COLOR_FORMAT_YUV420_TP10_UBWC_UV_TILE_WIDTH (24)
+#define HFI_COLOR_FORMAT_YUV420_P010_UBWC_Y_TILE_HEIGHT (4)
+#define HFI_COLOR_FORMAT_YUV420_P010_UBWC_Y_TILE_WIDTH (32)
+#define HFI_COLOR_FORMAT_YUV420_P010_UBWC_UV_TILE_HEIGHT (4)
+#define HFI_COLOR_FORMAT_YUV420_P010_UBWC_UV_TILE_WIDTH (16)
+#define HFI_COLOR_FORMAT_YUV422_P210_UBWC_Y_TILE_HEIGHT (4)
+#define HFI_COLOR_FORMAT_YUV422_P210_UBWC_Y_TILE_WIDTH (32)
+#define HFI_COLOR_FORMAT_YUV422_P210_UBWC_UV_TILE_HEIGHT (4)
+#define HFI_COLOR_FORMAT_YUV422_P210_UBWC_UV_TILE_WIDTH (16)
 #define HFI_COLOR_FORMAT_RGBA8888_UBWC_TILE_HEIGHT (4)
 #define HFI_COLOR_FORMAT_RGBA8888_UBWC_TILE_WIDTH (16)
 
@@ -192,15 +200,94 @@ typedef HFI_U32 HFI_BOOL;
 	(buf_height = HFI_ALIGN(((frame_height + 1) >> 1), \
 			min_buf_height_multiple))
 
-#define HFI_YUV420_P010_CALC_BUF_SIZE(buf_size, y_data_size, y_stride, \
-	y_buf_height, uv_data_size, uv_stride, uv_buf_height) \
+/*
+ * Minimum Luma buffer size that needs to be allocated for current
+ * frame dimensions P010_UBWC format
+ */
+#define HFI_YUV420_P010_UBWC_CALC_Y_BUF_SIZE(y_bufSize, y_stride, y_buf_height) \
+	(y_bufSize = HFI_ALIGN(y_stride * y_buf_height, HFI_ALIGNMENT_4096))
+
+/*
+ * Minimum chroma buffer size that needs to be allocated for current
+ * frame dimensions P010_UBWC format
+ */
+#define HFI_YUV420_P010_UBWC_CALC_UV_BUF_SIZE(uv_buf_size, \
+	uv_stride, uv_buf_height) \
+	(uv_buf_size = HFI_ALIGN(uv_stride * uv_buf_height, HFI_ALIGNMENT_4096))
+
+/*
+ * Minimum buffer size that needs to be allocated for current
+ * frame dimensions for YUV420_P010 linear format
+ * (calculation includes both luma and chroma plane)
+ */
+#define HFI_YUV420_P010_CALC_BUF_SIZE(buf_size, y_bufSize, y_stride, y_buf_height, \
+	uv_buf_size, uv_stride, uv_buf_height) \
 	do { \
-		y_data_size = HFI_ALIGN(y_stride * y_buf_height, \
-				HFI_ALIGNMENT_4096);\
-		uv_data_size = HFI_ALIGN(uv_stride * uv_buf_height, \
-				HFI_ALIGNMENT_4096); \
-		buf_size = y_data_size + uv_data_size; \
+		y_bufSize = (y_stride * y_buf_height); \
+		uv_buf_size = (uv_stride * uv_buf_height); \
+		buf_size = HFI_ALIGN(y_bufSize + uv_buf_size, HFI_ALIGNMENT_4096); \
 	} while (0)
+
+/*
+ * Luma stride calculation for YUV422_P210 color format
+ * Stride arrived at here is the minimum required stride. Host may
+ * set a stride higher than the one calculated here, till the stride
+ * is a multiple of "nStrideMultiples" in
+ * HFI_UNCOMPRESSED_PLANE_CONSTRAINTS_TYPE
+ */
+
+#define HFI_YUV422_P210_CALC_Y_STRIDE(stride, frame_width, stride_multiple) \
+	HFI_YUV420_P010_CALC_Y_STRIDE(stride, frame_width, stride_multiple)
+
+/*
+ * Luma plane height calculation for YUV422_P210 linear color format
+ * Luma plane height used by the host needs to be either equal
+ * to higher than the value calculated here
+ */
+#define HFI_YUV422_P210_CALC_Y_BUFHEIGHT(buf_height, frame_height, \
+				min_buf_height_multiple) \
+	HFI_YUV420_P010_CALC_Y_BUFHEIGHT(buf_height, frame_height, \
+				min_buf_height_multiple)
+
+/*
+ * Chroma stride calculation for YUV422_P210 linear color format
+ */
+#define HFI_YUV422_P210_CALC_UV_STRIDE(stride, frame_width, stride_multiple) \
+	HFI_YUV420_P010_CALC_UV_STRIDE(stride, frame_width, stride_multiple)
+
+/*
+ * Chroma plane height calculation for YUV422_P210 linear  color format
+ */
+#define HFI_YUV422_P210_CALC_UV_BUFHEIGHT(buf_height, frame_height, \
+				min_buf_height_multiple) \
+	HFI_YUV420_P010_CALC_UV_BUFHEIGHT(buf_height, frame_height * 2, \
+				min_buf_height_multiple)
+
+/*
+ * Minimum Luma buffer size that needs to be allocated for current
+ * frame dimensions P210_UBWC format
+ */
+#define HFI_YUV422_P210_UBWC_CALC_Y_BUF_SIZE(y_bufSize, y_stride, y_buf_height) \
+	HFI_YUV420_P010_UBWC_CALC_Y_BUF_SIZE(y_bufSize, y_stride, y_buf_height)
+
+/*
+ * Minimum chroma buffer size that needs to be allocated for current
+ * frame dimensions P210_UBWC format
+ */
+#define HFI_YUV422_P210_UBWC_CALC_UV_BUF_SIZE(uv_buf_size, \
+	uv_stride, uv_buf_height) \
+	HFI_YUV420_P010_UBWC_CALC_UV_BUF_SIZE(uv_buf_size, \
+	uv_stride, uv_buf_height)
+
+/*
+ * Minimum buffer size that needs to be allocated for current
+ * frame dimensions for YUV422_P210 linear format
+ * (calculation includes both luma and chroma plane)
+ */
+#define HFI_YUV422_P210_CALC_BUF_SIZE(buf_size, y_bufSize, y_stride, y_buf_height, \
+	uv_buf_size, uv_stride, uv_buf_height) \
+	HFI_YUV420_P010_CALC_BUF_SIZE(buf_size, y_bufSize, y_stride, y_buf_height, \
+	uv_buf_size, uv_stride, uv_buf_height)
 
 #define HFI_RGB888_CALC_STRIDE(stride, frame_width, stride_multiple) \
 	(stride = ((frame_width * 3) + stride_multiple - 1) & \

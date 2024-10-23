@@ -2436,7 +2436,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_set_bitrate},
 
 	{BIT_RATE, ENC, APV,
-		{PEAK_BITRATE, BITRATE_BOOST},
+		{PEAK_BITRATE},
 		NULL,
 		msm_vidc_set_bitrate},
 
@@ -2769,7 +2769,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL,
 		msm_vidc_set_u32_enum},
 
-	{LF_MODE, ENC, CODECS_ALL,
+	{LF_MODE, ENC, HEVC | HEIC | H264,
 		{0},
 		NULL,
 		msm_vidc_set_deblock_mode},

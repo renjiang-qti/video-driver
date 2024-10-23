@@ -653,6 +653,8 @@ enum hfi_view_id {
 
 #define HFI_PROP_OPEN_GOP                                       0x030001A6
 
+#define HFI_PROP_PAIRED_YUV                                     0x030001AA
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000

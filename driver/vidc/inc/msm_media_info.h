@@ -381,7 +381,10 @@ static inline unsigned int video_uv_meta_scanlines(unsigned int colorformat,
 		goto invalid_input;
 	}
 
-	uv_meta_scanlines = MSM_MEDIA_ROUNDUP((height + 1) >> 1, uv_tile_height);
+	if (colorformat == MSM_VIDC_FMT_P210C)
+		uv_meta_scanlines = MSM_MEDIA_ROUNDUP(height, uv_tile_height);
+	else
+		uv_meta_scanlines = MSM_MEDIA_ROUNDUP((height + 1) >> 1, uv_tile_height);
 	uv_meta_scanlines = MSM_MEDIA_ALIGN(uv_meta_scanlines, 16);
 
 invalid_input:
