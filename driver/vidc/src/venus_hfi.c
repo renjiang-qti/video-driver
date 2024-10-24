@@ -9,6 +9,7 @@
 #include <linux/iosys-map.h>
 #include <linux/dma-direction.h>
 #include <media/videobuf2-core.h>
+#include <linux/vmalloc.h>
 
 #include "msm_vidc_internal.h"
 #include "venus_hfi.h"

@@ -11,6 +11,7 @@
 #include <media/videobuf2-core.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/v4l2-event.h>
+#include <linux/vmalloc.h>
 
 #include "msm_media_info.h"
 #include "msm_vidc_driver.h"

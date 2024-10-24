@@ -8,6 +8,7 @@
 #include <linux/dma-heap.h>
 #include <linux/dma-mapping.h>
 #include <linux/iommu.h>
+#include <linux/vmalloc.h>
 
 #include "msm_vidc_memory.h"
 #include "msm_vidc_internal.h"

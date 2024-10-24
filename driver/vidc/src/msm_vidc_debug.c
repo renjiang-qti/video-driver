@@ -6,6 +6,7 @@
 
 #define CREATE_TRACE_POINTS
 #include <media/videobuf2-core.h>
+#include <linux/vmalloc.h>
 
 #include "msm_vidc_debug.h"
 #include "msm_vidc_driver.h"
@@ -645,9 +646,13 @@ static ssize_t inst_info_read(struct file *file, char __user *buf,
 		cur += write_str(cur, end - cur,
 			"type: %s\n", i == INPUT_PORT ?
 			"Output" : "Capture");
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		cur += write_str(cur, end - cur, "count: %u\n",
+				vb2_get_num_buffers(inst->bufq[i].vb2q));
+#else
 		cur += write_str(cur, end - cur, "count: %u\n",
 				inst->bufq[i].vb2q->num_buffers);
-
+#endif
 		for (j = 0; j < f->fmt.pix_mp.num_planes; j++)
 			cur += write_str(cur, end - cur,
 				"size for plane %d: %u\n",

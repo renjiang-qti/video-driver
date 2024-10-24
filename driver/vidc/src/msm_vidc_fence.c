@@ -5,6 +5,7 @@
 
 #include <linux/sync_file.h>
 #include <linux/file.h>
+#include <linux/vmalloc.h>
 
 #include "msm_vidc_fence.h"
 #include "msm_vidc_driver.h"

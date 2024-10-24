@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #if !defined(_TRACE_MSM_VIDC_H) || defined(TRACE_HEADER_MULTI_READ)
@@ -30,8 +30,13 @@ DECLARE_EVENT_CLASS(msm_v4l2_vidc_inst,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(dummy);
+		__assign_str(debug_str);
+#else
 		__assign_str(dummy, dummy);
 		__assign_str(debug_str, inst ? inst->debug_str : (u8 *)"");
+#endif
 	),
 
 	TP_printk("%s: %s\n", __get_str(dummy), __get_str(debug_str))
@@ -62,7 +67,11 @@ DECLARE_EVENT_CLASS(msm_v4l2_vidc_fw_load,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(dummy);
+#else
 		__assign_str(dummy, dummy);
+#endif
 	),
 
 	TP_printk("%s\n", __get_str(dummy))
@@ -90,10 +99,17 @@ DECLARE_EVENT_CLASS(msm_vidc_driver,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(debug_str);
+		__assign_str(func);
+		__assign_str(old_state);
+		__assign_str(new_state);
+#else
 		__assign_str(debug_str, inst ? inst->debug_str : (u8 *)"");
 		__assign_str(func, func);
 		__assign_str(old_state, old_state);
 		__assign_str(new_state, new_state);
+#endif
 	),
 
 	TP_printk("%s: %s: state changed to %s from %s\n",
@@ -177,9 +193,15 @@ DECLARE_EVENT_CLASS(msm_v4l2_vidc_buffer_events,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(debug_str);
+		__assign_str(str);
+		__assign_str(buf_type);
+#else
 		__assign_str(debug_str, inst ? inst->debug_str : (u8 *)"");
 		__assign_str(str, str);
 		__assign_str(buf_type, buf_type);
+#endif
 		__entry->index = vbuf ? vbuf->index : -1;
 		__entry->fd = vbuf ? vbuf->fd : 0;
 		__entry->data_offset = vbuf ? vbuf->data_offset : 0;
@@ -231,7 +253,11 @@ DECLARE_EVENT_CLASS(msm_vidc_perf,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(debug_str);
+#else
 		__assign_str(debug_str, inst ? inst->debug_str : (u8 *)"");
+#endif
 		__entry->curr_freq = inst ? inst->power.curr_freq : 0;
 		__entry->ddr_bw = inst ? inst->power.ddr_bw : 0;
 		__entry->sys_cache_bw = inst ? inst->power.sys_cache_bw : 0;
@@ -271,11 +297,19 @@ DECLARE_EVENT_CLASS(msm_vidc_buffer_dma_ops,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(buffer_op);
+#else
 		__assign_str(buffer_op, buffer_op);
+#endif
 		__entry->dmabuf = dmabuf;
 		__entry->size = size;
 		__entry->kvaddr = kvaddr;
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(buf_name);
+#else
 		__assign_str(buf_name, buf_name);
+#endif
 		__entry->secure = secure;
 		__entry->region = region;
 	),
@@ -305,7 +339,11 @@ DECLARE_EVENT_CLASS(msm_v4l2_vidc_trace,
 	),
 
 	TP_fast_assign(
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+		__assign_str(fw_trace_buf);
+#else
 		__assign_str(fw_trace_buf, fw_trace_buf);
+#endif
 	),
 
 	TP_printk("%s", __get_str(fw_trace_buf))
