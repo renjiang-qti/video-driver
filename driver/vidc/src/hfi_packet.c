@@ -288,6 +288,7 @@ static u32 get_hfi_region_flag(enum msm_vidc_buffer_region region)
 {
 	switch (region) {
 	case MSM_VIDC_NON_SECURE:
+	case MSM_VIDC_NON_SECURE_BITSTREAM:
 		return HFI_BUF_HOST_FLAGS_CB_NON_SECURE;
 	case MSM_VIDC_NON_SECURE_PIXEL:
 		return HFI_BUF_HOST_FLAGS_CB_NON_SECURE_PIXEL;
