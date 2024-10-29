@@ -43,7 +43,8 @@ static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_co
 	}
 
 	/* reject non-secure mapping request for a secure buffer(or vice versa) */
-	if (cb->region == MSM_VIDC_NON_SECURE || cb->region == MSM_VIDC_NON_SECURE_PIXEL) {
+	if (cb->region & MSM_VIDC_NON_SECURE || cb->region & MSM_VIDC_NON_SECURE_BITSTREAM ||
+	    cb->region & MSM_VIDC_NON_SECURE_PIXEL) {
 		if (!is_non_secure_buffer(dbuf)) {
 			d_vpr_e("%s: secure buffer mapping to non-secure region %d not allowed\n",
 				__func__, cb->region);
@@ -250,7 +251,8 @@ static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_m
 	}
 
 	/* reject non-secure mapping request for a secure buffer(or vice versa) */
-	if (mem->region == MSM_VIDC_NON_SECURE || mem->region == MSM_VIDC_NON_SECURE_PIXEL) {
+	if (mem->region & MSM_VIDC_NON_SECURE || mem->region & MSM_VIDC_NON_SECURE_BITSTREAM ||
+	    mem->region & MSM_VIDC_NON_SECURE_PIXEL) {
 		if (!is_non_secure_buffer(mem->dmabuf)) {
 			d_vpr_e("%s: secure buffer mapping to non-secure region %d not allowed\n",
 				__func__, mem->region);
@@ -363,11 +365,11 @@ static u32 msm_vidc_buffer_region_ext(struct msm_vidc_inst *inst,
 			if (is_encode_session(inst))
 				region = MSM_VIDC_NON_SECURE_PIXEL;
 			else
-				region = MSM_VIDC_NON_SECURE;
+				region = MSM_VIDC_NON_SECURE_BITSTREAM;
 			break;
 		case MSM_VIDC_BUF_OUTPUT:
 			if (is_encode_session(inst))
-				region = MSM_VIDC_NON_SECURE;
+				region = MSM_VIDC_NON_SECURE_BITSTREAM;
 			else
 				region = MSM_VIDC_NON_SECURE_PIXEL;
 			break;

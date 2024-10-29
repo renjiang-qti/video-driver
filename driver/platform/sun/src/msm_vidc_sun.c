@@ -1944,6 +1944,14 @@ static struct msm_platform_inst_capability instance_cap_data_sun[] = {
 		HFI_PROP_VIEW_ID,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
+	{META_THREE_DIMENSIONAL_REF_DISP_INFO, ENC, HEVC,
+		MSM_VIDC_META_DISABLE,
+		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT,
+		0, MSM_VIDC_META_DISABLE,
+		V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO,
+		HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO,
+		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
 	{META_PICTURE_TYPE, DEC, CODECS_ALL,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT |
@@ -2880,7 +2888,8 @@ static const struct subcache_table sun_subcache_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table sun_context_bank_table[] = {
-	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1,
+		MSM_VIDC_NON_SECURE | MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
 	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
