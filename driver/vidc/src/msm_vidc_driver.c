@@ -2423,7 +2423,13 @@ void msm_vidc_allow_dcvs(struct msm_vidc_inst *inst)
 
 	allow = !msm_vidc_clock_voting;
 	if (!allow) {
-		i_vpr_h(inst, "%s: core_clock_voting is set\n", __func__);
+		i_vpr_h(inst, "%s: msm_vidc_clock_voting is set\n", __func__);
+		goto exit;
+	}
+
+	if (msm_vidc_vpp_clock_voting || msm_vidc_apv_clock_voting ||
+	    msm_vidc_bse_clock_voting || msm_vidc_tensilica_clock_voting) {
+		i_vpr_h(inst, "%s: msm_vidc_(vpp,apv,bse,tns)_clock_voting is set\n", __func__);
 		goto exit;
 	}
 

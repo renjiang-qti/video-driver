@@ -2605,10 +2605,11 @@ static const struct pd_table lemans_pd_table[] = {
 
 /* name, clock id, scaling */
 static const struct clk_table lemans_clk_table[] = {
-	{ "gcc_video_axi0",         GCC_VIDEO_AXI0_CLK,     0 },
-	{ "core_clk",               VIDEO_CC_MVS0C_CLK,     0 },
-	{ "vcodec_clk",             VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "gcc_video_axi0",         GCC_VIDEO_AXI0_CLK,     0},
+	{ "core_clk",               VIDEO_CC_MVS0C_CLK,     0},
+	{ "vcodec_clk",             VIDEO_CC_MVS0_CLK,      0},
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {560000000, 533000000, 444000000, 366000000, 338000000, 240000000}, 6},
 };
 
 /* name, exclusive_release */
@@ -2630,11 +2631,6 @@ const struct context_bank_table lemans_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
-};
-
-/* freq */
-static struct freq_table lemans_freq_table[] = {
-	{560000000}, {533000000}, {444000000}, {366000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
@@ -2789,12 +2785,11 @@ static const struct msm_vidc_platform_data lemans_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(lemans_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = lemans_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(lemans_freq_table),
 	.reg_prst_tbl = lemans_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(lemans_reg_preset_table),
 	.dev_reg_tbl = lemans_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(lemans_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu30_4v",
 	.pas_id = 9,
 	.supports_mmrm = 1,

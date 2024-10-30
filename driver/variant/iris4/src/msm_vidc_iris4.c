@@ -419,7 +419,7 @@ static bool is_iris4_hw_power_collapsed(struct msm_vidc_core *core)
 
 static int __power_off_iris4_apv(struct msm_vidc_core *core)
 {
-	int rc = 0, i = 0;
+	int rc = 0;
 	u32 value = 0;
 	u32 count = 0;
 
@@ -451,11 +451,11 @@ static int __power_off_iris4_apv(struct msm_vidc_core *core)
 	 * add APV TOP IDLE STATUS check before collapsing APV per HPG update
 	 * poll for APV TOP IDLE STATUS -> HPG 3.4.4.2
 	 */
-	rc = __read_register_with_poll_timeout(core, WRAPPER_IRIS_APV_TOP_IDLE_STATUS_IRIS4,
-			0x11F, 0x11F, 2000, 20000);
-	if (rc)
-		d_vpr_e("%s: APV_TOP_IDLE_STATUS (%d) is not idle (%#x)\n",
-			__func__, i, value);
+	//rc = __read_register_with_poll_timeout(core, WRAPPER_IRIS_APV_TOP_IDLE_STATUS_IRIS4,
+	//		0x11F, 0x11F, 2000, 20000);
+	//if (rc)
+	//	d_vpr_e("%s: APV_TOP_IDLE_STATUS (%d) is not idle (%#x)\n",
+	//		__func__, value);
 
 	/* set MNoC to low power, set PD_NOC_QREQ (bit 0) */
 	rc = __write_register_masked(core, AON_WRAPPER_MVP_NOC_LPI_CONTROL_IRIS4,
@@ -950,9 +950,9 @@ static int __power_off_iris4(struct msm_vidc_core *core)
 	 * Reset video_cc_mvs0_clk_src value to resolve MMRM high video
 	 * clock projection issue.
 	 */
-	rc = call_res_op(core, set_clks, core, 0);
+	rc = call_res_op(core, set_clks, core, get_min_clock_index(core));
 	if (rc)
-		d_vpr_e("%s: resetting clocks failed\n", __func__);
+		d_vpr_e("%s: resetting core clocks failed\n", __func__);
 
 	if (__power_off_iris4_apv(core))
 		d_vpr_e("%s: failed to power off apv\n", __func__);
@@ -1122,8 +1122,7 @@ fail_read_efuse:
 
 static int __power_on_iris4(struct msm_vidc_core *core)
 {
-	struct frequency_table *freq_tbl;
-	u32 freq = 0;
+	u32 idx = 0;
 	int rc = 0;
 
 	if (is_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE))
@@ -1164,11 +1163,8 @@ static int __power_on_iris4(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_sw_ctrl;
 
-	freq_tbl = core->resource->freq_set.freq_tbl;
-	freq = core->power.clk_freq ? core->power.clk_freq :
-				      freq_tbl[0].freq;
-
-	rc = call_res_op(core, set_clks, core, freq);
+	idx = core->power.clk_freq_idx ? core->power.clk_freq_idx : 0;
+	rc = call_res_op(core, set_clks, core, idx);
 	if (rc) {
 		d_vpr_e("%s: failed to scale clocks\n", __func__);
 		rc = 0;
@@ -1185,7 +1181,7 @@ static int __power_on_iris4(struct msm_vidc_core *core)
 fail_sw_ctrl:
 	__power_off_iris4_apv(core);
 fail_power_on_apv:
-    __power_off_iris4_hardware(core);
+	__power_off_iris4_hardware(core);
 fail_power_on_hardware:
 	__power_off_iris4_controller(core);
 fail_power_on_controller:
@@ -1589,7 +1585,7 @@ static struct msm_vidc_session_ops msm_session_ops = {
 	.min_count = msm_buffer_min_count_iris4,
 	.extra_count = msm_buffer_extra_count_iris4,
 	.ring_buf_count = msm_vidc_ring_buf_count_iris4,
-	.calc_freq = msm_vidc_calc_freq_iris4,
+	.scale_clocks = msm_vidc_scale_clocks_iris4,
 	.calc_bw = msm_vidc_calc_bw_iris4,
 	.decide_work_route = msm_vidc_decide_work_route_iris4,
 	.decide_work_mode = msm_vidc_decide_work_mode_iris4,

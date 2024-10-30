@@ -9,11 +9,12 @@
 
 struct msm_vidc_inst;
 struct vidc_bus_vote_data;
+struct vidc_clock_scaling_data;
 
 #define ENABLE_LEGACY_POWER_CALCULATIONS  0
 
 int msm_vidc_ring_buf_count_iris35(struct msm_vidc_inst *inst, u32 data_size);
-u64 msm_vidc_calc_freq_iris35(struct msm_vidc_inst *inst, u32 data_size);
+int msm_vidc_scale_clocks_iris35(struct msm_vidc_inst *inst);
 int msm_vidc_calc_bw_iris35(struct msm_vidc_inst *inst,
 		struct vidc_bus_vote_data *vote_data);
 

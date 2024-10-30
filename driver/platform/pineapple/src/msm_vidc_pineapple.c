@@ -123,11 +123,11 @@ static struct color_format_info color_format_data_pineapple[] = {
 static struct color_primaries_info color_primaries_data_pineapple[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_REC709,
@@ -174,11 +174,11 @@ static struct color_primaries_info color_primaries_data_pineapple[] = {
 static struct transfer_char_info transfer_char_data_pineapple[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_709,
@@ -237,11 +237,11 @@ static struct transfer_char_info transfer_char_data_pineapple[] = {
 static struct matrix_coeff_info matrix_coeff_data_pineapple[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_VIDC_SRGB_OR_SMPTE_ST428,
@@ -2796,7 +2796,17 @@ static const struct clk_table pineapple_clk_table[] = {
 	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
 	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
 	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {533333333, 480000000, 435000000, 380000000, 280000000, 196000000}, 6},
+};
+
+/* name, clock id, scaling */
+static const struct clk_table pineapple_clk_table_v2[] = {
+	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
+	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
+	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {533333333, 480000000, 435000000, 380000000, 300000000, 196000000}, 6},
 };
 
 /* name, exclusive_release */
@@ -2820,15 +2830,6 @@ const struct context_bank_table pineapple_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-pxl", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_PIXEL, 0},
 	{"qcom,vidc,cb-sec-non-pxl", 0x01000000, 0x24800000, 1, 0, MSM_VIDC_SECURE_NONPIXEL, 0},
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xdfb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0},
-};
-
-/* freq */
-static struct freq_table pineapple_freq_table[] = {
-	{533333333}, {480000000}, {435000000}, {380000000}, {280000000}, {196000000}
-};
-
-static struct freq_table pineapple_freq_table_v2[] = {
-	{533333333}, {480000000}, {435000000}, {380000000}, {300000000}, {196000000}
 };
 
 /* register, value, mask */
@@ -2990,12 +2991,11 @@ static const struct msm_vidc_platform_data pineapple_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(pineapple_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = pineapple_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(pineapple_freq_table),
 	.reg_prst_tbl = pineapple_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(pineapple_reg_preset_table),
 	.dev_reg_tbl = pineapple_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(pineapple_device_region_table),
+	.clock_source_scaling_ratio = 3,
 	.fwname = "vpu33_4v",
 	.pas_id = 9,
 	.supports_mmrm = 1,
@@ -3066,9 +3066,9 @@ int msm_vidc_get_platform_data_pineapple(struct msm_vidc_core *core)
 	d_vpr_h("%s: initialize pineapple data\n", __func__);
 	core->platform->data = pineapple_data;
 	if (of_device_is_compatible(dev->of_node, "qcom,sm8650-vidc-v2")) {
-		d_vpr_h("%s: update frequency table for pineapple v2\n", __func__);
-		core->platform->data.freq_tbl = pineapple_freq_table_v2;
-		core->platform->data.freq_tbl_size = ARRAY_SIZE(pineapple_freq_table_v2);
+		d_vpr_h("%s: update clock table for pineapple v2\n", __func__);
+		core->platform->data.clk_tbl = pineapple_clk_table_v2;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(pineapple_clk_table_v2);
 	}
 
 	return 0;

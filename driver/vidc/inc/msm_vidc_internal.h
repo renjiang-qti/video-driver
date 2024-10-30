@@ -269,6 +269,7 @@ enum msm_vidc_metadata_bits {
 	CAP(META_HDR10_MAX_RGB_INFO)              \
 	CAP(META_VIEW_ID)                         \
 	CAP(META_MULTI_VIEW_PAIR)                 \
+	CAP(META_THREE_DIMENSIONAL_REF_DISP_INFO) \
 	CAP(DRV_VERSION)                          \
 	CAP(MIN_FRAME_QP)                         \
 	CAP(MAX_FRAME_QP)                         \
@@ -665,6 +666,7 @@ enum msm_vidc_core_capability_type {
 	SSR_TYPE,
 	SUPPORTS_REMOTE_PROC,
 	SUPPORTS_FREEZE,
+	NUM_VPU,
 	CORE_CAP_MAX,
 };
 
@@ -872,6 +874,15 @@ struct msm_vidc_decode_batch {
 	struct delayed_work    work;
 };
 
+struct vidc_clock_scaling_data {
+	u32 data_size;
+	u64 freq;
+	u64 vpp_freq;
+	u64 apv_freq;
+	u64 bse_freq;
+	u64 tensilica_freq;
+};
+
 enum msm_vidc_power_mode {
 	VIDC_POWER_NORMAL = 0,
 	VIDC_POWER_LOW,
@@ -910,7 +921,10 @@ struct msm_vidc_power {
 	bool                   dcvs_mode;
 	u32                    dcvs_window;
 	u64                    min_freq;
-	u64                    curr_freq;
+	u64                    min_vpp_freq;
+	u64                    min_apv_freq;
+	u64                    min_bse_freq;
+	u64                    min_tensilica_freq;
 	u32                    ddr_bw;
 	u32                    sys_cache_bw;
 	u32                    dcvs_flags;

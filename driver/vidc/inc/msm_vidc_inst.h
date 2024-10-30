@@ -21,7 +21,7 @@
 	((c)->session_ops->op(__VA_ARGS__)) : 0)
 
 struct msm_vidc_session_ops {
-	u64 (*calc_freq)(struct msm_vidc_inst *inst, u32 data_size);
+	int (*scale_clocks)(struct msm_vidc_inst *inst);
 	int (*calc_bw)(struct msm_vidc_inst *inst,
 		       struct vidc_bus_vote_data *vote_data);
 	int (*decide_work_route)(struct msm_vidc_inst *inst);
@@ -82,6 +82,7 @@ struct msm_vidc_inst {
 	void                              *core;
 	struct kref                        kref;
 	u32                                session_id;
+	u32                                device_id;
 	u8                                 debug_str[24];
 	void                              *packet;
 	u32                                packet_size;
@@ -99,6 +100,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_rectangle          compose;
 	struct msm_vidc_power              power;
 	struct vidc_bus_vote_data          bus_data;
+	struct vidc_clock_scaling_data     clock_data;
 	struct msm_memory_pool             pool[MSM_MEM_POOL_MAX];
 	struct msm_vidc_buffers_info       buffers;
 	struct msm_vidc_mem_list_info      mem_info;

@@ -160,6 +160,8 @@ struct clock_info {
 	struct mmrm_client        *mmrm_client;
 #endif
 	struct list_head           residency_list;  /* list of struct clock_residency */
+	u32                        freq_count;
+	u64                       *freq;
 };
 
 struct clock_set {
@@ -216,11 +218,6 @@ struct frequency_table {
 	unsigned long freq;
 };
 
-struct freq_set {
-	struct frequency_table    *freq_tbl;
-	u32                        count;
-};
-
 struct device_region_info {
 	const char          *name;
 	phys_addr_t          phy_addr;
@@ -244,7 +241,6 @@ struct msm_vidc_resource {
 	struct reset_set           reset_set;
 	struct subcache_set        subcache_set;
 	struct context_bank_set    context_bank_set;
-	struct freq_set            freq_set;
 	struct device_region_set   device_region_set;
 	int                        fw_cookie;
 };
@@ -275,7 +271,7 @@ struct msm_vidc_resources_ops {
 	int (*llcc)(struct msm_vidc_core *core, bool enable);
 	int (*set_bw)(struct msm_vidc_core *core, unsigned long bw_ddr,
 		      unsigned long bw_llcc);
-	int (*set_clks)(struct msm_vidc_core *core, u64 rate);
+	int (*set_clks)(struct msm_vidc_core *core, int idx);
 
 	int (*clk_disable)(struct msm_vidc_core *core, const char *name);
 	int (*clk_enable)(struct msm_vidc_core *core, const char *name);
@@ -289,5 +285,9 @@ struct msm_vidc_resources_ops {
 };
 
 const struct msm_vidc_resources_ops *get_resources_ops(void);
+unsigned long get_clock_freq(struct msm_vidc_core *core, const char *clk_name, int idx);
+unsigned long get_clock_freq_count(struct msm_vidc_core *core, const char *clk_name);
+int get_min_clock_index(struct msm_vidc_core *core);
+int get_max_clock_index(struct msm_vidc_core *core);
 
 #endif

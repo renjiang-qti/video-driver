@@ -145,11 +145,11 @@ static struct color_format_info color_format_data_canoe[] = {
 static struct color_primaries_info color_primaries_data_canoe[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
-		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_UNSPECIFIED,
+		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
 	},
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_REC709,
@@ -196,11 +196,11 @@ static struct color_primaries_info color_primaries_data_canoe[] = {
 static struct transfer_char_info transfer_char_data_canoe[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
-		.vidc_transfer_char  = MSM_VIDC_TRANSFER_UNSPECIFIED,
+		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
 	},
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_709,
@@ -263,11 +263,11 @@ static struct transfer_char_info transfer_char_data_canoe[] = {
 static struct matrix_coeff_info matrix_coeff_data_canoe[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
-		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_UNSPECIFIED,
+		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
 	},
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_VIDC_SRGB_OR_SMPTE_ST428,
@@ -1985,7 +1985,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_LTR_MARK_USE_DETAILS,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SEQ_HDR_NAL, ENC, H264 | HEVC | HEIC,
+	{META_SEQ_HDR_NAL, ENC, H264 | HEVC | HEIC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2033,7 +2033,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_CONEALED_MB_COUNT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_HIST_INFO, DEC, HEVC | AV1 | VP9,
+	{META_HIST_INFO, DEC, HEVC | AV1 | VP9 | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2041,7 +2041,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_HISTOGRAM_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_HIST_INFO, ENC, HEVC,
+	{META_HIST_INFO, ENC, HEVC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2049,7 +2049,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_HISTOGRAM_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_HDR10_MAX_RGB_INFO, ENC, HEVC,
+	{META_HDR10_MAX_RGB_INFO, ENC, HEVC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2082,7 +2082,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_PICTURE_TYPE,
 		CAP_FLAG_BITMASK | CAP_FLAG_META | CAP_FLAG_DYNAMIC_ALLOWED},
 
-	{META_SEI_MASTERING_DISP, ENC, HEVC | HEIC,
+	{META_SEI_MASTERING_DISP, ENC, HEVC | HEIC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE |
 		MSM_VIDC_META_DYN_ENABLE | MSM_VIDC_META_TX_INPUT,
@@ -2091,7 +2091,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_SEI_MASTERING_DISPLAY_COLOUR,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SEI_MASTERING_DISP, DEC, HEVC | HEIC | AV1,
+	{META_SEI_MASTERING_DISP, DEC, HEVC | HEIC | AV1 | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT |
 			MSM_VIDC_META_RX_OUTPUT,
@@ -2100,7 +2100,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_SEI_MASTERING_DISPLAY_COLOUR,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SEI_CLL, ENC, HEVC | HEIC,
+	{META_SEI_CLL, ENC, HEVC | HEIC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE |
 		MSM_VIDC_META_DYN_ENABLE | MSM_VIDC_META_TX_INPUT,
@@ -2109,7 +2109,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_SEI_CONTENT_LIGHT_LEVEL,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_SEI_CLL, DEC, HEVC | HEIC | AV1,
+	{META_SEI_CLL, DEC, HEVC | HEIC | AV1 | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT |
 			MSM_VIDC_META_RX_OUTPUT,
@@ -2118,7 +2118,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_SEI_CONTENT_LIGHT_LEVEL,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_HDR10PLUS, ENC, HEVC | HEIC,
+	{META_HDR10PLUS, ENC, HEVC | HEIC | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE |
 		MSM_VIDC_META_DYN_ENABLE | MSM_VIDC_META_TX_INPUT,
@@ -2127,7 +2127,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_SEI_HDR10PLUS_USERDATA,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_HDR10PLUS, DEC, HEVC | HEIC | AV1,
+	{META_HDR10PLUS, DEC, HEVC | HEIC | AV1 | APV,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT |
 			MSM_VIDC_META_RX_OUTPUT,
@@ -2968,6 +2968,31 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		msm_vidc_adjust_hdr10_max_rgb_info,
 		NULL},
+
+	{META_SEI_MASTERING_DISP, ENC, APV,
+		{0},
+		NULL,
+		NULL},
+
+	{META_SEI_CLL, ENC, APV,
+		{0},
+		NULL,
+		NULL},
+
+	{META_HDR10PLUS, ENC, APV,
+		{0},
+		NULL,
+		NULL},
+
+	{META_HIST_INFO, ENC, APV,
+		{0},
+		NULL,
+		NULL},
+
+	{META_HDR10_MAX_RGB_INFO, ENC, APV,
+		{0},
+		NULL,
+		NULL},
 };
 
 /* Default UBWC config for LPDDR5 */
@@ -3006,20 +3031,28 @@ static const struct pd_table canoe_pd_table[] = {
 
 /* name, clock id, scaling */
 static const struct clk_table canoe_clk_table[] = {
-	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
-	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
-	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
-	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0 },
-	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
-	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
-	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
-	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
-	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1 },
-	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1 },
-	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1 },
-	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1 },
+	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0},
+	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0},
+	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0},
+	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0},
+	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0},
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0},
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0},
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0},
+	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0},
+	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0},
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {800000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
+	 (u64[]) {1260000000, 1104000000, 800000000, 666000000,
+		  630000000,  507000000,  360000000}, 7},
 };
 
 /* name, exclusive_release */
@@ -3052,11 +3085,6 @@ const struct context_bank_table canoe_context_bank_table[] = {
 		MSM_VIDC_SECURE_NONPIXEL,      0 },
 	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0,
 		MSM_VIDC_SECURE_BITSTREAM,     0 },
-};
-
-/* freq */
-static struct freq_table canoe_freq_table[] = {
-    {800000000}, {630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
@@ -3218,13 +3246,12 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(canoe_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = canoe_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(canoe_freq_table),
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
+	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
-	.supports_mmrm = 1,
+	.supports_mmrm = 0,
 
 	/* caps related resorces */
 	.core_data = core_data_canoe,

@@ -527,9 +527,10 @@ static int calculate_apv_freq(struct api_calculation_input codec_input,
 
 	fmin = (fmin + 99999) / 1000 / 1000;
 
-	codec_output->vpp_min_freq = (u32)((vpp_hw_min_frequency + 99999) / 1000 / 1000);
+	codec_output->apv_min_freq = (u32)((vpp_hw_min_frequency + 99999) / 1000 / 1000);
 	codec_output->vsp_min_freq = vsp_hw_min_frequency / 1000 / 1000;
 	codec_output->tensilica_min_freq = (tensilica_min_frequency + 99999) / 1000 / 1000;
+	codec_output->vpp_min_freq = 0;
 	codec_output->hw_min_freq = fmin;
 
 	return 0;
@@ -646,6 +647,7 @@ static int calculate_vpp_min_freq(struct api_calculation_input codec_input,
 	codec_output->vpp_min_freq = (vpp_hw_min_frequency + 99999) / 1000 / 1000;
 	codec_output->vsp_min_freq = vsp_hw_min_frequency / 1000 / 1000;
 	codec_output->tensilica_min_freq = (tensilica_min_frequency + 99999) / 1000 / 1000;
+	codec_output->apv_min_freq = 0;
 	codec_output->hw_min_freq = fmin;
 
 	return 0;
