@@ -188,14 +188,14 @@ int msm_vidc_mem_protect_video_regions_v1(struct msm_vidc_core *core)
 	u32 cp_start = 0, cp_size = 0, cp_nonpixel_start = 0, cp_nonpixel_size = 0;
 
 	venus_hfi_for_each_context_bank(core, cb) {
-		if (cb->region == MSM_VIDC_NON_SECURE) {
+		if (cb->region & MSM_VIDC_NON_SECURE) {
 			cp_size = cb->addr_range.start;
 
 			d_vpr_h("%s: cp_size: %#x\n",
 				__func__, cp_size);
 		}
 
-		if (cb->region == MSM_VIDC_SECURE_NONPIXEL) {
+		if (cb->region & MSM_VIDC_SECURE_NONPIXEL) {
 			cp_nonpixel_start = cb->addr_range.start;
 			cp_nonpixel_size = cb->addr_range.size;
 
@@ -227,9 +227,9 @@ int msm_vidc_mem_protect_video_regions_v2(struct msm_vidc_core *core)
 
 	venus_hfi_for_each_context_bank(core, cb) {
 
-		if (cb->region == MSM_VIDC_NON_SECURE)
+		if (cb->region & MSM_VIDC_NON_SECURE)
 			region = VIDEO_REGION_VM0_NONSECURE_NP_ID;
-		else if (cb->region == MSM_VIDC_SECURE_NONPIXEL)
+		else if (cb->region & MSM_VIDC_SECURE_NONPIXEL)
 			region = VIDEO_REGION_VM0_SECURE_NP_ID;
 		else
 			continue;
