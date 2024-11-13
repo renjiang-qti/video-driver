@@ -170,17 +170,17 @@ static u32 msm_vidc_decoder_line_size_iris4(struct msm_vidc_inst *inst)
 	out_min_count = inst->buffers.output.min_count;
 	out_min_count = max(vpp_delay + 1, out_min_count);
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_LINE_H264D(size, width, height, is_opb,
-			num_vpp_pipes);
+		HFI_BUFFER_LINE_H264D_IRIS4(size, width, height, is_opb,
+					    num_vpp_pipes);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_LINE_H265D(size, width, height, is_opb,
-			num_vpp_pipes);
+		HFI_BUFFER_LINE_H265D_IRIS4(size, width, height, is_opb,
+					    num_vpp_pipes);
 	else if (inst->codec == MSM_VIDC_VP9)
-		HFI_BUFFER_LINE_VP9D(size, width, height, out_min_count,
-			is_opb, num_vpp_pipes);
+		HFI_BUFFER_LINE_VP9D_IRIS4(size, width, height, 0, 0,
+					   is_opb, num_vpp_pipes);
 	else if (inst->codec == MSM_VIDC_AV1)
-		HFI_BUFFER_LINE_AV1D(size, width, height, is_opb,
-			num_vpp_pipes);
+		HFI_BUFFER_LINE_AV1D_IRIS4(size, width, height, is_opb,
+					   num_vpp_pipes);
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
@@ -215,7 +215,7 @@ static u32 msm_vidc_decoder_persist_size_iris4(struct msm_vidc_inst *inst)
 	} else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
 		HFI_BUFFER_PERSIST_H265D(size, rpu_enabled);
 	} else if (inst->codec == MSM_VIDC_VP9) {
-		HFI_BUFFER_PERSIST_VP9D(size);
+		HFI_BUFFER_PERSIST_VP9D_IRIS4(size);
 	} else if (inst->codec == MSM_VIDC_AV1) {
 		/*
 		 * When DRAP is enabled, COMV buffer is part of PERSIST buffer and
