@@ -3224,7 +3224,7 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
-	.supports_mmrm = 1,
+	.supports_mmrm = 0,
 
 	/* caps related resorces */
 	.core_data = core_data_canoe,
