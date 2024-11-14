@@ -29,17 +29,21 @@
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8000800010
 #define MAX_BASE_LAYER_PRIORITY_ID 63
 #define MAX_OP_POINT            31
-#define MAX_BITRATE             245000000
+#define MAX_BITRATE             400000000
+#define MAX_BITRATE_HEVC        180000000
+#define MAX_BITRATE_H264        220000000
 #define DEFAULT_BITRATE         20000000
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
-#define MAXIMUM_DEC_FPS         960
+#define MAXIMUM_DEC_FPS         480
 #define MAX_QP                  51
 #define DEFAULT_QP              20
 #define MAX_CONSTANT_QUALITY    100
 #define MIN_SLICE_BYTE_SIZE     512
-#define MAX_SLICE_BYTE_SIZE       \
-	((MAX_BITRATE) >> 3)
+#define MAX_SLICE_BYTE_SIZE_H264       \
+	((MAX_BITRATE_H264) >> 3)
+#define MAX_SLICE_BYTE_SIZE_HEVC       \
+	((MAX_BITRATE_HEVC) >> 3)
 #define MAX_SLICE_MB_SIZE         \
 	(((4096 + 15) >> 4) * ((2304 + 15) >> 4))
 
@@ -807,8 +811,15 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 	/* Enc: Keeping CABAC and CAVLC as same bitrate.
 	 * Dec: there's no use of Bitrate cap
 	 */
-	{BIT_RATE, ENC, H264 | HEVC,
-		1, MAX_BITRATE, 1, DEFAULT_BITRATE,
+	{BIT_RATE, ENC, H264,
+		1, MAX_BITRATE_H264, 1, DEFAULT_BITRATE,
+		V4L2_CID_MPEG_VIDEO_BITRATE,
+		HFI_PROP_TOTAL_BITRATE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
+			CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{BIT_RATE, ENC, HEVC,
+		1, MAX_BITRATE_HEVC, 1, DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -851,10 +862,13 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		220000000, 1, 220000000},
 
 	{ALLINTRA_MAX_BITRATE, ENC, H264 | HEVC, 0,
-		245000000, 1, 245000000},
+		400000000, 1, 400000000},
 
-	{LOWLATENCY_MAX_BITRATE, ENC, H264 | HEVC, 0,
+	{LOWLATENCY_MAX_BITRATE, ENC, H264, 0,
 		70000000, 1, 70000000},
+
+	{LOWLATENCY_MAX_BITRATE, ENC, HEVC, 0,
+		80000000, 1, 80000000},
 
 	{NUM_COMV, DEC, CODECS_ALL,
 		0, INT_MAX, 1, 0},
@@ -1613,8 +1627,15 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		0,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{SLICE_MAX_BYTES, ENC, H264 | HEVC,
-		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE,
+	{SLICE_MAX_BYTES, ENC, H264,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_H264,
+		1, MIN_SLICE_BYTE_SIZE,
+		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
+		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	{SLICE_MAX_BYTES, ENC, HEVC,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_HEVC,
 		1, MIN_SLICE_BYTE_SIZE,
 		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
 		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
@@ -2611,7 +2632,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		NULL,
 		msm_vidc_set_u32_enum},
 
-	{LF_MODE, ENC, CODECS_ALL,
+	{LF_MODE, ENC, HEVC | HEIC | H264,
 		{0},
 		NULL,
 		msm_vidc_set_deblock_mode},
@@ -2850,7 +2871,6 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
 	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0b_freerun_clk", VIDEO_CC_MVS0B_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
 	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
@@ -2867,7 +2887,6 @@ static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_axi0_reset",                   0  },
 	{ "video_axi1_reset",                   0  },
 	{ "video_mvs0_freerun_reset",           0  },
-	{ "video_mvs0b_freerun_reset",          0  },
 	{ "video_mvs0c_freerun_reset",          0  },
 };
 
