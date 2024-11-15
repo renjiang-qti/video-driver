@@ -30,6 +30,7 @@
 #include "resources.h"
 #include "firmware.h"
 #include "msm_vidc_hw_virt.h"
+#include <linux/reboot.h>
 
 #define BASE_DEVICE_NUMBER 32
 
@@ -812,6 +813,33 @@ static int msm_vidc_remove(struct platform_device *pdev)
 }
 #endif
 
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+static int msm_vidc_reboot_notify(
+		struct notifier_block *nfb, unsigned long action, void *data)
+{
+	struct msm_vidc_core *core = NULL;
+
+	d_vpr_h("%s(): %ld", __func__, action);
+	core = g_core;
+
+	switch (action) {
+	case SYS_DOWN:
+	case SYS_HALT:
+	case SYS_POWER_OFF:
+		if (core && core->full_virtualization_data.virtualization_en)
+			core->full_virtualization_data.gvm_deinit = 1;
+		msm_vidc_core_deinit(core, true);
+		break;
+	}
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block msm_vidc_reboot_nb = {
+	.notifier_call = msm_vidc_reboot_notify,
+};
+#endif
+
 static int msm_vidc_probe_video_device(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -880,6 +908,10 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		d_vpr_e("Failed to create attributes\n");
 		goto init_group_failed;
 	}
+
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	register_reboot_notifier(&msm_vidc_reboot_nb);
+#endif
 
 	rc = msm_vidc_check_mmrm_support(core);
 	if (rc) {
