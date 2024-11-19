@@ -1,4 +1,4 @@
-load("//build/kernel/kleaf:kernel.bzl", "ddk_module", "ddk_submodule")
+load("//build/kernel/kleaf:kernel.bzl", "ddk_module", "kernel_module_group")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 
 def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps):
@@ -25,7 +25,7 @@ def _register_module_to_map(module_map, name, path, config_option, srcs, config_
 def _get_config_choices(map, options):
     choices = []
     for option in map:
-        choices.extend(map[option].get(option in options,[]))
+        choices.extend(map[option].get(option in options, []))
     return choices
 
 def _get_kernel_build_options(modules, config_options):
@@ -35,7 +35,6 @@ def _get_kernel_build_options(modules, config_options):
 
 def _get_kernel_build_module_srcs(module, options, formatter):
     srcs = module.srcs + _get_config_choices(module.config_srcs, options)
-    print("-",module.name,",",module.config_option,",srcs =",srcs)
     module_path = "{}/".format(module.path) if module.path else ""
     globbed_srcs = native.glob(["{}{}".format(module_path, formatter(src)) for src in srcs])
     return globbed_srcs
@@ -45,25 +44,34 @@ def _get_kernel_build_module_deps(module, options, formatter):
 
 def video_module_entry(hdrs = []):
     module_map = {}
+
     def register(name, path = None, config_option = None, srcs = [], config_srcs = {}, deps = [], config_deps = {}):
         _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps)
+
     return struct(
         register = register,
         get = module_map.get,
         hdrs = hdrs,
-        module_map = module_map
+        module_map = module_map,
     )
 
 def define_target_variant_modules(target, variant, registry, modules, config_options = []):
     kernel_build = "{}_{}".format(target, variant)
-    kernel_build_label = "//msm-kernel:{}".format(kernel_build)
+    kernel_build_label = "//soc-repo:{}_base_kernel".format(kernel_build)
     modules = [registry.get(module_name) for module_name in modules]
     options = _get_kernel_build_options(modules, config_options)
-    build_print = lambda message : print("{}: {}".format(kernel_build, message))
-    formatter = lambda s : s.replace("%b", kernel_build).replace("%t", target)
-    headers = ["//msm-kernel:all_headers"] +  registry.hdrs + [":{}_headers".format(target)]
+    build_print = lambda message: print("{}: {}".format(kernel_build, message))
+    formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
+    headers = ["//soc-repo:all_headers"] + registry.hdrs + [":{}_headers".format(target)]
     print(headers)
     all_module_rules = []
+    all_module_deps = [
+                       "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
+                       "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+                       ]
 
     for module in modules:
         rule_name = "{}_{}".format(kernel_build, module.name)
@@ -72,23 +80,24 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
         if not module_srcs:
             continue
 
-        ddk_submodule(
+        ddk_module(
             name = rule_name,
             srcs = module_srcs,
             out = "{}.ko".format(module.name),
-            deps = headers + _get_kernel_build_module_deps(module, options, formatter),
+            deps = headers + all_module_deps + _get_kernel_build_module_deps(module, options, formatter),
             local_defines = options.keys(),
+            kernel_build = kernel_build_label,
         )
         all_module_rules.append(rule_name)
 
-    ddk_module(
-        name = "{}_video_driver_modules".format(kernel_build),
-        kernel_build = kernel_build_label,
-        deps = all_module_rules,
+    kernel_module_group(
+        name = "{}_video_modules".format(kernel_build),
+        srcs = all_module_rules,
     )
+
     copy_to_dist_dir(
         name = "{}_video_driver_modules_dist".format(kernel_build),
-        data = [":{}_video_driver_modules".format(kernel_build)],
+        data = [":{}_video_modules".format(kernel_build)],
         dist_dir = "out/target/product/{}/dlkm/lib/modules/".format(target),
         flat = True,
         wipe_dist_dir = False,
@@ -97,76 +106,78 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
         log = "info",
     )
 
-def define_lunch_target_variant_modules(target, variant, registry, modules, lunch_target=None):
+def define_lunch_target_variant_modules(target, variant, registry, modules, lunch_target = None):
     print(lunch_target)
 
     kernel_build = "{}_{}".format(target, variant)
-    print("kernel_build: "+ kernel_build)
+    print("kernel_build: " + kernel_build)
 
-    kernel_build_label = "//msm-kernel:{}".format(kernel_build)
+    kernel_build_label = "//soc-repo:{}_base_kernel".format(kernel_build)
     print(kernel_build_label)
 
     if lunch_target != None:
         kernel_build = "{}_{}_{}".format(target, variant, lunch_target)
-        print("kernel_build: "+ kernel_build)
-        ddk_mod_name = "{}_video_driver_modules".format(kernel_build)
-        print("ddk_mod_name : " + ddk_mod_name)
+        print("kernel_build: " + kernel_build)
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
-        data = [":{}_video_driver_modules".format(kernel_build)]
         config_options = [
             "CONFIG_MSM_MMRM",
-            "CONFIG_MSM_VIDC_{}".format(lunch_target.upper())
+            "CONFIG_MSM_VIDC_{}".format(lunch_target.upper()),
         ]
     else:
-        ddk_mod_name = "{}_video_driver_modules".format(kernel_build)
-        print("ddk_mod_name: " + ddk_mod_name)
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
-        data = [":{}_video_driver_modules".format(kernel_build)]
         config_options = [
             "CONFIG_MSM_MMRM",
-            "CONFIG_MSM_VIDC_{}".format(target.upper())
+            "CONFIG_MSM_VIDC_{}".format(target.upper()),
         ]
 
     modules = [registry.get(module_name) for module_name in modules]
 
     options = _get_kernel_build_options(modules, config_options)
 
-    build_print = lambda message : print("{}: {}".format(kernel_build, message))
+    build_print = lambda message: print("{}: {}".format(kernel_build, message))
 
-    formatter = lambda s : s.replace("%b", kernel_build).replace("%t", target)
+    formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
 
-    headers = ["//msm-kernel:all_headers"] +  registry.hdrs + [":{}_headers".format(target)]
+    headers = ["//soc-repo:all_headers"] + registry.hdrs + [":{}_headers".format(target)]
     print(headers)
 
     all_module_rules = []
+    all_module_deps = [
+                       "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
+                       "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
+                       "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+                       ]
 
     for module in modules:
-        print("Module name: "+ module.name)
+        print("Module name: " + module.name)
         rule_name = "{}_{}".format(kernel_build, module.name)
         module_srcs = _get_kernel_build_module_srcs(module, options, formatter)
 
         if not module_srcs:
             continue
 
-        ddk_submodule(
+        ddk_module(
             name = rule_name,
             srcs = module_srcs,
             out = "{}.ko".format(module.name),
-            deps = headers + _get_kernel_build_module_deps(module, options, formatter),
+            deps = headers + all_module_deps + _get_kernel_build_module_deps(module, options, formatter),
+            kernel_build = kernel_build_label,
             local_defines = options.keys(),
         )
         all_module_rules.append(rule_name)
 
-    ddk_module(
-        name = ddk_mod_name,
-        kernel_build = kernel_build_label,
-        deps = all_module_rules,
+    kernel_module_group(
+        name = "{}_video_modules".format(kernel_build),
+        srcs = all_module_rules,
     )
+
 
     copy_to_dist_dir(
         name = dist_target_name,
-        data = data,
+        data = [":{}_video_modules".format(kernel_build)],
         dist_dir = "out/target/product/{}/dlkm/lib/modules/".format(target),
         flat = True,
         wipe_dist_dir = False,
@@ -177,4 +188,4 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 
 def define_consolidate_gki_modules(target, registry, modules, config_options = []):
     define_target_variant_modules(target, "consolidate", registry, modules, config_options)
-    define_target_variant_modules(target, "gki", registry, modules, config_options)
+    define_target_variant_modules(target, "perf", registry, modules, config_options)

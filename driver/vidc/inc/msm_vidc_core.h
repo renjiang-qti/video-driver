@@ -75,13 +75,13 @@ struct msm_vidc_core {
 	struct list_head                       dangling_instances;
 	struct dentry                         *debugfs_parent;
 	struct dentry                         *debugfs_root;
-	char                                   fw_version[MAX_NAME_LENGTH];
+	char                                   fw_version[MAX_MSM_VIDC_NAME_LENGTH];
 	enum msm_vidc_core_state               state;
 	int                                  (*state_handle)(struct msm_vidc_core *core,
 							     enum msm_vidc_core_event_type type,
 							     struct msm_vidc_event_data *data);
 	enum msm_vidc_core_sub_state           sub_state;
-	char                                   sub_state_name[MAX_NAME_LENGTH];
+	char                                   sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	struct mutex                           lock;
 	struct msm_vidc_resource              *resource;
 	struct msm_vidc_platform              *platform;

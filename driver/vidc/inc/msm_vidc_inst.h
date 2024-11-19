@@ -77,7 +77,7 @@ struct msm_vidc_inst {
 							 enum msm_vidc_event event,
 							 void *data);
 	enum msm_vidc_sub_state            sub_state;
-	char                               sub_state_name[MAX_NAME_LENGTH];
+	char                               sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	enum msm_vidc_domain_type          domain;
 	enum msm_vidc_codec_type           codec;
 	void                              *core;
