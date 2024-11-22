@@ -1665,7 +1665,8 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 #define APV_NUM_SLIST APV_NUM_HW_PIC_BUF
 
 #define HFI_BUFFER_PERSIST_APVD(_size) { \
-		_size = (HFI_ALIGN(APV_NUM_SLIST * APV_SIZE_QM_ALIGN, VENUS_DMA_ALIGNMENT)); \
+		_size = HFI_ALIGN((APV_NUM_SLIST * APV_SIZE_QM_ALIGN) + \
+			HDR10_HIST_EXTRADATA_SIZE, VENUS_DMA_ALIGNMENT); \
 	}
 
 #define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \
