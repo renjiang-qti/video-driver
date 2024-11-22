@@ -4317,10 +4317,10 @@ static const struct bw_table kera_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name, hw_trigger */
-static const struct regulator_table kera_regulator_table[] = {
-	{ "iris-ctl", 0 },
-	{ "vcodec",   1 },
+/* name */
+static const struct pd_table kera_pd_table[] = {
+	{ "iris-ctl" },
+	{ "vcodec" },
 };
 
 /* name, clock id, scaling */
@@ -4514,8 +4514,8 @@ static const struct msm_vidc_platform_data kera_data_v0 = {
 	/* resources dependent on other module */
 	.bw_tbl = kera_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(kera_bw_table),
-	.regulator_tbl = kera_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(kera_regulator_table),
+	.pd_tbl = kera_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(kera_pd_table),
 	.clk_tbl = kera_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(kera_clk_table),
 	.clk_rst_tbl = kera_clk_reset_table,
@@ -4591,8 +4591,8 @@ static const struct msm_vidc_platform_data kera_data_v1 = {
 	/* resources dependent on other module */
 	.bw_tbl = kera_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(kera_bw_table),
-	.regulator_tbl = kera_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(kera_regulator_table),
+	.pd_tbl = kera_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(kera_pd_table),
 	.clk_tbl = kera_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(kera_clk_table),
 	.clk_rst_tbl = kera_clk_reset_table,
