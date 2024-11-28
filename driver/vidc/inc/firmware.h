@@ -14,5 +14,6 @@ int fw_unload(struct msm_vidc_core *core);
 int fw_suspend(struct msm_vidc_core *core);
 int fw_resume(struct msm_vidc_core *core);
 void fw_coredump(struct msm_vidc_core *core);
+void msm_vidc_md_video_queues_dump(struct msm_vidc_core *core);
 
 #endif
