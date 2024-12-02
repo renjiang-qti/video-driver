@@ -636,8 +636,14 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 				ctrl_cfg.type = V4L2_CTRL_TYPE_MENU;
 			else if (cap[idx].flags & CAP_FLAG_BITMASK)
 				ctrl_cfg.type = V4L2_CTRL_TYPE_BITMASK;
+			else if (cap[idx].flags & CAP_FLAG_U8)
+				ctrl_cfg.type = V4L2_CTRL_TYPE_U8;
 			else
 				ctrl_cfg.type = V4L2_CTRL_TYPE_INTEGER;
+			if (ctrl_cfg.type & V4L2_CTRL_TYPE_U8) {
+				ctrl_cfg.elem_size = sizeof(u8);
+				ctrl_cfg.dims[0] = ctrl_cfg.max;
+			}
 			if (is_meta_cap(inst, idx)) {
 				/* bitmask is expected to be enabled for meta controls */
 				if (ctrl_cfg.type != V4L2_CTRL_TYPE_BITMASK) {

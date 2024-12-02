@@ -347,6 +347,7 @@ enum msm_vidc_metadata_bits {
 	CAP(OUTPUT_TX_FENCE_ID)                   \
 	CAP(INPUT_RX_FENCE_FD)                    \
 	CAP(OUTPUT_TX_FENCE_FD)                   \
+	CAP(FENCE_INFO)                           \
 	CAP(TS_REORDER)                           \
 	CAP(HFLIP)                                \
 	CAP(VFLIP)                                \
@@ -686,6 +687,7 @@ enum msm_vidc_inst_capability_flags {
 	CAP_FLAG_BITMASK                 = BIT(5),
 	CAP_FLAG_VOLATILE                = BIT(6),
 	CAP_FLAG_META                    = BIT(7),
+	CAP_FLAG_U8                      = BIT(8),
 };
 
 struct msm_vidc_inst_cap {
@@ -958,6 +960,15 @@ struct msm_vidc_fence {
 	spinlock_t                      lock;
 	struct sync_file               *sync_file;
 	struct dma_fence               *imp_fence;
+};
+
+struct msm_vidc_fence_info {
+	u32 v4l2_type;
+	u32 index;
+	u32 num_rx_fds;
+	u32 num_tx_fds;
+	int fd[32];
+	u64 handle[32];
 };
 
 struct msm_vidc_mem {

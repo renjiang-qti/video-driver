@@ -244,6 +244,49 @@ enum v4l2_mpeg_vidc_av1_tier {
 /* Control to set output buffer RX fence (video device wait) type */
 #define V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE              (VIDC_BASE + 0x57)
 
+/* Control to queue fence fd array to Driver */
+#define V4L2_CID_MPEG_VIDC_FENCE_INFO                        (VIDC_BASE + 0x58)
+
+/**
+ * @struct v4l2_vidc_fence_info
+ * @brief Structure for managing fence file descriptors and handles
+ *
+ * Client will populate fields(v4l2_type, index, num_rx_fds & fd
+ * array) and queues to driver and driver extracts RX fence
+ * (video device wait) handles using fd array.
+ *
+ * Driver will internally allocates TX fence (video device signal)
+ * handles and associates file descriptors and also populates
+ * (num_tx_fds, fd and handle array), which client will use it during
+ * early input metadata done to send speculative output done.
+ *
+ * @var v4l2_vidc_fence_info::v4l2_type
+ *     The type of the V4L2 buffer (e.g., V4L2_BUF_TYPE_VIDEO_OUTPUT). (Input)
+ *
+ * @var v4l2_vidc_fence_info::index
+ *     The index of the buffer. (Input)
+ *
+ * @var v4l2_vidc_fence_info::num_rx_fds
+ *     The number of RX fences (video device wait). (Input)
+ *
+ * @var v4l2_vidc_fence_info::num_tx_fds
+ *     The number of TX fences (video device signal). (Output)
+ *
+ * @var v4l2_vidc_fence_info::fd
+ *     An array of file descriptors for the fences(RX/TX). (Input/Output)
+ *
+ * @var v4l2_vidc_fence_info::handle
+ *     An array of handles for the fences. (Output)
+ */
+struct v4l2_vidc_fence_info {
+	__u32 v4l2_type;      /* The type of the V4L2 buffer */
+	__u32 index;          /* V4L2 index of the buffer */
+	__u32 num_rx_fds;     /* The number of RX (video device wait) fences */
+	__u32 num_tx_fds;     /* The number of TX (video device signal) fences */
+	int fd[32];           /* An array of file descriptors for the fences (RX/TX) */
+	__u64 handle[32];     /* An array of handles (fence id) for the fences (TX) */
+};
+
 /* Profile information for APV */
 #define V4L2_CID_MPEG_VIDC_APV_PROFILE                       (VIDC_BASE + 0x60)
 enum v4l2_mpeg_vidc_apv_profile {

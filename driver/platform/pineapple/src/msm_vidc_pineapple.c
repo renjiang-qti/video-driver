@@ -647,6 +647,12 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		0,
 		CAP_FLAG_VOLATILE},
 
+	{FENCE_INFO, DEC|ENC, CODECS_ALL,
+		0, sizeof(struct v4l2_vidc_fence_info), 1, 0,
+		V4L2_CID_MPEG_VIDC_FENCE_INFO,
+		0,
+		CAP_FLAG_U8 | CAP_FLAG_DYNAMIC_ALLOWED},
+
 	/*
 	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
 	 * Driver will import fence_fd and uses underlyling fence.
@@ -2182,6 +2188,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 		{0},
 		NULL,
 		msm_vidc_set_u32},
+
+	{FENCE_INFO, DEC|ENC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_fence_info,
+		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
 		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,

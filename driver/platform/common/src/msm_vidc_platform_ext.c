@@ -14,6 +14,25 @@
 #include "msm_vidc_debug.h"
 #include "hfi_command.h"
 
+static void v4l2_fence_info_to_driver(
+	struct v4l2_vidc_fence_info *v4l2_finfo,
+	struct msm_vidc_fence_info *vidc_finfo)
+{
+	vidc_finfo->v4l2_type  = v4l2_finfo->v4l2_type;
+	vidc_finfo->index      = v4l2_finfo->index;
+	vidc_finfo->num_rx_fds = v4l2_finfo->num_rx_fds;
+	memcpy(&vidc_finfo->fd, &v4l2_finfo->fd, sizeof(int) * vidc_finfo->num_rx_fds);
+}
+
+static void v4l2_fence_info_from_driver(
+	struct v4l2_vidc_fence_info *v4l2_finfo,
+	struct msm_vidc_fence_info *vidc_finfo)
+{
+	v4l2_finfo->num_tx_fds = vidc_finfo->num_tx_fds;
+	memcpy(&v4l2_finfo->fd, &vidc_finfo->fd, sizeof(int) * v4l2_finfo->num_tx_fds);
+	memcpy(&v4l2_finfo->handle, &vidc_finfo->handle, sizeof(u64) * v4l2_finfo->num_tx_fds);
+}
+
 int msm_vidc_adjust_ir_period(void *instance, struct v4l2_ctrl *ctrl)
 {
 	s32 adjusted_value;
@@ -278,6 +297,30 @@ int msm_vidc_adjust_csc_custom_matrix(void *instance, struct v4l2_ctrl *ctrl)
 		adjusted_value = 0;
 
 	msm_vidc_update_cap_value(inst, CSC_CUSTOM_MATRIX, adjusted_value, __func__);
+
+	return 0;
+}
+
+int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct v4l2_vidc_fence_info *v4l2_finfo;
+	struct msm_vidc_fence_info vidc_finfo;
+
+	if (!ctrl)
+		return 0;
+
+	v4l2_finfo = (struct v4l2_vidc_fence_info *)ctrl->p_new.p;
+	i_vpr_e(inst,
+		"%s: v4l2_type %u, index %d, num_rx %d, num_tx %d\n",
+		__func__, v4l2_finfo->v4l2_type, v4l2_finfo->index,
+		v4l2_finfo->num_rx_fds, v4l2_finfo->num_tx_fds);
+
+	v4l2_fence_info_to_driver(v4l2_finfo, &vidc_finfo);
+	/**
+	 * Todo: add logic to populate msm_vidc_fence from vidc_finfo.
+	 */
+	v4l2_fence_info_from_driver(v4l2_finfo, &vidc_finfo);
 
 	return 0;
 }
