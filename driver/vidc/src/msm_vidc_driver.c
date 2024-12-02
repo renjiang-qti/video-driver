@@ -158,7 +158,7 @@ const char *v4l2_type_name(u32 port)
 	return "UNKNOWN";
 }
 
-bool msm_vidc_check_inpbuf_fence_allowed(struct msm_vidc_inst *inst)
+bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst)
 {
 	enum msm_vidc_fence_type type = get_fence_type(inst, MSM_VIDC_BUF_INPUT);
 	bool is_allowed = false;
@@ -300,13 +300,13 @@ static int msm_vidc_destroy_fence_array(struct msm_vidc_inst *inst, struct msm_v
 	bool is_fence_enabled = false;
 	int cnt, rc = 0;
 
-	if (is_input_buffer(buf->type) && is_inpbuf_fence_rx_enabled(inst)) {
+	if (is_input_buffer(buf->type) && is_input_rx_fence_enabled(inst)) {
 		fence_list = &inst->input_fence_list;
-		cap_id = INPBUF_FENCE_TYPE;
+		cap_id = INPUT_RX_FENCE_TYPE;
 		is_fence_enabled = true;
-	} else if (is_output_buffer(buf->type) && is_outbuf_fence_tx_enabled(inst)) {
+	} else if (is_output_buffer(buf->type) && is_output_tx_fence_enabled(inst)) {
 		fence_list = &inst->output_fence_list;
-		cap_id = OUTBUF_FENCE_TYPE;
+		cap_id = OUTPUT_TX_FENCE_TYPE;
 		is_fence_enabled = true;
 	}
 
@@ -350,11 +350,11 @@ static int msm_vidc_populate_fence_array(struct msm_vidc_inst *inst, struct msm_
 	bool is_fence_enabled = false;
 	int cnt, fence_count = 0, rc = 0;
 
-	if (is_input_buffer(buf->type) && is_inpbuf_fence_rx_enabled(inst)) {
+	if (is_input_buffer(buf->type) && is_input_rx_fence_enabled(inst)) {
 		fence_list = &inst->input_fence_list;
 		fence_count = 1;
 		is_fence_enabled = true;
-	} else if (is_output_buffer(buf->type) && is_outbuf_fence_tx_enabled(inst)) {
+	} else if (is_output_buffer(buf->type) && is_output_tx_fence_enabled(inst)) {
 		fence_list = &inst->output_fence_list;
 		fence_count = is_early_notify_enabled(inst) ?
 			(int)inst->capabilities[EARLY_NOTIFY_FENCE_COUNT].value : 1;
@@ -1001,7 +1001,7 @@ bool msm_vidc_allow_metadata_subscription(struct msm_vidc_inst *inst, u32 cap_id
 		case META_SEI_MASTERING_DISP:
 		case META_SEI_CLL:
 		case META_HDR10PLUS:
-			if (!is_outbuf_fence_tx_enabled(inst)) {
+			if (!is_output_tx_fence_enabled(inst)) {
 				i_vpr_h(inst,
 					"%s: cap: %24s not allowed as output buffer fence is disabled\n",
 					__func__, cap_name(cap_id));
@@ -1043,10 +1043,10 @@ bool msm_vidc_allow_property(struct msm_vidc_inst *inst, u32 hfi_id)
 			is_allowed = false;
 		break;
 	case HFI_PROP_FENCE_OUTPUT:
-		if (!is_outbuf_fence_tx_enabled(inst)) {
+		if (!is_output_tx_fence_enabled(inst)) {
 			i_vpr_h(inst,
 				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
-				__func__, cap_name(META_OUTBUF_FENCE));
+				__func__, cap_name(META_OUTPUT_TX_FENCE));
 			is_allowed = false;
 		}
 		break;
@@ -1620,7 +1620,7 @@ static int msm_vidc_flush_fences(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-static int msm_vidc_get_outbuf_fence_fd(struct msm_vidc_inst *inst, int *fence_fd)
+static int msm_vidc_get_output_tx_fence_fd(struct msm_vidc_inst *inst, int *fence_fd)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct msm_vidc_fence *fence = NULL;
@@ -1628,7 +1628,7 @@ static int msm_vidc_get_outbuf_fence_fd(struct msm_vidc_inst *inst, int *fence_f
 	int rc = 0;
 
 	*fence_fd = INVALID_FD;
-	fence_id = (u64)((u32)inst->capabilities[OUTBUF_FENCE_ID].value);
+	fence_id = (u64)((u32)inst->capabilities[OUTPUT_TX_FENCE_ID].value);
 	fence = msm_vidc_get_fence_from_id(inst, &inst->output_fence_list, fence_id);
 	if (!fence) {
 		i_vpr_l(inst, "%s: could not find matching fence for fence id %llu\n",
@@ -1676,8 +1676,8 @@ int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 		i_vpr_h(inst, "%s: film grain present: %d\n",
 			 __func__, ctrl->val);
 		break;
-	case OUTBUF_FENCE_FD:
-		rc = msm_vidc_get_outbuf_fence_fd(inst, &ctrl->val);
+	case OUTPUT_TX_FENCE_FD:
+		rc = msm_vidc_get_output_tx_fence_fd(inst, &ctrl->val);
 		if (!rc)
 			i_vpr_l(inst, "%s: output fence fd: %d\n",
 				__func__, ctrl->val);

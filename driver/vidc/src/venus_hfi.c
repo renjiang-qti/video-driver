@@ -484,6 +484,14 @@ static int __suspend(struct msm_vidc_core *core)
 
 	d_vpr_h("Entering suspend\n");
 
+	/*
+	 * please note, suspend/resume is handled differently when full
+	 * virtualization is enabled, and fw code is skipped. please do not
+	 * add new suspend code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		return rc;
+
 	rc = fw_suspend(core);
 	if (rc) {
 		d_vpr_e("Failed to suspend video core %d\n", rc);
@@ -516,6 +524,15 @@ static int __resume(struct msm_vidc_core *core)
 		return rc;
 
 	d_vpr_h("Resuming from power collapse\n");
+
+	/*
+	 * please note, suspend/resume is handled differently when full
+	 * virtualization is enabled, and fw code is skipped. please do not
+	 * add new resume code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		return rc;
+
 	/* reset handoff done from core sub_state */
 	rc = msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
 	if (rc)
@@ -896,6 +913,38 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 	if (rc)
 		goto error;
 
+	/*
+	 * please note, when full virtualization is enabled, most of the init
+	 * code is skipped using the conditional block below. please do not
+	 * add any new initialization code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en) {
+		if (!core->full_virtualization_data.is_gvm_open) {
+			d_vpr_h("%s: Hardware virtualization enabled.\n"
+				"Calling open_gvm\n", __func__);
+			rc = virtio_video_msm_cmd_open_gvm(
+				core->full_virtualization_data.vmid,
+				core->capabilities[NUM_VPU].value,
+				&core->full_virtualization_data.device_core_mask);
+			if (rc) {
+				d_vpr_e("%s: open_gvm failed\n", __func__);
+				goto error;
+			}
+			core->full_virtualization_data.is_gvm_open = 1;
+
+			/* set up core state and substate */
+			msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
+				__func__);
+			msm_vidc_change_core_sub_state(core, 0,
+				CORE_SUBSTATE_POWER_ENABLE, __func__);
+		}
+		/*
+		 * skip core init in hw virtualization case, as pvm will do
+		 * core_init on behalf of gvm
+		 */
+		return 0;
+	}
+
 	rc = __load_fw(core);
 	if (rc)
 		goto error;
@@ -950,6 +999,33 @@ int venus_hfi_core_deinit(struct msm_vidc_core *core, bool force)
 
 	if (is_core_state(core, MSM_VIDC_CORE_DEINIT))
 		return 0;
+
+	/*
+	 * please note, when full virtualization is enabled, most of the init
+	 * code is skipped using the conditional block below. please do not
+	 * add any new deinit code above this.
+	 */
+	if (core->full_virtualization_data.virtualization_en) {
+		if (core->full_virtualization_data.is_gvm_open &&
+			core->full_virtualization_data.gvm_deinit) {
+			/* close gvm */
+			virtio_video_msm_cmd_close_gvm();
+			core->full_virtualization_data.is_gvm_open = 0;
+			core->full_virtualization_data.gvm_deinit = 0;
+
+			/* update core state and clear all substates */
+			msm_vidc_change_core_sub_state(core,
+				CORE_SUBSTATE_MAX - 1, 0, __func__);
+			msm_vidc_change_core_state(core,
+				MSM_VIDC_CORE_DEINIT, __func__);
+		}
+		/*
+		 * skip core deinit in hw virtualization case, as pvm will do so
+		 * on behalf of gvm
+		 */
+		return 0;
+	}
+
 	__resume(core);
 	__flush_debug_queue(core, (!force ? core->packet : NULL), core->packet_size);
 	__release_subcaches(core);
@@ -1095,6 +1171,10 @@ int venus_hfi_trigger_ssr(struct msm_vidc_core *core, u32 type,
 	int rc = 0;
 	u32 payload[2];
 
+	/* If hw virtualization is enabled, skip this. */
+	if (core->full_virtualization_data.virtualization_en)
+		return 0;
+
 	/*
 	 * call resume before preparing ssr hfi packet in core->packet
 	 * otherwise ssr hfi packet in core->packet will be overwritten
@@ -1225,6 +1305,12 @@ int venus_hfi_reserve_hardware(struct msm_vidc_inst *inst, u32 duration)
 int venus_hfi_session_open_locked(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
+	struct msm_vidc_core *core = inst->core;
+
+	if (core->full_virtualization_data.virtualization_en) {
+		return virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
+			&inst->session_id);
+	}
 
 	__sys_set_debug(inst->core,
 		(msm_fw_debug & FW_LOGMASK) >> FW_LOGSHIFT);
@@ -1736,7 +1822,7 @@ int venus_hfi_queue_input_buffer(struct msm_vidc_inst *inst,
 			goto unlock;
 	}
 
-	if (is_inpbuf_fence_rx_enabled(inst)) {
+	if (is_input_rx_fence_enabled(inst)) {
 		/* get hfi port */
 		hfi_port = get_hfi_port_from_buffer_type(inst, buffer->type);
 
@@ -1753,7 +1839,7 @@ int venus_hfi_queue_input_buffer(struct msm_vidc_inst *inst,
 		if (rc)
 			goto unlock;
 
-		fence_type = inst->capabilities[INPBUF_FENCE_TYPE].value;
+		fence_type = inst->capabilities[INPUT_RX_FENCE_TYPE].value;
 		rc = hfi_create_packet(inst->packet,
 				inst->packet_size,
 				HFI_PROP_FENCE_TYPE,
@@ -1766,7 +1852,7 @@ int venus_hfi_queue_input_buffer(struct msm_vidc_inst *inst,
 		if (rc)
 			goto unlock;
 
-		fence_direction = inst->capabilities[INPBUF_FENCE_DIRECTION].value;
+		fence_direction = inst->capabilities[INPUT_RX_FENCE_DIRECTION].value;
 		rc = hfi_create_packet(inst->packet,
 				inst->packet_size,
 				HFI_PROP_FENCE_DIRECTION,
@@ -1883,7 +1969,7 @@ int venus_hfi_queue_output_buffer(struct msm_vidc_inst *inst,
 			goto unlock;
 	}
 
-	if (is_outbuf_fence_tx_enabled(inst)) {
+	if (is_output_tx_fence_enabled(inst)) {
 		/* get hfi port */
 		hfi_port = get_hfi_port_from_buffer_type(inst, buffer->type);
 
@@ -1900,7 +1986,7 @@ int venus_hfi_queue_output_buffer(struct msm_vidc_inst *inst,
 		if (rc)
 			goto unlock;
 
-		fence_type = inst->capabilities[OUTBUF_FENCE_TYPE].value;
+		fence_type = inst->capabilities[OUTPUT_TX_FENCE_TYPE].value;
 		rc = hfi_create_packet(inst->packet,
 				inst->packet_size,
 				HFI_PROP_FENCE_TYPE,
@@ -1913,7 +1999,7 @@ int venus_hfi_queue_output_buffer(struct msm_vidc_inst *inst,
 		if (rc)
 			goto unlock;
 
-		fence_direction = inst->capabilities[OUTBUF_FENCE_DIRECTION].value;
+		fence_direction = inst->capabilities[OUTPUT_TX_FENCE_DIRECTION].value;
 		rc = hfi_create_packet(inst->packet,
 				inst->packet_size,
 				HFI_PROP_FENCE_DIRECTION,

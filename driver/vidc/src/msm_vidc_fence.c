@@ -137,12 +137,12 @@ struct msm_vidc_fence *msm_vidc_get_sw_fence(
 	}
 
 	if (is_imported) {
-		fence_fd = inst->capabilities[INPBUF_FENCE_FD].value;
+		fence_fd = inst->capabilities[INPUT_RX_FENCE_FD].value;
 		if (fence_fd == INVALID_FD) {
 			i_vpr_e(inst, "%s: Invalid dma fence fd!\n", __func__);
 			goto error;
 		}
-		inst->capabilities[INPBUF_FENCE_FD].value = INVALID_FD;
+		inst->capabilities[INPUT_RX_FENCE_FD].value = INVALID_FD;
 
 		imp_dma_fence = sync_file_get_fence(fence_fd);
 		if (!imp_dma_fence) {

@@ -667,7 +667,7 @@ void msm_vb2_buf_queue(struct vb2_buffer *vb2)
 			/*
 			 * vb2 is not allowing client to pass data in output meta plane.
 			 * adjust the bytesused as client will send buffer tag metadata
-			 * in output meta plane if DPB_TAG_LIST, or OUTBUF_FENCE metadata
+			 * in output meta plane if DPB_TAG_LIST, or OUTPUT_TX_FENCE metadata
 			 * is enabled.
 			 */
 			vb2->planes[0].bytesused = vb2->planes[0].length;

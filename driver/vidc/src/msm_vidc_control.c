@@ -166,8 +166,10 @@ static const char * const *msm_vidc_get_qmenu_type(
 		return av1_tier;
 	case IR_TYPE:
 		return mpeg_video_vidc_ir_type;
-	case INPBUF_FENCE_TYPE:
-	case OUTBUF_FENCE_TYPE:
+	case INPUT_RX_FENCE_TYPE:
+	case INPUT_TX_FENCE_TYPE:
+	case OUTPUT_RX_FENCE_TYPE:
+	case OUTPUT_TX_FENCE_TYPE:
 		return mpeg_video_vidc_fence_type;
 	default:
 		i_vpr_e(inst, "%s: No available qmenu for cap id %d\n",

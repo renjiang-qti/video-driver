@@ -729,7 +729,7 @@ static int msm_vdec_set_output_properties(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-static bool msm_vdec_check_outbuf_fence_allowed(struct msm_vidc_inst *inst)
+static bool msm_vdec_check_output_tx_fence_allowed(struct msm_vidc_inst *inst)
 {
 	u32 reorder_count = inst->capabilities[MAX_NUM_REORDER_FRAMES].value >> 16;
 
@@ -740,7 +740,7 @@ static bool msm_vdec_check_outbuf_fence_allowed(struct msm_vidc_inst *inst)
 	if (inst->capabilities[CODED_FRAMES].value == CODED_FRAMES_INTERLACE ||
 		(!inst->capabilities[OUTPUT_ORDER].value && reorder_count)) {
 		i_vpr_e(inst,
-			"%s: outbuf tx fence is unsupported for coded frames %lld or output order %lld and reorder frames %lld\n",
+			"%s: output tx fence is unsupported for coded frames %lld or output order %lld and reorder frames %lld\n",
 			__func__, inst->capabilities[CODED_FRAMES].value,
 			inst->capabilities[OUTPUT_ORDER].value,
 			(inst->capabilities[MAX_NUM_REORDER_FRAMES].value >> 16));
@@ -1206,10 +1206,10 @@ static int msm_vdec_set_delivery_mode_property(struct msm_vidc_inst *inst,
 	u32 payload[32] = {0};
 	u32 i, count = 0;
 	static const u32 property_output_list[] = {
-		META_OUTBUF_FENCE,
+		META_OUTPUT_TX_FENCE,
 	};
 	static const u32 property_input_list[] = {
-		INPBUF_FENCE_ENABLE,
+		INPUT_RX_FENCE_ENABLE,
 	};
 
 	i_vpr_h(inst, "%s() port %d\n", __func__, port);
@@ -1226,10 +1226,10 @@ static int msm_vdec_set_delivery_mode_property(struct msm_vidc_inst *inst,
 		}
 	} else if (port == OUTPUT_PORT) {
 		for (i = 0; i < ARRAY_SIZE(property_output_list); i++) {
-			if (property_output_list[i] == META_OUTBUF_FENCE) {
-				if (is_outbuf_fence_tx_enabled(inst)) {
+			if (property_output_list[i] == META_OUTPUT_TX_FENCE) {
+				if (is_output_tx_fence_enabled(inst)) {
 					/*
-					 * if output buffer fence enabled via META_OUTBUF_FENCE,
+					 * if output buffer fence enabled via META_OUTPUT_TX_FENCE,
 					 * then driver will send fence info using
 					 * HFI_PROP_FENCE_OUTPUT to firmware via property,
 					 * so enable HFI_PROP_FENCE_OUTPUT as delivery mode
@@ -1542,8 +1542,8 @@ int msm_vdec_streamon_input(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	if (is_inpbuf_fence_rx_enabled(inst) &&
-		!msm_vidc_check_inpbuf_fence_allowed(inst)) {
+	if (is_input_rx_fence_enabled(inst) &&
+		!msm_vidc_check_input_fence_allowed(inst)) {
 		rc = -EINVAL;
 		goto error;
 	}
@@ -1848,8 +1848,8 @@ int msm_vdec_streamon_output(struct msm_vidc_inst *inst)
 	if (rc)
 		goto error;
 
-	if (is_outbuf_fence_tx_enabled(inst)) {
-		if (!msm_vdec_check_outbuf_fence_allowed(inst)) {
+	if (is_output_tx_fence_enabled(inst)) {
+		if (!msm_vdec_check_output_tx_fence_allowed(inst)) {
 			rc = -EINVAL;
 			goto error;
 		}

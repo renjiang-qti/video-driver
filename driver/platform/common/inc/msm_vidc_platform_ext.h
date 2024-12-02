@@ -9,17 +9,14 @@
 struct v4l2_ctrl;
 enum msm_vidc_inst_capability_type;
 
-/* Enables Output buffer fence id via input metadata */
-#define V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE                             \
+/* Control to enable output buffer TX fence (video device signal) feature */
+#define V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE                          \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x38)
-/* Control to set fence id to driver in order get corresponding fence fd */
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID                                   \
+/* Control to set fence id to driver in order to get corresponding fence fd */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_ID                                \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x39)
-/*
- * Control to get fence fd from driver for the fence id
- * set via V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID
- */
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_FD                                    \
+/* Control to get fence fd from driver for the fence id */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_FD                                \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3A)
 #define V4L2_CID_MPEG_VIDC_METADATA_PICTURE_TYPE                             \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3B)
@@ -39,30 +36,30 @@ enum msm_vidc_inst_capability_type;
 #define V4L2_CID_MPEG_VIDC_RESERVE_DURATION                                  \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x3F)
 
-#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_ENABLE                                \
+/* Control to enable early notify feature */
+#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_ENABLE                               \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x44)
 
-#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT                            \
+/* Control to configure line count to get partial decode completion notification */
+#define V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT                           \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x45)
 
-/*
- * Userspace need to enable input fence feature via
- * control V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE
- */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE                                \
+/* Control to enable input buffer RX fence (video device wait) feature */
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE                             \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x4F)
 
 /*
  * Control to set fence fd to the driver for each I/P buf
- * set via V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD
+ * set via V4L2_CID_MPEG_VIDC_INPUT_FENCE_FD
  */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD                                    \
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_FD                                 \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x50)
 
-/* set input & output fence type */
-#define V4L2_CID_MPEG_VIDC_INPBUF_FENCE_TYPE                                  \
+/* Control to set input buffer RX fence (video device wait) type */
+#define V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE                               \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x51)
-#define V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_TYPE                                  \
+/* Control to set output buffer TX fence (video device signal) type */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE                              \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x52)
 enum v4l2_mpeg_vidc_fence_type {
 	V4L2_MPEG_VIDC_FENCE_NONE       = 0,
@@ -70,10 +67,7 @@ enum v4l2_mpeg_vidc_fence_type {
 	V4L2_MPEG_VIDC_FENCE_SYNX_V2    = 2,
 };
 
-/**
- * If client sets this extra metada offset, then send additional
- * metadata buffer to fw.
- */
+/* Control to set offset in metadata buffer where extra data can be present */
 #define V4L2_CID_MPEG_VIDC_INPUT_EXTRA_METADATA_OFFSET                       \
 	(V4L2_CID_MPEG_VIDC_BASE + 0x53)
 

@@ -1443,6 +1443,16 @@ static int __init_resources(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
+	rc = __init_context_banks(core);
+	if (rc)
+		return rc;
+
+	/* If HW Virtualization enabled, skip all initializations below. */
+	if (core->full_virtualization_data.virtualization_en) {
+		d_vpr_h("%s: hardware virtualization enabled.\n", __func__);
+		goto exit;
+	}
+
 	rc = __init_bus(core);
 	if (rc)
 		return rc;
@@ -1467,10 +1477,6 @@ static int __init_resources(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
-	rc = __init_context_banks(core);
-	if (rc)
-		return rc;
-
 	rc = __init_device_region(core);
 	if (rc)
 		return rc;
@@ -1479,6 +1485,7 @@ static int __init_resources(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
+exit:
 	return rc;
 }
 

@@ -29,17 +29,21 @@
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8000800010
 #define MAX_BASE_LAYER_PRIORITY_ID 63
 #define MAX_OP_POINT            31
-#define MAX_BITRATE             245000000
+#define MAX_BITRATE             400000000
+#define MAX_BITRATE_HEVC        180000000
+#define MAX_BITRATE_H264        220000000
 #define DEFAULT_BITRATE         20000000
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
-#define MAXIMUM_DEC_FPS         960
+#define MAXIMUM_DEC_FPS         480
 #define MAX_QP                  51
 #define DEFAULT_QP              20
 #define MAX_CONSTANT_QUALITY    100
 #define MIN_SLICE_BYTE_SIZE     512
-#define MAX_SLICE_BYTE_SIZE       \
-	((MAX_BITRATE) >> 3)
+#define MAX_SLICE_BYTE_SIZE_H264       \
+	((MAX_BITRATE_H264) >> 3)
+#define MAX_SLICE_BYTE_SIZE_HEVC       \
+	((MAX_BITRATE_HEVC) >> 3)
 #define MAX_SLICE_MB_SIZE         \
 	(((4096 + 15) >> 4) * ((2304 + 15) >> 4))
 
@@ -336,6 +340,9 @@ static const struct msm_platform_core_capability core_data_seraph[] = {
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
 	{SUPPORTS_REQUESTS, 0},
+	{SUPPORTS_SYNX_V2_FENCE, 1},
+	{SUPPORTS_REMOTE_PROC, 1},
+	{SUPPORTS_FREEZE, 1},
 };
 
 static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
@@ -611,71 +618,104 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		CAP_FLAG_NONE},
 
 	/*
-	 * Client will enable V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE
+	 * Client will enable V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE
 	 * to get fence_id in input metadata buffer done.
 	 */
-	{META_OUTBUF_FENCE, DEC, H264 | HEVC | VP9 | AV1,
+	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
-		V4L2_CID_MPEG_VIDC_METADATA_OUTBUF_FENCE,
+		V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE,
 		HFI_PROP_FENCE_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	/* enable input fence feature */
-	{INPBUF_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_ENABLE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_OUTPUT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE,
+		HFI_PROP_FENCE_INPUT,
+		CAP_FLAG_INPUT_PORT},
+
+	/* enable input rx fence feature */
+	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE,
 		HFI_PROP_FENCE_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
 	/*
-	 * Client to do set_ctrl with OUTBUF_FENCE_ID to set fence_id
-	 * and then client will do get_ctrl with OUTBUF_FENCE_FD to get
+	 * Client to do set_ctrl with OUTPUT_TX_FENCE_ID to set fence_id
+	 * and then client will do get_ctrl with OUTPUT_TX_FENCE_FD to get
 	 * fence_fd corresponding to client set fence_id.
 	 */
-	{OUTBUF_FENCE_ID, DEC, CODECS_ALL,
+	{OUTPUT_TX_FENCE_ID, DEC, CODECS_ALL,
 		0, INT_MAX, 1, 0,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_ID,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_ID,
 		0,
 		CAP_FLAG_DYNAMIC_ALLOWED | CAP_FLAG_OUTPUT_PORT},
 
-	{OUTBUF_FENCE_FD, DEC, CODECS_ALL,
+	{OUTPUT_TX_FENCE_FD, DEC, CODECS_ALL,
 		INVALID_FD, INT_MAX, 1, INVALID_FD,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_FD,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_FD,
 		0,
 		CAP_FLAG_VOLATILE},
 
 	/*
-	 * Client to do set_ctrl with INPBUF_FENCE_FD to set fence_fd.
+	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
 	 * Driver will import fence_fd and uses underlyling fence.
 	 */
-	{INPBUF_FENCE_FD, DEC, CODECS_ALL,
+	{INPUT_RX_FENCE_FD, DEC, CODECS_ALL,
 		INVALID_FD, INT_MAX, 1, INVALID_FD,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_FD,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_FD,
 		0,
 		CAP_FLAG_DYNAMIC_ALLOWED | CAP_FLAG_INPUT_PORT},
 
-	/* Fence type for input buffer */
-	{INPBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence type for input rx buffer */
+	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
-		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SYNX_V2_FENCE),
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
-		V4L2_CID_MPEG_VIDC_INPBUF_FENCE_TYPE,
+		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
-	{OUTBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence type for input tx buffer */
+	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
+		MSM_VIDC_FENCE_NONE,
+		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_TYPE,
+		HFI_PROP_FENCE_TYPE,
+		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
+
+	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
+		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
+			BIT(MSM_VIDC_SYNX_V2_FENCE),
+		MSM_VIDC_FENCE_NONE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE,
+		HFI_PROP_FENCE_TYPE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
+
+	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_NONE, MSM_VIDC_SYNX_V2_FENCE,
 		BIT(MSM_VIDC_FENCE_NONE) | BIT(MSM_VIDC_SW_FENCE) |
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_SW_FENCE,
-		V4L2_CID_MPEG_VIDC_OUTBUF_FENCE_TYPE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	/* Fence direction for input buffer */
-	{INPBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	/* Fence direction for input rx buffer */
+	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
 		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
 		MSM_VIDC_FENCE_DIR_NONE,
@@ -683,7 +723,7 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		HFI_PROP_FENCE_DIRECTION,
 		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
 
-	{OUTBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
 		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
 		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
 			BIT(MSM_VIDC_FENCE_DIR_RX),
@@ -804,8 +844,15 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 	/* Enc: Keeping CABAC and CAVLC as same bitrate.
 	 * Dec: there's no use of Bitrate cap
 	 */
-	{BIT_RATE, ENC, H264 | HEVC,
-		1, MAX_BITRATE, 1, DEFAULT_BITRATE,
+	{BIT_RATE, ENC, H264,
+		1, MAX_BITRATE_H264, 1, DEFAULT_BITRATE,
+		V4L2_CID_MPEG_VIDEO_BITRATE,
+		HFI_PROP_TOTAL_BITRATE,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
+			CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{BIT_RATE, ENC, HEVC,
+		1, MAX_BITRATE_HEVC, 1, DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -848,10 +895,13 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		220000000, 1, 220000000},
 
 	{ALLINTRA_MAX_BITRATE, ENC, H264 | HEVC, 0,
-		245000000, 1, 245000000},
+		400000000, 1, 400000000},
 
-	{LOWLATENCY_MAX_BITRATE, ENC, H264 | HEVC, 0,
+	{LOWLATENCY_MAX_BITRATE, ENC, H264, 0,
 		70000000, 1, 70000000},
+
+	{LOWLATENCY_MAX_BITRATE, ENC, HEVC, 0,
+		80000000, 1, 80000000},
 
 	{NUM_COMV, DEC, CODECS_ALL,
 		0, INT_MAX, 1, 0},
@@ -1610,8 +1660,15 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		0,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{SLICE_MAX_BYTES, ENC, H264 | HEVC,
-		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE,
+	{SLICE_MAX_BYTES, ENC, H264,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_H264,
+		1, MIN_SLICE_BYTE_SIZE,
+		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
+		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
+		CAP_FLAG_OUTPUT_PORT},
+
+	{SLICE_MAX_BYTES, ENC, HEVC,
+		MIN_SLICE_BYTE_SIZE, MAX_SLICE_BYTE_SIZE_HEVC,
 		1, MIN_SLICE_BYTE_SIZE,
 		V4L2_CID_MPEG_VIDEO_MULTI_SLICE_MAX_BYTES,
 		HFI_PROP_MULTI_SLICE_BYTES_COUNT,
@@ -2183,42 +2240,61 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		NULL,
 		msm_vidc_set_u32},
 
-	{META_OUTBUF_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTBUF_FENCE_TYPE, OUTBUF_FENCE_DIRECTION, SLICE_DECODE,
+	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
+		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
 		EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
-	{META_OUTBUF_FENCE, DEC, VP9,
-		{OUTBUF_FENCE_TYPE, OUTBUF_FENCE_DIRECTION},
+	{META_OUTPUT_TX_FENCE, DEC, VP9,
+		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
 		NULL,
 		NULL},
 
-	{INPBUF_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPBUF_FENCE_TYPE, INPBUF_FENCE_DIRECTION},
+	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
 		NULL,
 		NULL},
 
-	{INPBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_inpbuf_fence_type,
+	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{INPUT_TX_FENCE_TYPE},
+		NULL,
 		NULL},
 
-	{OUTBUF_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_outbuf_fence_type,
+	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
+		{OUTPUT_RX_FENCE_TYPE},
+		NULL,
 		NULL},
 
-	{INPBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
-		msm_vidc_adjust_dec_inpbuf_fence_direction,
+		msm_vidc_adjust_dec_input_rx_fence_type,
 		NULL},
 
-	{OUTBUF_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
-		msm_vidc_adjust_dec_outbuf_fence_direction,
+		msm_vidc_adjust_dec_input_tx_fence_type,
 		NULL},
 
+	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_tx_fence_type,
+		NULL},
+
+	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_rx_fence_type,
+		NULL},
+
+	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_input_rx_fence_direction,
+		NULL},
+
+	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_dec_output_tx_fence_direction,
+		NULL},
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
 		NULL,
@@ -2608,7 +2684,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		NULL,
 		msm_vidc_set_u32_enum},
 
-	{LF_MODE, ENC, CODECS_ALL,
+	{LF_MODE, ENC, HEVC | HEIC | H264,
 		{0},
 		NULL,
 		msm_vidc_set_deblock_mode},
@@ -2847,7 +2923,6 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
 	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0b_freerun_clk", VIDEO_CC_MVS0B_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
 	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
@@ -2864,7 +2939,6 @@ static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_axi0_reset",                   0  },
 	{ "video_axi1_reset",                   0  },
 	{ "video_mvs0_freerun_reset",           0  },
-	{ "video_mvs0b_freerun_reset",          0  },
 	{ "video_mvs0c_freerun_reset",          0  },
 };
 
@@ -3118,6 +3192,14 @@ int msm_vidc_init_platform_seraph(struct msm_vidc_core *core)
 	if (!core->res_ops) {
 		d_vpr_e("%s: invalid resource ext ops\n", __func__);
 		return -EINVAL;
+	}
+	if (core->capabilities[SUPPORTS_SYNX_V2_FENCE].value) {
+		core->fence_ops = get_synx_fence_ops();
+		if (!core->fence_ops) {
+			core->capabilities[SUPPORTS_SYNX_V2_FENCE].value = 0;
+			d_vpr_e("%s: invalid synx fence ops\n", __func__);
+			return -EINVAL;
+		}
 	}
 	rc = msm_vidc_seraph_check_ddr_type();
 	if (rc)

@@ -46,6 +46,10 @@
 #include "msm_vidc_seraph.h"
 #include "msm_vidc_iris4.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+#include "msm_vidc_nordau.h"
+#include "msm_vidc_iris33_au.h"
+#endif
 
 #define CAP_TO_8BIT_QP(a) {          \
 	if ((a) < MIN_QP_8BIT)                 \
@@ -276,6 +280,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_seraph,
 		.init_platform              = msm_vidc_init_platform_seraph,
 		.init_iris                  = msm_vidc_init_iris4,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_NORDAU)
+	{
+		.compat                     = "qcom,sm8797-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_nordau,
+		.init_platform              = msm_vidc_init_platform_nordau,
+		.init_iris                  = msm_vidc_init_iris33_au,
 	},
 #endif
 };
@@ -2464,18 +2476,46 @@ int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
-int msm_vidc_adjust_dec_outbuf_fence_type(void *instance, struct v4l2_ctrl *ctrl)
+int msm_vidc_adjust_dec_output_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct msm_vidc_inst_cap *capability = inst->capabilities;
 	struct msm_vidc_core *core = inst->core;
-	s64 adjusted_value, meta_outbuf_fence = 0;
+	s64 adjusted_value, output_fence_enable = 0;
+
+	if (msm_vidc_get_parent_value(inst, INPUT_TX_FENCE_TYPE,
+			INPUT_TX_FENCE_ENABLE, &output_fence_enable, __func__))
+		return -EINVAL;
 
 	adjusted_value = ctrl ? ctrl->val :
-		capability[OUTBUF_FENCE_TYPE].value;
+		capability[OUTPUT_RX_FENCE_TYPE].value;
 
-	if (msm_vidc_get_parent_value(inst, OUTBUF_FENCE_TYPE,
-			META_OUTBUF_FENCE, &meta_outbuf_fence, __func__))
+	/* override to sw fence, if synx not supported */
+	if (adjusted_value == MSM_VIDC_SYNX_V2_FENCE)
+		if (!core->capabilities[SUPPORTS_SYNX_V2_FENCE].value)
+			adjusted_value = MSM_VIDC_SW_FENCE;
+
+	/* mark fence dir as none, if fence not enabled */
+	if (!is_output_rx_fence_enabled(inst))
+		adjusted_value = MSM_VIDC_FENCE_NONE;
+
+	msm_vidc_update_cap_value(inst, OUTPUT_RX_FENCE_TYPE, adjusted_value, __func__);
+
+	return 0;
+}
+
+int msm_vidc_adjust_dec_output_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct msm_vidc_inst_cap *capability = inst->capabilities;
+	struct msm_vidc_core *core = inst->core;
+	s64 adjusted_value, meta_output_fence = 0;
+
+	adjusted_value = ctrl ? ctrl->val :
+		capability[OUTPUT_TX_FENCE_TYPE].value;
+
+	if (msm_vidc_get_parent_value(inst, OUTPUT_TX_FENCE_TYPE,
+			META_OUTPUT_TX_FENCE, &meta_output_fence, __func__))
 		return -EINVAL;
 
 	/* override to sw fence, if synx not supported */
@@ -2484,72 +2524,90 @@ int msm_vidc_adjust_dec_outbuf_fence_type(void *instance, struct v4l2_ctrl *ctrl
 			adjusted_value = MSM_VIDC_SW_FENCE;
 
 	/* mark fence dir as none, if fence not enabled */
-	if (!is_outbuf_fence_tx_enabled(inst))
+	if (!is_output_tx_fence_enabled(inst))
 		adjusted_value = MSM_VIDC_FENCE_NONE;
 
-	msm_vidc_update_cap_value(inst, OUTBUF_FENCE_TYPE, adjusted_value, __func__);
+	msm_vidc_update_cap_value(inst, OUTPUT_TX_FENCE_TYPE, adjusted_value, __func__);
 
 	return 0;
 }
 
-int msm_vidc_adjust_dec_inpbuf_fence_type(void *instance, struct v4l2_ctrl *ctrl)
+int msm_vidc_adjust_dec_input_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 adjusted_value, inpbuf_fence_enable = 0;
+	s64 adjusted_value, input_fence_enable = 0;
 
-	if (msm_vidc_get_parent_value(inst, INPBUF_FENCE_TYPE,
-			INPBUF_FENCE_ENABLE, &inpbuf_fence_enable, __func__))
+	if (msm_vidc_get_parent_value(inst, INPUT_RX_FENCE_TYPE,
+			INPUT_RX_FENCE_ENABLE, &input_fence_enable, __func__))
 		return -EINVAL;
 
-	if (is_inpbuf_fence_rx_enabled(inst))
+	if (is_input_rx_fence_enabled(inst))
 		adjusted_value = MSM_VIDC_SYNX_V2_FENCE;
 	else
 		adjusted_value = MSM_VIDC_FENCE_NONE;
 
-	msm_vidc_update_cap_value(inst, INPBUF_FENCE_TYPE, adjusted_value, __func__);
+	msm_vidc_update_cap_value(inst, INPUT_RX_FENCE_TYPE, adjusted_value, __func__);
 
 	return 0;
 }
 
-
-int msm_vidc_adjust_dec_outbuf_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
+int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 adjusted_value, meta_outbuf_fence = 0;
+	s64 adjusted_value, input_fence_enable = 0;
 
-	if (msm_vidc_get_parent_value(inst, OUTBUF_FENCE_DIRECTION,
-			META_OUTBUF_FENCE, &meta_outbuf_fence, __func__))
+	if (msm_vidc_get_parent_value(inst, INPUT_TX_FENCE_TYPE,
+			INPUT_TX_FENCE_ENABLE, &input_fence_enable, __func__))
 		return -EINVAL;
 
-	if (is_outbuf_fence_tx_enabled(inst))
+	if (is_input_tx_fence_enabled(inst))
+		adjusted_value = MSM_VIDC_SYNX_V2_FENCE;
+	else
+		adjusted_value = MSM_VIDC_FENCE_NONE;
+
+	msm_vidc_update_cap_value(inst, INPUT_TX_FENCE_TYPE, adjusted_value, __func__);
+
+	return 0;
+}
+
+int msm_vidc_adjust_dec_output_tx_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 adjusted_value, meta_output_fence = 0;
+
+	if (msm_vidc_get_parent_value(inst, OUTPUT_TX_FENCE_DIRECTION,
+			META_OUTPUT_TX_FENCE, &meta_output_fence, __func__))
+		return -EINVAL;
+
+	if (is_output_tx_fence_enabled(inst))
 		adjusted_value = MSM_VIDC_FENCE_DIR_TX;
 	else
 		adjusted_value = MSM_VIDC_FENCE_DIR_NONE;
 
-	msm_vidc_update_cap_value(inst, OUTBUF_FENCE_DIRECTION, adjusted_value, __func__);
+	msm_vidc_update_cap_value(inst, OUTPUT_TX_FENCE_DIRECTION, adjusted_value, __func__);
 
 	return 0;
 }
 
-int msm_vidc_adjust_dec_inpbuf_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
+int msm_vidc_adjust_dec_input_rx_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct msm_vidc_inst_cap *capability = inst->capabilities;
-	s64 adjusted_value, inpbuf_fence_enable = 0;
+	s64 adjusted_value, input_fence_enable = 0;
 
 	adjusted_value = ctrl ? ctrl->val :
-		capability[INPBUF_FENCE_DIRECTION].value;
+		capability[INPUT_RX_FENCE_DIRECTION].value;
 
-	if (msm_vidc_get_parent_value(inst, INPBUF_FENCE_DIRECTION,
-			INPBUF_FENCE_ENABLE, &inpbuf_fence_enable, __func__))
+	if (msm_vidc_get_parent_value(inst, INPUT_RX_FENCE_DIRECTION,
+			INPUT_RX_FENCE_ENABLE, &input_fence_enable, __func__))
 		return -EINVAL;
 
-	if (is_inpbuf_fence_rx_enabled(inst))
+	if (is_input_rx_fence_enabled(inst))
 		adjusted_value = MSM_VIDC_FENCE_DIR_RX;
 	else
 		adjusted_value = MSM_VIDC_FENCE_DIR_NONE;
 
-	msm_vidc_update_cap_value(inst, INPBUF_FENCE_DIRECTION, adjusted_value, __func__);
+	msm_vidc_update_cap_value(inst, INPUT_RX_FENCE_DIRECTION, adjusted_value, __func__);
 
 	return 0;
 }
@@ -2560,7 +2618,7 @@ int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl)
 	u32 adjusted_value = 0;
 	s64 low_latency = -1;
 	s64 picture_order = -1;
-	s64 outbuf_fence = 0;
+	s64 output_fence = 0;
 
 	adjusted_value = ctrl ? ctrl->val : inst->capabilities[SLICE_DECODE].value;
 
@@ -2568,11 +2626,11 @@ int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl)
 				      &low_latency, __func__) ||
 	    msm_vidc_get_parent_value(inst, SLICE_DECODE, OUTPUT_ORDER,
 				      &picture_order, __func__) ||
-	    msm_vidc_get_parent_value(inst, SLICE_DECODE, META_OUTBUF_FENCE,
-				      &outbuf_fence, __func__))
+	    msm_vidc_get_parent_value(inst, SLICE_DECODE, META_OUTPUT_TX_FENCE,
+				      &output_fence, __func__))
 		return -EINVAL;
 
-	if (!low_latency || !picture_order || !is_outbuf_fence_tx_enabled(inst))
+	if (!low_latency || !picture_order || !is_output_tx_fence_enabled(inst))
 		adjusted_value = 0;
 
 	msm_vidc_update_cap_value(inst, SLICE_DECODE, adjusted_value, __func__);
@@ -2586,7 +2644,7 @@ int msm_vidc_adjust_early_notify_enable(void *instance, struct v4l2_ctrl *ctrl)
 	u64 adjusted_value = 0;
 	s64 low_latency = -1;
 	s64 picture_order = -1;
-	s64 outbuf_fence = MSM_VIDC_META_DISABLE;
+	s64 output_fence = MSM_VIDC_META_DISABLE;
 
 	adjusted_value = ctrl ? ctrl->val : inst->capabilities[EARLY_NOTIFY_ENABLE].value;
 
@@ -2594,12 +2652,12 @@ int msm_vidc_adjust_early_notify_enable(void *instance, struct v4l2_ctrl *ctrl)
 		&low_latency, __func__) ||
 	    msm_vidc_get_parent_value(inst, EARLY_NOTIFY_ENABLE, OUTPUT_ORDER,
 		&picture_order, __func__) ||
-	    msm_vidc_get_parent_value(inst, EARLY_NOTIFY_ENABLE, META_OUTBUF_FENCE,
-		&outbuf_fence, __func__))
+	    msm_vidc_get_parent_value(inst, EARLY_NOTIFY_ENABLE, META_OUTPUT_TX_FENCE,
+		&output_fence, __func__))
 		return -EINVAL;
 
 	if (!low_latency || !picture_order ||
-	     !is_outbuf_fence_tx_enabled(inst))
+	     !is_output_tx_fence_enabled(inst))
 		adjusted_value = 0;
 
 	msm_vidc_update_cap_value(inst, EARLY_NOTIFY_ENABLE,

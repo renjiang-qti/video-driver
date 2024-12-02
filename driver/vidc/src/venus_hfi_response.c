@@ -74,7 +74,7 @@ static void print_sfr_message(struct msm_vidc_core *core)
 				vsfr->buf_size, core->sfr.mem_size);
 			return;
 		}
-		vsfr_size = vsfr->buf_size - sizeof(u32);
+		vsfr_size = core->sfr.mem_size - sizeof(u32);
 		p = memchr(vsfr->rg_data, '\0', vsfr_size);
 		/* SFR isn't guaranteed to be NULL terminated */
 		if (p == NULL)
@@ -764,7 +764,7 @@ static int handle_input_buffer(struct msm_vidc_inst *inst,
 	/* ebd: update end timestamp and flags in stats entry */
 	msm_vidc_remove_buffer_stats(inst, buf, buffer->timestamp);
 
-	if (is_inpbuf_fence_rx_enabled(inst)) {
+	if (is_input_rx_fence_enabled(inst)) {
 		if (buf->fence_count != 1) {
 			i_vpr_e(inst, "%s: unexpected input hw fence_count %d\n",
 				__func__, buf->fence_count);
@@ -805,7 +805,7 @@ static int msm_vidc_handle_fence_signal(struct msm_vidc_inst *inst,
 	u64 fence_seqno = 0;
 	int cnt, rc = 0;
 
-	if (!is_outbuf_fence_tx_enabled(inst))
+	if (!is_output_tx_fence_enabled(inst))
 		return 0;
 
 	if (is_synx_v2_fence(inst, get_fence_type(inst, buf->type))) {
@@ -1179,7 +1179,7 @@ static bool is_metabuffer_dequeued(struct msm_vidc_inst *inst,
 			(buffer->attr & MSM_VIDC_ATTR_DEQUEUED ||
 			buffer->attr & MSM_VIDC_ATTR_BUFFER_DONE)) {
 			/*
-			 * For META_OUTBUF_FENCE case, meta buffers are
+			 * For META_OUTPUT_TX_FENCE case, meta buffers are
 			 * dequeued ahead in time and completed vb2 done
 			 * as well. Hence, check for vb2 buffer done flag since
 			 * dequeued flag is already cleared for such buffers
