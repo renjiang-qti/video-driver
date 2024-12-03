@@ -678,10 +678,110 @@ static int handle_drain_last_flag_buffer(struct msm_vidc_inst *inst,
 	return rc;
 }
 
+static int handle_input_rx_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	struct msm_vidc_core *core = inst->core;
+	struct msm_vidc_fence *fence = NULL;
+	int cnt, rc = 0;
+
+	for (cnt = 0; cnt < buf->num_rx_fences; cnt++) {
+		fence = msm_vidc_get_fence_from_id(inst,
+			&inst->input_rx_f_context.fence_list, buf->rx_fences[cnt]);
+		if (!fence) {
+			i_vpr_e(inst, "%s: invalid rx fence_id %llu\n",
+				__func__, buf->rx_fences[cnt]);
+			rc = -EINVAL;
+			goto error;
+		}
+		print_fence_buffer(VIDC_HIGH, "high", "release", inst, buf, fence, 0);
+		rc = call_fence_op(core, fence_release, inst, fence, false);
+		if (rc)
+			goto error;
+
+		buf->rx_fences[cnt] = 0;
+	}
+
+error:
+	if (rc)
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	return rc;
+}
+
+static int handle_input_tx_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	struct msm_vidc_core *core = inst->core;
+	struct msm_vidc_fence *fence = NULL;
+	int cnt, rc = 0;
+
+	for (cnt = 0; cnt < buf->num_tx_fences; cnt++) {
+		fence = msm_vidc_get_fence_from_id(inst,
+			&inst->input_tx_f_context.fence_list, buf->tx_fences[cnt]);
+		if (!fence) {
+			i_vpr_e(inst, "%s: invalid tx fence_id %llu\n",
+				__func__, buf->tx_fences[cnt]);
+			rc = -EINVAL;
+			goto error;
+		}
+		print_fence_buffer(VIDC_HIGH, "high", "destroy", inst, buf, fence, 0);
+		rc = call_fence_op(core, fence_destroy, inst, fence, false);
+		if (rc) {
+			i_vpr_e(inst, "%s: failed to destroy fence_id %llu\n",
+				__func__, buf->tx_fences[cnt]);
+			rc = -EINVAL;
+			goto error;
+		}
+		buf->tx_fences[cnt] = 0;
+	}
+
+error:
+	if (rc)
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	return rc;
+}
+
+static int msm_vidc_handle_input_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	int rc = 0;
+
+	if (!is_input_rx_fence_enabled(inst) && !is_input_tx_fence_enabled(inst))
+		return 0;
+
+	/* sanitize TX & RX fences */
+	if ((is_input_rx_fence_enabled(inst) ^ (buf->num_rx_fences > 0)) ||
+	    (is_input_tx_fence_enabled(inst) ^ (buf->num_tx_fences > 0))) {
+		i_vpr_e(inst, "%s: unexpected. enable: rx %d tx %d, count: rx %d, tx %d\n",
+			__func__, is_input_rx_fence_enabled(inst), is_input_tx_fence_enabled(inst),
+			buf->num_rx_fences, buf->num_tx_fences);
+		rc = -EINVAL;
+		goto error;
+	}
+
+	/* rx fence signalling */
+	rc = handle_input_rx_fence(inst, buf);
+	if (rc)
+		return rc;
+
+	/* tx fence signalling */
+	rc = handle_input_tx_fence(inst, buf);
+	if (rc)
+		return rc;
+
+error:
+	/* reset num rx fences */
+	buf->num_rx_fences = 0;
+	/* reset num tx fences */
+	buf->num_tx_fences = 0;
+	if (rc)
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	return rc;
+}
+
 static int handle_input_buffer(struct msm_vidc_inst *inst,
 			       struct hfi_buffer *buffer)
 {
-	struct msm_vidc_fence *fence = NULL;
 	struct msm_vidc_buffers *buffers;
 	struct msm_vidc_buffer *buf;
 	struct msm_vidc_core *core;
@@ -764,31 +864,65 @@ static int handle_input_buffer(struct msm_vidc_inst *inst,
 	/* ebd: update end timestamp and flags in stats entry */
 	msm_vidc_remove_buffer_stats(inst, buf, buffer->timestamp);
 
-	if (is_input_rx_fence_enabled(inst)) {
-		if (buf->fence_count != 1) {
-			i_vpr_e(inst, "%s: unexpected input hw fence_count %d\n",
-				__func__, buf->fence_count);
-			rc = -EINVAL;
-			goto error;
+	msm_vidc_handle_input_fence(inst, buf);
+
+	return rc;
+}
+
+static int handle_output_rx_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	struct msm_vidc_core *core = inst->core;
+	struct msm_vidc_fence_context *fcontext = &inst->output_rx_f_context;
+	struct msm_vidc_fence *fence = NULL;
+	u64 fence_seqno = 0;
+	int cnt, rc = 0;
+
+	for (cnt = 0; cnt < buf->num_rx_fences; cnt++) {
+		u64 fence_id = inst->hfi_frame_info.fence_id[cnt];
+
+		if ((s64)fence_id < 0) {
+			i_vpr_h(inst, "%s: skip release rx fence_id %llu\n",
+				__func__, buf->rx_fences[cnt]);
+			buf->rx_fences[cnt] = 0;
+			continue;
 		}
-		fence = msm_vidc_get_fence_from_id(inst, &inst->input_fence_list, buf->fence_id[0]);
+		/* fetch fence using fence_id */
+		fence = msm_vidc_get_fence_from_id(inst, &fcontext->fence_list, fence_id);
 		if (!fence) {
-			i_vpr_e(inst, "%s: invalid fence_id %llu\n", __func__, buf->fence_id[0]);
+			i_vpr_e(inst, "%s: invalid fence_id %llu\n", __func__, fence_id);
 			rc = -EINVAL;
 			goto error;
 		}
-		/* print fence info */
-		print_fence_buffer(VIDC_HIGH, "high", "release", inst, buf, fence, 0);
+		fence_seqno = fence->seqno;
+
+		if (fence_seqno <= fcontext->prev_seqno) {
+			i_vpr_e(inst,
+				"%s: invalid fence seqno %llu, prev reverse_fence seqno %llu\n",
+				__func__, fence_seqno, fcontext->prev_seqno);
+			rc = -EINVAL;
+			goto error;
+		}
+
+		print_fence_buffer(VIDC_HIGH, "high", "release", inst, buf, fence, cnt);
 		rc = call_fence_op(core, fence_release, inst, fence, false);
-		if (rc) {
-			i_vpr_e(inst, "%s: failed to release input fence id %llu\n",
-				__func__, buf->fence_id[0]);
-			rc = -EINVAL;
+		if (rc)
 			goto error;
-		}
-		/* reset fence_id */
-		buf->fence_id[0] = 0;
+
+		buf->rx_fences[cnt] = 0;
+		fcontext->fences_per_buffer_counter++;
+		fcontext->prev_seqno = fence_seqno;
 	}
+	/* validate firmware returned all the rx fences or not */
+	if (fcontext->fences_per_buffer_counter != buf->num_rx_fences) {
+		i_vpr_h(inst,
+			"%s: reverse fence count mismatch. value %d, expected %d\n",
+			__func__, fcontext->fences_per_buffer_counter, buf->num_rx_fences);
+		rc = -EINVAL;
+		goto error;
+	}
+	/* reset fence_count value after FBD handling */
+	fcontext->fences_per_buffer_counter -= buf->num_rx_fences;
 
 error:
 	if (rc)
@@ -796,34 +930,34 @@ error:
 	return rc;
 }
 
-static int msm_vidc_handle_fence_signal(struct msm_vidc_inst *inst,
-					struct msm_vidc_buffer *buf)
+static int handle_output_tx_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
 {
 	struct msm_vidc_core *core = inst->core;
+	struct msm_vidc_fence_context *fcontext = &inst->output_tx_f_context;
 	struct msm_vidc_fence *fence = NULL;
 	bool signal_error = false;
-	u64 fence_seqno = 0;
-	int cnt, rc = 0;
+	u64 fence_id, fence_seqno = 0;
+	int cnt, tx_fence_count, rc = 0;
 
-	if (!is_output_tx_fence_enabled(inst))
-		return 0;
-
-	if (is_synx_v2_fence(inst, get_fence_type(inst, buf->type))) {
+	if (is_synx_v2_fence(inst, get_output_tx_fence_type(inst))) {
 		if (inst->hfi_frame_info.fence_error)
 			signal_error = true;
-	} else if (is_sw_fence(inst, get_fence_type(inst, buf->type))) {
+	} else if (is_sw_fence(inst, get_output_tx_fence_type(inst))) {
 		if (!buf->data_size)
 			signal_error = true;
 	}
+	tx_fence_count = inst->hfi_frame_info.fence_count - buf->num_rx_fences;
 
-	/* fence signalling */
-	for (cnt = 0; cnt < inst->hfi_frame_info.fence_count; cnt++) {
-		u64 fence_id = inst->hfi_frame_info.fence_id[cnt];
+	for (cnt = 0; cnt < tx_fence_count; cnt++) {
+		/* locate TX index */
+		int idx = cnt + buf->num_rx_fences;
 
+		fence_id = inst->hfi_frame_info.fence_id[idx];
 		/* fetch fence using fence_id */
-		fence = msm_vidc_get_fence_from_id(inst, &inst->output_fence_list, fence_id);
+		fence = msm_vidc_get_fence_from_id(inst, &fcontext->fence_list, fence_id);
 		if (!fence) {
-			i_vpr_e(inst, "%s: invalid fence_id %llu\n", __func__, fence_id);
+			i_vpr_e(inst, "%s: invalid tx fence_id %llu\n", __func__, fence_id);
 			rc = -EINVAL;
 			goto error;
 		}
@@ -835,33 +969,103 @@ static int msm_vidc_handle_fence_signal(struct msm_vidc_inst *inst,
 		 * and seqno order is not guaranteed and hence skip seqno check in
 		 * signal error case
 		 */
-		if (!signal_error && fence_seqno <= inst->prev_seqno) {
+		if (!signal_error && fence_seqno <= fcontext->prev_seqno) {
 			i_vpr_e(inst, "%s: invalid fence seqno %llu, prev fence seqno %llu\n",
-				__func__, fence_seqno, inst->prev_seqno);
+				__func__, fence_seqno, fcontext->prev_seqno);
 			rc = -EINVAL;
 			goto error;
 		}
 
-		if (signal_error) {
-			print_fence_buffer(VIDC_ERR, "err ", "destroy", inst, buf, fence, cnt);
-			rc = call_fence_op(core, fence_destroy, inst, fence, true);
-		} else {
-			print_fence_buffer(VIDC_HIGH, "high",
-				is_synx_v2_fence(inst, fence->type) ? "destroy" : "signal",
-				inst, buf, fence, cnt);
-			if (is_synx_v2_fence(inst, fence->type))
-				rc = call_fence_op(core, fence_destroy, inst, fence, false);
-			else
-				rc = call_fence_op(core, fence_signal, inst, fence);
-		}
+		print_fence_buffer(signal_error ? VIDC_ERR : VIDC_HIGH,
+			signal_error ? "err " : "high", "destroy", inst, buf, fence, cnt);
+		rc = call_fence_op(core, fence_destroy, inst, fence, signal_error);
 		if (rc)
 			goto error;
 
-		inst->fences_per_output_counter++;
-		inst->prev_seqno = fence_seqno;
+		buf->tx_fences[cnt] = 0;
+		fcontext->fences_per_buffer_counter++;
+		fcontext->prev_seqno = fence_seqno;
 	}
+	/* validate firmware returned all the tx fences */
+	if (fcontext->fences_per_buffer_counter < buf->num_tx_fences) {
+		i_vpr_e(inst, "%s: fence count mismatch. value %d, min expected %d\n",
+			__func__, fcontext->fences_per_buffer_counter, buf->num_tx_fences);
+		rc = -EINVAL;
+		goto error;
+	}
+	/* Reset tx fence count after handling */
+	fcontext->fences_per_buffer_counter -= buf->num_tx_fences;
 
 error:
+	if (rc)
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	return rc;
+}
+
+static int msm_vidc_handle_output_fence(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	int rc = 0;
+
+	if (!is_output_rx_fence_enabled(inst) && !is_output_tx_fence_enabled(inst))
+		return 0;
+
+	/* sanitize TX & RX fences */
+	if ((is_output_rx_fence_enabled(inst) ^ (buf->num_rx_fences > 0)) ||
+	    (is_output_tx_fence_enabled(inst) ^ (buf->num_tx_fences > 0))) {
+		i_vpr_e(inst, "%s: unexpected. enable: rx %d tx %d, count: rx %d, tx %d\n",
+			__func__, is_output_rx_fence_enabled(inst),
+			is_output_tx_fence_enabled(inst),
+			buf->num_rx_fences, buf->num_tx_fences);
+		rc = -EINVAL;
+		goto error;
+	}
+
+	/* sanitize rx fence count */
+	if (inst->hfi_frame_info.fence_count < buf->num_rx_fences) {
+		i_vpr_e(inst, "%s: invalid fence_count %d, rx_fences %d\n", __func__,
+			inst->hfi_frame_info.fence_count, buf->num_rx_fences);
+		rc = -EINVAL;
+		goto error;
+	}
+
+	/* sanitize tx fence count */
+	if (is_early_notify_enabled(inst)) {
+		if (inst->hfi_frame_info.fence_count +
+			inst->output_tx_f_context.fences_per_buffer_counter
+			 < buf->num_tx_fences) {
+			i_vpr_e(inst, "%s: invalid fence_count %d, notify_count %d, tx_fences %d\n",
+				__func__, inst->hfi_frame_info.fence_count,
+				inst->output_tx_f_context.fences_per_buffer_counter,
+				buf->num_tx_fences);
+			rc = -EINVAL;
+			goto error;
+		}
+	} else {
+		if (inst->hfi_frame_info.fence_count - buf->num_rx_fences != buf->num_tx_fences) {
+			i_vpr_e(inst, "%s: invalid fence_count %d, rx_fences %d, tx_fences %d\n",
+				__func__, inst->hfi_frame_info.fence_count,
+				buf->num_rx_fences, buf->num_tx_fences);
+			rc = -EINVAL;
+			goto error;
+		}
+	}
+
+	/* rx fence signalling */
+	rc = handle_output_rx_fence(inst, buf);
+	if (rc)
+		goto error;
+
+	/* tx fence signalling */
+	rc = handle_output_tx_fence(inst, buf);
+	if (rc)
+		goto error;
+
+error:
+	/* reset num rx fences */
+	buf->num_rx_fences = 0;
+	/* reset num tx fences */
+	buf->num_tx_fences = 0;
 	if (rc)
 		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
 	return rc;
@@ -1002,17 +1206,7 @@ static int handle_output_buffer(struct msm_vidc_inst *inst,
 	buf->flags = 0;
 	buf->flags = get_driver_buffer_flags(inst, buffer->flags);
 
-	msm_vidc_handle_fence_signal(inst, buf);
-
-	/* validate firmware returned all the fences or not */
-	if (inst->fences_per_output_counter >= buf->fence_count) {
-		/* reset fence_count value after FBD handling */
-		inst->fences_per_output_counter -= buf->fence_count;
-	} else {
-		i_vpr_e(inst, "%s: fence count mismatch. value %d, min expected %d\n",
-			__func__, inst->fences_per_output_counter, buf->fence_count);
-		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
-	}
+	msm_vidc_handle_output_fence(inst, buf);
 
 	if (is_decode_session(inst)) {
 		inst->power.fw_cr = inst->hfi_frame_info.cr;
@@ -1555,8 +1749,9 @@ static int handle_session_stability(struct msm_vidc_inst *inst,
 static int handle_session_early_notify_partial_frame(struct msm_vidc_inst *inst,
 	struct hfi_packet *pkt)
 {
-	enum msm_vidc_fence_type f_type = get_fence_type(inst, MSM_VIDC_BUF_OUTPUT);
+	enum msm_vidc_fence_type f_type = get_output_tx_fence_type(inst);
 	struct msm_vidc_core *core = inst->core;
+	struct msm_vidc_fence_context *fcontext = NULL;
 	struct msm_vidc_fence *fence = NULL;
 	u64 fence_id = 0, fence_seqno = 0;
 	u32 port;
@@ -1583,8 +1778,9 @@ static int handle_session_early_notify_partial_frame(struct msm_vidc_inst *inst,
 		goto error;
 	}
 
+	fcontext = &inst->output_tx_f_context;
 	fence_id = *(u64 *)((u8 *)pkt + sizeof(struct hfi_packet));
-	fence = msm_vidc_get_fence_from_id(inst, &inst->output_fence_list, fence_id);
+	fence = msm_vidc_get_fence_from_id(inst, &fcontext->fence_list, fence_id);
 	if (!fence) {
 		i_vpr_e(inst, "%s: invalid fence_id %llu\n", __func__, fence_id);
 		rc = -EINVAL;
@@ -1593,26 +1789,26 @@ static int handle_session_early_notify_partial_frame(struct msm_vidc_inst *inst,
 	fence_seqno = fence->seqno;
 
 	/* sanitize fence seqno */
-	if (fence_seqno <= inst->prev_seqno) {
+	if (fence_seqno <= fcontext->prev_seqno) {
 		i_vpr_e(inst, "%s: invalid fence seqno %llu, prev fence seqno %llu\n",
-			__func__, fence_seqno, inst->prev_seqno);
+			__func__, fence_seqno, fcontext->prev_seqno);
 		rc = -EINVAL;
 		goto error;
 	}
-	print_fence_buffer(VIDC_HIGH, "high", "signal", inst, NULL, fence, 0);
-	rc = call_fence_op(core, fence_signal, inst, fence);
+	print_fence_buffer(VIDC_HIGH, "high", "destroy", inst, NULL, fence, 0);
+	rc = call_fence_op(core, fence_destroy, inst, fence, false);
 	if (rc) {
 		i_vpr_e(inst,
 			"%s: fence signal failed. invalid fence seqno %llu, id %llu, count %d\n",
-			__func__, fence_seqno, fence_id, inst->fences_per_output_counter);
+			__func__, fence_seqno, fence_id, fcontext->fences_per_buffer_counter);
 		rc = -EINVAL;
 		goto error;
 	}
-	inst->fences_per_output_counter++;
-	inst->prev_seqno = fence_seqno;
+	fcontext->fences_per_buffer_counter++;
+	fcontext->prev_seqno = fence_seqno;
 
 	i_vpr_l(inst, "%s: received fence seqno %llu, id %llu, count %d\n",
-		__func__, fence_seqno, fence_id, inst->fences_per_output_counter);
+		__func__, fence_seqno, fence_id, fcontext->fences_per_buffer_counter);
 
 error:
 	if (rc)
@@ -1762,9 +1958,8 @@ static int handle_property_fence_array(struct msm_vidc_inst *inst,
 		inst->hfi_frame_info.fence_id[i] = cur_fence_id;
 		inst->hfi_frame_info.fence_count++;
 	}
-	i_vpr_l(inst, "%s: fence_id[0] %u, received %d, expected %d\n", __func__,
-		inst->hfi_frame_info.fence_id[0], inst->fences_per_output_counter,
-		inst->hfi_frame_info.fence_count);
+	i_vpr_l(inst, "%s: fence_id[0] %llu, received %d\n", __func__,
+		inst->hfi_frame_info.fence_id[0], inst->hfi_frame_info.fence_count);
 
 	return 0;
 }

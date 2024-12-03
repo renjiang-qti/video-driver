@@ -77,7 +77,7 @@ struct msm_vidc_inst {
 							 enum msm_vidc_event event,
 							 void *data);
 	enum msm_vidc_sub_state            sub_state;
-	char                               sub_state_name[MAX_NAME_LENGTH];
+	char                               sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	enum msm_vidc_domain_type          domain;
 	enum msm_vidc_codec_type           codec;
 	void                              *core;
@@ -123,8 +123,6 @@ struct msm_vidc_inst {
 	struct list_head                   children_list; /* struct msm_vidc_inst_cap_entry */
 	struct list_head                   firmware_list; /* struct msm_vidc_inst_cap_entry */
 	struct list_head                   pending_pkts; /* struct hfi_pending_packet */
-	struct list_head                   input_fence_list; /* struct msm_vidc_fence */
-	struct list_head                   output_fence_list; /* struct msm_vidc_fence */
 	struct list_head                   buffer_stats_list; /* struct msm_vidc_buffer_stats */
 	bool                               once_per_session_set;
 	bool                               ipsc_properties_set;
@@ -136,7 +134,10 @@ struct msm_vidc_inst {
 	struct msm_vidc_statistics         stats;
 	struct msm_vidc_inst_cap           capabilities[INST_CAP_MAX + 1];
 	struct completion                  completions[MAX_SIGNAL];
-	struct msm_vidc_fence_context      fence_context;
+	struct msm_vidc_fence_context      input_rx_f_context;
+	struct msm_vidc_fence_context      input_tx_f_context;
+	struct msm_vidc_fence_context      output_rx_f_context;
+	struct msm_vidc_fence_context      output_tx_f_context;
 	bool                               active;
 	u64                                last_active_time_ns;
 	u64                                initial_time_us;
@@ -151,8 +152,6 @@ struct msm_vidc_inst {
 	u32                                adjust_priority;
 	bool                               iframe;
 	u32                                fw_min_count;
-	u32                                fences_per_output_counter;
-	u64                                prev_seqno;
 };
 
 #endif // _MSM_VIDC_INST_H_

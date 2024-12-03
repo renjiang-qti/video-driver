@@ -84,7 +84,7 @@ void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
 	}
 	core = inst->core;
 
-	buf = msm_vidc_fetch_buffer(inst, vb);
+	buf = msm_vidc_fetch_buffer(inst, vb->type, vb->index);
 	if (!buf) {
 		i_vpr_e(inst, "%s: failed to fetch buffer\n", __func__);
 		buf = NULL;

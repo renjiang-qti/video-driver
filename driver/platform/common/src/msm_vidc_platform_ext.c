@@ -306,6 +306,8 @@ int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl)
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct v4l2_vidc_fence_info *v4l2_finfo;
 	struct msm_vidc_fence_info vidc_finfo;
+	struct msm_vidc_buffer *buf;
+	int rc = 0;
 
 	if (!ctrl)
 		return 0;
@@ -317,9 +319,16 @@ int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl)
 		v4l2_finfo->num_rx_fds, v4l2_finfo->num_tx_fds);
 
 	v4l2_fence_info_to_driver(v4l2_finfo, &vidc_finfo);
-	/**
-	 * Todo: add logic to populate msm_vidc_fence from vidc_finfo.
-	 */
+	buf = msm_vidc_fetch_buffer(inst, vidc_finfo.v4l2_type, vidc_finfo.index);
+	if (!buf) {
+		i_vpr_e(inst, "%s: failed to fetch buffer\n", __func__);
+		return -EINVAL;
+	}
+
+	/* populate fence info */
+	rc = msm_vidc_populate_fence_info(inst, buf, &vidc_finfo);
+	if (rc)
+		return rc;
 	v4l2_fence_info_from_driver(v4l2_finfo, &vidc_finfo);
 
 	return 0;

@@ -408,7 +408,7 @@ static int msm_vidc_update_core_sub_state(struct msm_vidc_core *core,
 	enum msm_vidc_core_sub_state sub_state, const char *func)
 {
 	struct msm_vidc_event_data data;
-	char sub_state_name[MAX_NAME_LENGTH];
+	char sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	int ret = 0, rc = 0;
 
 	/* no substate update */
@@ -1400,7 +1400,7 @@ struct msm_vidc_sub_state_allow {
 static int msm_vidc_set_sub_state(struct msm_vidc_inst *inst,
 	enum msm_vidc_sub_state sub_state, const char *func)
 {
-	char sub_state_name[MAX_NAME_LENGTH];
+	char sub_state_name[MAX_MSM_VIDC_NAME_LENGTH];
 	int cnt, rc = 0;
 	static struct msm_vidc_sub_state_allow sub_state_allow[] = {
 		/* state, allow, sub_state */

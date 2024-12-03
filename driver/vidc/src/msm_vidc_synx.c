@@ -112,8 +112,8 @@ static int msm_vidc_synx_fence_deregister(struct msm_vidc_core *core)
 }
 
 static struct msm_vidc_fence *msm_vidc_synx_fence_create(
-	struct msm_vidc_inst *inst, struct list_head *fence_list,
-	enum msm_vidc_buffer_type buf_type)
+	struct msm_vidc_inst *inst, struct msm_vidc_fence_context *f_context,
+	enum msm_vidc_fence_type f_type, enum msm_vidc_fence_direction f_dir, int fence_fd)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct msm_vidc_fence *fence = NULL;
@@ -127,7 +127,7 @@ static struct msm_vidc_fence *msm_vidc_synx_fence_create(
 	}
 
 	/* create dma fence */
-	fence = msm_vidc_get_sw_fence(inst, fence_list, buf_type, false);
+	fence = msm_vidc_get_sw_fence(inst, f_context, f_type, f_dir, fence_fd);
 	if (!fence) {
 		i_vpr_e(inst, "%s: failed to create sw fence\n", __func__);
 		return NULL;
@@ -162,13 +162,14 @@ exit:
 	return fence;
 
 put_sw_fence:
-	msm_vidc_put_sw_fence(inst, fence, true);
+	msm_vidc_fence_signal(inst, fence, true);
+	msm_vidc_put_sw_fence(inst, fence);
 	return NULL;
 }
 
 static struct msm_vidc_fence *msm_vidc_synx_fence_import(
-	struct msm_vidc_inst *inst, struct list_head *fence_list,
-	enum msm_vidc_buffer_type buf_type)
+	struct msm_vidc_inst *inst, struct msm_vidc_fence_context *f_context,
+	enum msm_vidc_fence_type f_type, enum msm_vidc_fence_direction f_dir, int fence_fd)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct msm_vidc_fence *fence = NULL;
@@ -182,14 +183,11 @@ static struct msm_vidc_fence *msm_vidc_synx_fence_import(
 	}
 
 	/* import dma fence */
-	fence = msm_vidc_get_sw_fence(inst, fence_list, buf_type, true);
+	fence = msm_vidc_get_sw_fence(inst, f_context, f_type, f_dir, fence_fd);
 	if (!fence) {
 		i_vpr_e(inst, "%s: failed to import sw fence\n", __func__);
 		return NULL;
 	}
-
-	if (is_sw_fence(inst, fence->type))
-		goto exit;
 
 	/* handle hw fence case */
 	memset(&params, 0, sizeof(struct synx_import_params));
@@ -211,15 +209,14 @@ static struct msm_vidc_fence *msm_vidc_synx_fence_import(
 	/* prepare hw fence name */
 	populate_fence_name(inst, fence, false);
 
-exit:
 	return fence;
 
 put_sw_fence:
-	msm_vidc_put_sw_fence(inst, fence, true);
+	msm_vidc_put_sw_fence(inst, fence);
 	return NULL;
 }
 
-int msm_vidc_synx_fence_create_fd(struct msm_vidc_inst *inst,
+static int msm_vidc_synx_fence_create_fd(struct msm_vidc_inst *inst,
 	struct msm_vidc_fence *fence)
 {
 	int rc = 0;
@@ -233,28 +230,16 @@ int msm_vidc_synx_fence_create_fd(struct msm_vidc_inst *inst,
 	return rc;
 }
 
-static int msm_vidc_synx_fence_signal(struct msm_vidc_inst *inst, struct msm_vidc_fence *fence)
+static int msm_vidc_synx_fence_destroy_fd(struct msm_vidc_inst *inst,
+	struct msm_vidc_fence *fence)
 {
 	int rc = 0;
 
-	/* sanity - only sw output fence is allowed to signal */
-	if (fence->session || fence->imp_fence) {
-		i_vpr_e(inst, "%s: unexpected. name %s\n", __func__, fence->name);
-		return -EINVAL;
-	}
-
-	/* signal hw fence */
-	/**
-	 * Calling synx_signal() from HLOS is unexpected.
-	 */
-
-	/* signal sw fence */
-	dma_fence_signal(&fence->dma_fence);
-
-	/* remove entry from fence_list */
-	rc = msm_vidc_put_sw_fence(inst, fence, false);
-	if (rc)
+	rc = msm_vidc_put_sw_fence_fd(inst, fence);
+	if (rc) {
+		i_vpr_e(inst, "%s: failed. %s\n", __func__, fence->name);
 		return rc;
+	}
 
 	return rc;
 }
@@ -289,11 +274,14 @@ static int msm_vidc_synx_fence_destroy(struct msm_vidc_inst *inst,
 	}
 
 	/* signal sw fence(in normal flow) */
-	if (!is_error)
-		dma_fence_signal(&fence->dma_fence);
+	rc = msm_vidc_fence_signal(inst, fence, is_error);
+	if (rc) {
+		i_vpr_e(inst, "%s: synx signal failed. name %s\n", __func__, fence->name);
+		return rc;
+	}
 
 	/* destroy sw fence */
-	rc = msm_vidc_put_sw_fence(inst, fence, is_error);
+	rc = msm_vidc_put_sw_fence(inst, fence);
 	if (rc)
 		return rc;
 
@@ -349,7 +337,7 @@ static int msm_vidc_synx_fence_release(struct msm_vidc_inst *inst,
 	}
 
 	/* destroy sw fence */
-	rc = msm_vidc_put_sw_fence(inst, fence, is_error);
+	rc = msm_vidc_put_sw_fence(inst, fence);
 	if (rc)
 		return rc;
 
@@ -376,7 +364,7 @@ const struct msm_vidc_fence_ops *get_synx_fence_ops(void)
 	synx_ops.fence_create            = msm_vidc_synx_fence_create;
 	synx_ops.fence_import            = msm_vidc_synx_fence_import;
 	synx_ops.fence_create_fd         = msm_vidc_synx_fence_create_fd;
-	synx_ops.fence_signal            = msm_vidc_synx_fence_signal;
+	synx_ops.fence_destroy_fd        = msm_vidc_synx_fence_destroy_fd;
 	synx_ops.fence_destroy           = msm_vidc_synx_fence_destroy;
 	synx_ops.fence_release           = msm_vidc_synx_fence_release;
 	synx_ops.fence_recover           = msm_vidc_synx_fence_recover;

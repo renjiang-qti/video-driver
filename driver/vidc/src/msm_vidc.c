@@ -790,8 +790,6 @@ void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type)
 	INIT_LIST_HEAD(&inst->dmabuf_tracker);
 	INIT_LIST_HEAD(&inst->input_timer_list);
 	INIT_LIST_HEAD(&inst->pending_pkts);
-	INIT_LIST_HEAD(&inst->input_fence_list);
-	INIT_LIST_HEAD(&inst->output_fence_list);
 	INIT_LIST_HEAD(&inst->buffer_stats_list);
 	for (i = 0; i < MAX_SIGNAL; i++)
 		init_completion(&inst->completions[i]);

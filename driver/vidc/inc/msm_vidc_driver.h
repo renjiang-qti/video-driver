@@ -14,6 +14,8 @@
 enum msm_vidc_debugfs_event;
 struct vb2_buffer;
 struct iommu_domain;
+struct v4l2_vidc_fence_info;
+struct msm_vidc_fence_context;
 
 static inline bool is_dec_scaling_enabled(struct msm_vidc_inst *inst)
 {
@@ -278,32 +280,6 @@ static inline bool is_meta_enabled(struct msm_vidc_inst *inst, unsigned int type
 	return enabled;
 }
 
-static inline enum msm_vidc_fence_type get_fence_type(struct msm_vidc_inst *inst,
-	enum msm_vidc_buffer_type buf_type)
-{
-	enum msm_vidc_fence_type type = MSM_VIDC_FENCE_NONE;
-
-	if (is_input_buffer(buf_type))
-		type = inst->capabilities[INPUT_RX_FENCE_TYPE].value;
-	else if (is_output_buffer(buf_type))
-		type = inst->capabilities[OUTPUT_TX_FENCE_TYPE].value;
-
-	return type;
-}
-
-static inline enum msm_vidc_fence_direction get_fence_direction(struct msm_vidc_inst *inst,
-	enum msm_vidc_buffer_type buf_type)
-{
-	enum msm_vidc_fence_direction dir = MSM_VIDC_FENCE_DIR_NONE;
-
-	if (is_input_buffer(buf_type))
-		dir = inst->capabilities[INPUT_RX_FENCE_DIRECTION].value;
-	else if (is_output_buffer(buf_type))
-		dir = inst->capabilities[OUTPUT_TX_FENCE_DIRECTION].value;
-
-	return dir;
-}
-
 static inline enum msm_vidc_fence_type get_input_rx_fence_type(struct msm_vidc_inst *inst)
 {
 	return inst->capabilities[INPUT_RX_FENCE_TYPE].value;
@@ -322,18 +298,6 @@ static inline enum msm_vidc_fence_type get_output_rx_fence_type(struct msm_vidc_
 static inline enum msm_vidc_fence_type get_output_tx_fence_type(struct msm_vidc_inst *inst)
 {
 	return inst->capabilities[OUTPUT_TX_FENCE_TYPE].value;
-}
-
-static inline enum msm_vidc_fence_direction get_input_rx_fence_direction(
-	struct msm_vidc_inst *inst)
-{
-	return inst->capabilities[INPUT_RX_FENCE_DIRECTION].value;
-}
-
-static inline enum msm_vidc_fence_direction get_output_tx_fence_direction(
-	struct msm_vidc_inst *inst)
-{
-	return inst->capabilities[OUTPUT_TX_FENCE_DIRECTION].value;
 }
 
 static inline bool is_sw_fence(struct msm_vidc_inst *inst,
@@ -505,6 +469,8 @@ static inline bool is_enc_slice_delivery_mode(struct msm_vidc_inst *inst)
 const char *cap_name(enum msm_vidc_inst_capability_type cap_id);
 const char *v4l2_pixelfmt_name(struct msm_vidc_inst *inst, u32 pixelfmt);
 const char *v4l2_type_name(u32 port);
+int msm_vidc_populate_fence_info(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf, struct msm_vidc_fence_info *finfo);
 void print_fence_buffer(u32 tag, const char *tag_str, const char *str,
 		struct msm_vidc_inst *inst, struct msm_vidc_buffer *buf,
 		struct msm_vidc_fence *fence, int count);
@@ -731,7 +697,7 @@ int msm_vidc_alloc_and_queue_input_internal_buffers(struct msm_vidc_inst *inst);
 int vb2_buffer_to_driver(struct vb2_buffer *vb2, struct msm_vidc_buffer *buf);
 bool is_ssr_type_allowed(struct msm_vidc_core *core, u32 type);
 struct msm_vidc_buffer *msm_vidc_fetch_buffer(struct msm_vidc_inst *inst,
-					      struct vb2_buffer *vb2);
+					    u32 vb2_type, int vb2_index);
 struct context_bank_info
 	*msm_vidc_get_context_bank_for_region(struct msm_vidc_core *core,
 					      enum msm_vidc_buffer_region region);
