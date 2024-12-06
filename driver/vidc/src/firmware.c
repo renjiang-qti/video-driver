@@ -15,6 +15,7 @@
 #include <linux/soc/qcom/smem.h>
 #include <linux/devcoredump.h>
 #include <linux/firmware.h>
+#include <soc/qcom/minidump.h>
 
 
 #include "msm_vidc_core.h"
@@ -31,8 +32,65 @@ enum tzbsp_video_state {
 	TZBSP_VIDEO_STATE_RESTORE_THRESHOLD = 2,
 };
 
+static void msm_vidc_md_video_fw_coredump(struct msm_vidc_core *core,
+					const char *name, void *virt, u64 phys, u64 size)
+{
+	struct md_region md_entry = {0};
+
+	if (core->capabilities[SUPPORTS_MINIDUMP].value && msm_minidump_enabled()) {
+		d_vpr_h("minidump is enabled!\n");
+
+		strscpy(md_entry.name, name, sizeof(md_entry.name));
+		md_entry.virt_addr = (uintptr_t)virt;
+		md_entry.phys_addr = phys;
+		md_entry.size = size;
+		if (msm_minidump_add_region(&md_entry) < 0)
+			d_vpr_e("minidump: failed to add FW mem-region in minidump\n");
+		else
+			d_vpr_h("minidump: added FW mem-region, virt_addr %#llx size %llu\n",
+					md_entry.virt_addr, size);
+	} else {
+		d_vpr_e("minidump is not enabled!\n");
+	}
+}
+
+void msm_vidc_md_video_queues_dump(struct msm_vidc_core *core)
+{
+	int rc = 0;
+	struct va_md_entry entry = {0};
+
+	/* copy queues(cmd, msg, dbg) dump(along with headers) */
+	entry.size = TOTAL_QSIZE;
+	strscpy(entry.owner, "msm_vidc", sizeof(entry.owner));
+	entry.cb = NULL;
+	entry.vaddr = (unsigned long)core->iface_q_table.align_virtual_addr;
+	/* Client needs to run below command in their boot-up script
+	 * To collect queues dump and sfr buffer dump during kernel panic
+	 *
+	 * "echo 1 > /sys/kernel/va-minidump/msm_vidc/enable"
+	 */
+	rc = qcom_va_md_add_region(&entry);
+	if (rc)
+		d_vpr_e("minidump: failed to dump queues in minidump\n");
+	else
+		d_vpr_h("minidump: added queues memory region, virt_addr %#lx size %u\n",
+				entry.vaddr, entry.size);
+
+	/* copy sfr dump */
+	entry.size = ALIGNED_SFR_SIZE;
+	strscpy(entry.owner, "msm_vidc", sizeof(entry.owner));
+	entry.cb = NULL;
+	entry.vaddr = (unsigned long)core->sfr.align_virtual_addr;
+	rc = qcom_va_md_add_region(&entry);
+	if (rc)
+		d_vpr_e("minidump: failed to dump SFR buffer in minidump\n");
+	else
+		d_vpr_h("minidump: added SFR memory region, virt_addr %#lx size %u\n",
+				entry.vaddr, entry.size);
+}
+
 static int __load_fw_to_memory(struct platform_device *pdev,
-			       const char *fw_name)
+			const char *fw_name)
 {
 	int rc = 0;
 	const struct firmware *firmware = NULL;
@@ -120,6 +178,8 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 		goto exit;
 	}
 
+	/* Enabling FW memory-region dump during Kernel panic */
+	msm_vidc_md_video_fw_coredump(core, "vidc_core", virt, phys, res_size);
 	memunmap(virt);
 	release_firmware(firmware);
 	d_vpr_h("%s: firmware \"%s\" loaded successfully\n",

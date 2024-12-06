@@ -81,7 +81,7 @@ enum msm_vidc_metadata_bits {
 #define DECODE_INPUT_METADATA_SIZE         MSM_VIDC_METADATA_SIZE
 #define MSM_VIDC_METADATA_DOLBY_RPU_SIZE   (41 * 1024) /* 41 KB */
 
-#define MAX_NAME_LENGTH   128
+#define MAX_MSM_VIDC_NAME_LENGTH   128
 #define VENUS_VERSION_LENGTH 128
 #define MAX_MATRIX_COEFFS 9
 #define MAX_BIAS_COEFFS   3
@@ -671,6 +671,7 @@ enum msm_vidc_core_capability_type {
 	SSR_TYPE,
 	SUPPORTS_REMOTE_PROC,
 	SUPPORTS_FREEZE,
+	SUPPORTS_MINIDUMP,
 	NUM_VPU,
 	CORE_CAP_MAX,
 };
@@ -941,7 +942,7 @@ enum msm_vidc_fence_direction {
 };
 
 struct msm_vidc_fence_context {
-	char                      name[MAX_NAME_LENGTH];
+	char                      name[MAX_MSM_VIDC_NAME_LENGTH];
 	u64                       ctx_num;
 	u64                       input_seq_num;
 	u64                       output_seq_num;
@@ -949,7 +950,7 @@ struct msm_vidc_fence_context {
 
 struct msm_vidc_fence {
 	struct list_head                list;
-	char                            name[MAX_NAME_LENGTH];
+	char                            name[MAX_MSM_VIDC_NAME_LENGTH];
 	enum msm_vidc_fence_type        type;
 	enum msm_vidc_fence_direction   direction;
 	int                             fd;
