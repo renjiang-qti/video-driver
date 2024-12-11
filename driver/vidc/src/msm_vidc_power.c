@@ -682,6 +682,10 @@ int msm_vidc_scale_power(struct msm_vidc_inst *inst, bool scale_buses)
 	core = inst->core;
 	curr_time_ns = ktime_get_ns();
 
+	/* skip scale_power when using hw virtualization */
+	if (core->full_virtualization_data.virtualization_en)
+		return 0;
+
 	if (!inst->active) {
 		/* scale buses for inactive -> active session */
 		scale_buses = true;

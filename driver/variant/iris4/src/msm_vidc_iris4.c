@@ -419,7 +419,7 @@ static bool is_iris4_hw_power_collapsed(struct msm_vidc_core *core)
 
 static int __power_off_iris4_apv(struct msm_vidc_core *core)
 {
-	int rc = 0, i = 0;
+	int rc = 0;
 	u32 value = 0;
 	u32 count = 0;
 
@@ -451,11 +451,11 @@ static int __power_off_iris4_apv(struct msm_vidc_core *core)
 	 * add APV TOP IDLE STATUS check before collapsing APV per HPG update
 	 * poll for APV TOP IDLE STATUS -> HPG 3.4.4.2
 	 */
-	rc = __read_register_with_poll_timeout(core, WRAPPER_IRIS_APV_TOP_IDLE_STATUS_IRIS4,
-			0x11F, 0x11F, 2000, 20000);
-	if (rc)
-		d_vpr_e("%s: APV_TOP_IDLE_STATUS (%d) is not idle (%#x)\n",
-			__func__, i, value);
+	//rc = __read_register_with_poll_timeout(core, WRAPPER_IRIS_APV_TOP_IDLE_STATUS_IRIS4,
+	//		0x11F, 0x11F, 2000, 20000);
+	//if (rc)
+	//	d_vpr_e("%s: APV_TOP_IDLE_STATUS (%d) is not idle (%#x)\n",
+	//		__func__, value);
 
 	/* set MNoC to low power, set PD_NOC_QREQ (bit 0) */
 	rc = __write_register_masked(core, AON_WRAPPER_MVP_NOC_LPI_CONTROL_IRIS4,
@@ -746,6 +746,12 @@ disable_power:
 		rc = 0;
 	}
 
+	rc = call_res_op(core, clk_disable, core, "video_cc_mvs0b_clk");
+	if (rc) {
+		d_vpr_e("%s: disable unprepare video_cc_mvs0b_clk failed\n", __func__);
+		rc = 0;
+	}
+
 	return rc;
 }
 
@@ -1033,6 +1039,10 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_clk_controller;
 
+	rc = call_res_op(core, clk_enable, core, "video_cc_mvs0b_clk");
+	if (rc)
+		goto fail_clk_bse_controller;
+
 	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
 	if (rc)
 		goto fail_read_efuse;
@@ -1077,6 +1087,9 @@ fail_clk_vpp0:
 		call_res_op(core, gdsc_off, core, "vpp0");
 fail_regulator_vpp0:
 fail_read_efuse:
+	call_res_op(core, clk_disable, core, "video_cc_mvs0b_clk");
+fail_clk_bse_controller:
+	call_res_op(core, clk_disable, core, "video_cc_mvs0_clk");
 fail_clk_controller:
 	call_res_op(core, clk_disable, core, "video_cc_mvs0_freerun_clk");
 fail_clk_freerun:
@@ -1185,7 +1198,7 @@ static int __power_on_iris4(struct msm_vidc_core *core)
 fail_sw_ctrl:
 	__power_off_iris4_apv(core);
 fail_power_on_apv:
-    __power_off_iris4_hardware(core);
+	__power_off_iris4_hardware(core);
 fail_power_on_hardware:
 	__power_off_iris4_controller(core);
 fail_power_on_controller:
