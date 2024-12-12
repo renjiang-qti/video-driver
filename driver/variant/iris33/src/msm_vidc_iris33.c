@@ -715,6 +715,14 @@ skip_video_xo_reset:
 	if (rc)
 		d_vpr_e("%s: de-assert video_mvs0c_reset failed\n", __func__);
 
+	/* When the vcodec GDSC is powered on and then moves into HW control. As it moves into HW
+	 * control, vcodec is initiated with power down sequence then driver requests for migrating
+	 * GDSC into sw control, which implies power up sequence for GDSC. Due to b2b switch of
+	 * power off and on for video hardware, it ends up in transient state and hungs eventually.
+	 * So Writing the register explicitly to avoid power off sequence when HW control is set.
+	 */
+	writel_relaxed(0x0, (u8 *)core->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
+
 	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
 	if (rc) {
 		d_vpr_e("%s: failed to acquire video_xo_reset control\n", __func__);
@@ -723,12 +731,12 @@ skip_video_xo_reset:
 		xo_reset_acquired = true;
 	}
 	rc = call_res_op(core, gdsc_on, core, "vcodec");
-	if (rc)
-		return rc;
 	if (xo_reset_acquired) {
 		xo_reset_acquired = false;
 		call_res_op(core, reset_control_release, core, "video_xo_reset");
 	}
+	if (rc)
+		return rc;
 
 	rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_clk");
 	if (rc)
@@ -964,6 +972,14 @@ static int __power_on_iris33_hardware(struct msm_vidc_core *core)
 	else {
 		xo_reset_acquired = true;
 	}
+
+	/* When the vcodec GDSC is powered on and then moves into HW control. As it moves into HW
+	 * control, vcodec is initiated with power down sequence then driver requests for migrating
+	 * GDSC into sw control, which implies power up sequence for GDSC. Due to b2b switch of
+	 * power off and on for video hardware, it ends up in transient state and hungs eventually.
+	 * So Writing the register explicitly to avoid power off sequence when HW control is set.
+	 */
+	writel_relaxed(0x0, (u8 *)core->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
 
 	rc = call_res_op(core, gdsc_on, core, "vcodec");
 	if (rc)
