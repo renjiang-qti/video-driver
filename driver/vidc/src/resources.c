@@ -41,14 +41,6 @@ enum reset_state {
 	DEASSERT,
 };
 
-/* A comparator to compare loads (needed later on) */
-static inline int cmp(const void *a, const void *b)
-{
-	/* want to sort in reverse so flip the comparison */
-	return ((struct freq_table *)b)->freq -
-		((struct freq_table *)a)->freq;
-}
-
 static void __fatal_error(bool fatal)
 {
 	WARN_ON(fatal);
@@ -467,14 +459,67 @@ enable_runtime_pm:
 	return rc;
 }
 
+unsigned long get_clock_freq(struct msm_vidc_core *core, const char *clk_name, int idx)
+{
+	struct clock_info *cl;
+	u64 freq = 0;
+
+	venus_hfi_for_each_clock(core, cl) {
+		if (!strcmp(cl->name, clk_name)) {
+			freq = cl->freq[idx];
+			break;
+		}
+	}
+
+	return freq;
+}
+
+unsigned long get_clock_freq_count(struct msm_vidc_core *core, const char *clk_name)
+{
+	struct clock_info *cl;
+	u64 freq_count = 0;
+
+	venus_hfi_for_each_clock(core, cl) {
+		if (!strcmp(cl->name, clk_name)) {
+			freq_count = cl->freq_count;
+			break;
+		}
+	}
+
+	return freq_count;
+}
+
+int get_min_clock_index(struct msm_vidc_core *core)
+{
+	struct clock_info *cl;
+	int min_clk_idx = 0;
+
+	/* min clock rate will always be last entry in freq table */
+	venus_hfi_for_each_clock(core, cl) {
+		if (cl->has_scaling)
+			continue;
+
+		min_clk_idx = cl->freq_count - 1;
+		break;
+	}
+
+	return min_clk_idx;
+}
+
+int get_max_clock_index(struct msm_vidc_core *core)
+{
+
+	/* index zero will always be the max clock rate */
+	return 0;
+}
+
 static int __init_clocks(struct msm_vidc_core *core)
 {
 	struct clock_residency *residency = NULL;
 	const struct clk_table *clk_tbl;
-	struct freq_table *freq_tbl;
 	struct clock_set *clocks;
 	struct clock_info *cinfo = NULL;
-	u32 clk_count = 0, freq_count = 0;
+	u32 clk_count = 0, size;
 	int fcnt = 0, cnt = 0, rc = 0;
 
 	clocks = &core->resource->clock_set;
@@ -499,13 +544,30 @@ static int __init_clocks(struct msm_vidc_core *core)
 
 	/* populate clock field from platform data */
 	for (cnt = 0; cnt < clocks->count; cnt++) {
+		size = 0;
+		if (clk_tbl[cnt].scaling)
+			size = clk_tbl[cnt].freq_table_size;
+
+		clocks->clock_tbl[cnt].freq = devm_kzalloc(&core->pdev->dev,
+							    sizeof(u64) * size, GFP_KERNEL);
+
 		clocks->clock_tbl[cnt].name = clk_tbl[cnt].name;
 		clocks->clock_tbl[cnt].clk_id = clk_tbl[cnt].clk_id;
 		clocks->clock_tbl[cnt].has_scaling = clk_tbl[cnt].scaling;
+		clocks->clock_tbl[cnt].freq_count = size;
+		for (int i = 0; i < size; i++)
+			clocks->clock_tbl[cnt].freq[i] = clk_tbl[cnt].freq_table[i];
 	}
 
-	freq_tbl = core->platform->data.freq_tbl;
-	freq_count = core->platform->data.freq_tbl_size;
+	/* print freq field clock_set */
+	for (cnt = 0; cnt < clocks->count; cnt++) {
+		if (clocks->clock_tbl[cnt].has_scaling) {
+			d_vpr_h("%s: updated freq table for clock %s\n",
+				__func__, clocks->clock_tbl[cnt].name);
+			for (int i = 0; i < clocks->clock_tbl[cnt].freq_count; i++)
+				d_vpr_h("%s:\t %llu\n", __func__, clocks->clock_tbl[cnt].freq[i]);
+		}
+	}
 
 	/* populate clk residency stats table */
 	for (cnt = 0; cnt < clocks->count; cnt++) {
@@ -516,7 +578,7 @@ static int __init_clocks(struct msm_vidc_core *core)
 		if (!clocks->clock_tbl[cnt].has_scaling)
 			continue;
 
-		for (fcnt = 0; fcnt < freq_count; fcnt++) {
+		for (fcnt = 0; fcnt < clocks->clock_tbl[cnt].freq_count; fcnt++) {
 			residency = devm_kzalloc(&core->pdev->dev,
 				sizeof(struct clock_residency), GFP_KERNEL);
 			if (!residency) {
@@ -524,13 +586,8 @@ static int __init_clocks(struct msm_vidc_core *core)
 				return -ENOMEM;
 			}
 
-			if (!freq_tbl) {
-				d_vpr_e("%s: invalid freq tbl %pK\n", __func__, freq_tbl);
-				return -EINVAL;
-			}
-
 			/* update residency node */
-			residency->rate = freq_tbl[fcnt].freq;
+			residency->rate = clocks->clock_tbl[cnt].freq[fcnt];
 			residency->start_time_us = 0;
 			residency->total_time_us = 0;
 			INIT_LIST_HEAD(&residency->list);
@@ -675,48 +732,6 @@ static int __init_subcaches(struct msm_vidc_core *core)
 			return rc;
 		}
 	}
-
-	return rc;
-}
-
-static int __init_freq_table(struct msm_vidc_core *core)
-{
-	struct freq_table *freq_tbl;
-	struct freq_set *clks;
-	u32 freq_count = 0, cnt = 0;
-	int rc = 0;
-
-	clks = &core->resource->freq_set;
-
-	freq_tbl = core->platform->data.freq_tbl;
-	freq_count = core->platform->data.freq_tbl_size;
-
-	if (!freq_tbl || !freq_count) {
-		d_vpr_e("%s: invalid freq tbl %pK or count %d\n",
-			__func__, freq_tbl, freq_count);
-		return -EINVAL;
-	}
-
-	/* allocate freq_set */
-	clks->freq_tbl = devm_kzalloc(&core->pdev->dev,
-			sizeof(*clks->freq_tbl) * freq_count, GFP_KERNEL);
-	if (!clks->freq_tbl) {
-		d_vpr_e("%s: failed to alloc memory for freq table\n", __func__);
-		return -ENOMEM;
-	}
-	clks->count = freq_count;
-
-	/* populate freq field from platform data */
-	for (cnt = 0; cnt < clks->count; cnt++)
-		clks->freq_tbl[cnt].freq = freq_tbl[cnt].freq;
-
-	/* sort freq table */
-	sort(clks->freq_tbl, clks->count, sizeof(*clks->freq_tbl), cmp, NULL);
-
-	/* print freq field freq_set */
-	d_vpr_h("%s: updated freq table\n", __func__);
-	for (cnt = 0; cnt < clks->count; cnt++)
-		d_vpr_h("%s:\t %lu\n", __func__, clks->freq_tbl[cnt].freq);
 
 	return rc;
 }
@@ -1316,21 +1331,26 @@ static int __set_clk_rate(struct msm_vidc_core *core, struct clock_info *cl,
 	return rc;
 }
 
-static int __set_clocks(struct msm_vidc_core *core, u64 freq)
+static int __set_clocks(struct msm_vidc_core *core, int idx)
 {
 	struct clock_info *cl;
 	int rc = 0;
 
-	/* scale mxc & mmcx rails */
-	rc = __opp_set_rate(core, freq);
-	if (rc) {
-		d_vpr_e("%s: opp setrate failed %lld\n", __func__, freq);
-		return rc;
-	}
-
 	venus_hfi_for_each_clock(core, cl) {
 		if (cl->has_scaling) {
-			rc = __set_clk_rate(core, cl, freq);
+			if (idx > cl->freq_count - 1)
+				idx = cl->freq_count - 1;
+			if (idx < 0)
+				idx = 0;
+
+			/* scale mxc & mmcx rails */
+			rc = __opp_set_rate(core, cl->freq[idx]);
+			if (rc) {
+				d_vpr_e("%s: opp setrate failed %llu\n", __func__, cl->freq[idx]);
+				return rc;
+			}
+
+			rc = __set_clk_rate(core, cl, cl->freq[idx]);
 			if (rc)
 				return rc;
 		}
@@ -1402,7 +1422,7 @@ static int __prepare_enable_clock(struct msm_vidc_core *core,
 			 * attempts to multiply again. So divide scaling ratio before calling
 			 * __set_clk_rate.
 			 */
-			rate = rate / MSM_VIDC_CLOCK_SOURCE_SCALING_RATIO;
+			rate = rate / core->platform->data.clock_source_scaling_ratio;
 			__set_clk_rate(core, cl, rate);
 		}
 
@@ -1470,10 +1490,6 @@ static int __init_resources(struct msm_vidc_core *core)
 		return rc;
 
 	rc = __init_subcaches(core);
-	if (rc)
-		return rc;
-
-	rc = __init_freq_table(core);
 	if (rc)
 		return rc;
 

@@ -3095,20 +3095,28 @@ static const struct pd_table canoe_pd_table[] = {
 
 /* name, clock id, scaling */
 static const struct clk_table canoe_clk_table[] = {
-	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0 },
-	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0 },
-	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
-	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
-	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0 },
-	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
-	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
-	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
-	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
-	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1 },
-	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1 },
-	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1 },
-	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1 },
+	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0},
+	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0},
+	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0},
+	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0},
+	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0},
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0},
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0},
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0},
+	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0},
+	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0},
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {800000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 7},
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
+	 (u64[]) {1260000000, 1104000000, 800000000, 666000000,
+		  630000000,  507000000,  360000000}, 7},
 };
 
 /* name, exclusive_release */
@@ -3141,11 +3149,6 @@ const struct context_bank_table canoe_context_bank_table[] = {
 		MSM_VIDC_SECURE_NONPIXEL,      0 },
 	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0,
 		MSM_VIDC_SECURE_BITSTREAM,     0 },
-};
-
-/* freq */
-static struct freq_table canoe_freq_table[] = {
-    {800000000}, {630000000}, {533000000}, {444000000}, {420000000}, {338000000}, {240000000}
 };
 
 /* register, value, mask */
@@ -3307,10 +3310,9 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(canoe_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = canoe_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(canoe_freq_table),
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
+	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
 	.supports_mmrm = 0,

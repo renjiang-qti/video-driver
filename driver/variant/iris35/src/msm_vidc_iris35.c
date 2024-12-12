@@ -684,7 +684,7 @@ static int __power_off_iris35(struct msm_vidc_core *core)
 	 * Reset video_cc_mvs0_clk_src value to resolve MMRM high video
 	 * clock projection issue.
 	 */
-	rc = call_res_op(core, set_clks, core, 0);
+	rc = call_res_op(core, set_clks, core, get_min_clock_index(core));
 	if (rc)
 		d_vpr_e("%s: resetting clocks failed\n", __func__);
 
@@ -784,8 +784,7 @@ fail_regulator:
 
 static int __power_on_iris35(struct msm_vidc_core *core)
 {
-	struct frequency_table *freq_tbl;
-	u32 freq = 0;
+	u32 idx = 0;
 	int rc = 0;
 
 	if (is_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE))
@@ -816,11 +815,8 @@ static int __power_on_iris35(struct msm_vidc_core *core)
 		goto fail_power_on_hardware;
 	}
 
-	freq_tbl = core->resource->freq_set.freq_tbl;
-	freq = core->power.clk_freq ? core->power.clk_freq :
-				      freq_tbl[0].freq;
-
-	rc = call_res_op(core, set_clks, core, freq);
+	idx = core->power.clk_freq_idx ? core->power.clk_freq_idx : 0;
+	rc = call_res_op(core, set_clks, core, idx);
 	if (rc) {
 		d_vpr_e("%s: failed to scale clocks\n", __func__);
 		rc = 0;
@@ -1331,7 +1327,7 @@ static struct msm_vidc_session_ops msm_session_ops = {
 	.min_count = msm_buffer_min_count_iris35,
 	.extra_count = msm_buffer_extra_count_iris35,
 	.ring_buf_count = msm_vidc_ring_buf_count_iris35,
-	.calc_freq = msm_vidc_calc_freq_iris35,
+	.scale_clocks = msm_vidc_scale_clocks_iris35,
 	.calc_bw = msm_vidc_calc_bw_iris35,
 	.decide_work_route = msm_vidc_decide_work_route_iris35,
 	.decide_work_mode = msm_vidc_decide_work_mode_iris35,

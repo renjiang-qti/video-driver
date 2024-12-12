@@ -880,6 +880,15 @@ struct msm_vidc_decode_batch {
 	struct delayed_work    work;
 };
 
+struct vidc_clock_scaling_data {
+	u32 data_size;
+	u64 freq;
+	u64 vpp_freq;
+	u64 apv_freq;
+	u64 bse_freq;
+	u64 tensilica_freq;
+};
+
 enum msm_vidc_power_mode {
 	VIDC_POWER_NORMAL = 0,
 	VIDC_POWER_LOW,
@@ -918,7 +927,10 @@ struct msm_vidc_power {
 	bool                   dcvs_mode;
 	u32                    dcvs_window;
 	u64                    min_freq;
-	u64                    curr_freq;
+	u64                    min_vpp_freq;
+	u64                    min_apv_freq;
+	u64                    min_bse_freq;
+	u64                    min_tensilica_freq;
 	u32                    ddr_bw;
 	u32                    sys_cache_bw;
 	u32                    dcvs_flags;

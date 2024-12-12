@@ -2089,7 +2089,7 @@ int venus_hfi_release_buffer(struct msm_vidc_inst *inst,
 	return rc;
 }
 
-int venus_hfi_scale_clocks(struct msm_vidc_inst *inst, u64 freq)
+int venus_hfi_scale_clocks(struct msm_vidc_inst *inst, int idx)
 {
 	int rc = 0;
 	struct msm_vidc_core *core;
@@ -2102,7 +2102,7 @@ int venus_hfi_scale_clocks(struct msm_vidc_inst *inst, u64 freq)
 		i_vpr_e(inst, "%s: Resume from power collapse failed\n", __func__);
 		goto exit;
 	}
-	rc = call_res_op(core, set_clks, core, freq);
+	rc = call_res_op(core, set_clks, core, idx);
 	if (rc)
 		goto exit;
 

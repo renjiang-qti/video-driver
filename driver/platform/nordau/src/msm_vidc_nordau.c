@@ -2501,7 +2501,8 @@ static const struct clk_table nordau_clk_table[] = {
 	{ "gcc_video_axi0",         GCC_VIDEO_AXI0_CLK,     0 },
 	{ "core_clk",               VIDEO_CC_MVS0C_CLK,     0 },
 	{ "vcodec_clk",             VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	 (u64[]) {560000000, 533333333, 480000000, 435000000, 240000000}, 5},
 };
 #endif
 
@@ -2532,11 +2533,6 @@ const struct context_bank_table nordau_context_bank_table[] = {
 		MSM_VIDC_SECURE_BITSTREAM,    0 },
 };
 
-/* freq */
-static struct freq_table nordau_freq_table[] = {
-	{560000000}, {533333333}, {480000000}, {435000000}, {240000000}
-};
-
 /* register, value, mask */
 static const struct reg_preset_table nordau_reg_preset_table[] = {
 	{ 0xB0088, 0x0, 0x11 },
@@ -2562,8 +2558,6 @@ static const struct msm_vidc_platform_data nordau_data = {
 	.context_bank_tbl_size = ARRAY_SIZE(nordau_context_bank_table),
 
 	/* platform specific resources */
-	.freq_tbl = nordau_freq_table,
-	.freq_tbl_size = ARRAY_SIZE(nordau_freq_table),
 	.reg_prst_tbl = nordau_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(nordau_reg_preset_table),
 	.fwname = "vpu36_4v",
