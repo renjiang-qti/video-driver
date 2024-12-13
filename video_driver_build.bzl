@@ -57,21 +57,33 @@ def video_module_entry(hdrs = []):
 
 def define_target_variant_modules(target, variant, registry, modules, config_options = []):
     kernel_build = "{}_{}".format(target, variant)
-    kernel_build_label = "//soc-repo:{}_base_kernel".format(kernel_build)
+
+    deps = []
+    all_module_deps = select({
+        "//build/kernel/kleaf:socrepo_true": [
+            "//soc-repo:all_headers",
+            "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
+            "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+        ],
+        "//build/kernel/kleaf:socrepo_false": [
+            "//msm-kernel:all_headers",
+        ],
+    })
+    kernel_build_label = select({
+        "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
+        "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
+    })
+
     modules = [registry.get(module_name) for module_name in modules]
     options = _get_kernel_build_options(modules, config_options)
     build_print = lambda message: print("{}: {}".format(kernel_build, message))
     formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
-    headers = ["//soc-repo:all_headers"] + registry.hdrs + [":{}_headers".format(target)]
+    headers = registry.hdrs + [":{}_headers".format(target)]
     print(headers)
     all_module_rules = []
-    all_module_deps = [
-                       "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
-                       "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
-                       ]
 
     for module in modules:
         rule_name = "{}_{}".format(kernel_build, module.name)
@@ -110,10 +122,25 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
     print(lunch_target)
 
     kernel_build = "{}_{}".format(target, variant)
-    print("kernel_build: " + kernel_build)
 
-    kernel_build_label = "//soc-repo:{}_base_kernel".format(kernel_build)
-    print(kernel_build_label)
+    deps = []
+    all_module_deps = select({
+        "//build/kernel/kleaf:socrepo_true": [
+            "//soc-repo:all_headers",
+            "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
+            "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
+        ],
+        "//build/kernel/kleaf:socrepo_false": [
+            "//msm-kernel:all_headers",
+        ],
+    })
+    kernel_build_label = select({
+        "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
+        "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
+    })
 
     if lunch_target != None:
         kernel_build = "{}_{}_{}".format(target, variant, lunch_target)
@@ -139,17 +166,10 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 
     formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
 
-    headers = ["//soc-repo:all_headers"] + registry.hdrs + [":{}_headers".format(target)]
+    headers = registry.hdrs + [":{}_headers".format(target)]
     print(headers)
 
     all_module_rules = []
-    all_module_deps = [
-                       "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
-                       "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/mdt_loader".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/llcc-qcom".format(kernel_build),
-                       "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
-                       ]
 
     for module in modules:
         print("Module name: " + module.name)
@@ -173,7 +193,6 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
         name = "{}_video_modules".format(kernel_build),
         srcs = all_module_rules,
     )
-
 
     copy_to_dist_dir(
         name = dist_target_name,
