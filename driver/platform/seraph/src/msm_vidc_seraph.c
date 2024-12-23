@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-seraph.h>
@@ -670,7 +670,7 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		0, sizeof(struct v4l2_vidc_fence_info), 1, 0,
 		V4L2_CID_MPEG_VIDC_FENCE_INFO,
 		0,
-		CAP_FLAG_U8 | CAP_FLAG_DYNAMIC_ALLOWED},
+		CAP_FLAG_BLOB | CAP_FLAG_DYNAMIC_ALLOWED},
 
 	/*
 	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
@@ -719,24 +719,6 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	/* Fence direction for input rx buffer */
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
-			BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_OUTPUT_PORT},
 
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
@@ -2252,18 +2234,17 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
-		EARLY_NOTIFY_ENABLE},
+		{OUTPUT_TX_FENCE_TYPE, SLICE_DECODE, EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, VP9,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
+		{OUTPUT_TX_FENCE_TYPE},
 		NULL,
 		NULL},
 
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
+		{INPUT_RX_FENCE_TYPE},
 		NULL,
 		NULL},
 
@@ -2297,15 +2278,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		msm_vidc_adjust_dec_output_rx_fence_type,
 		NULL},
 
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_input_rx_fence_direction,
-		NULL},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_output_tx_fence_direction,
-		NULL},
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
 		NULL,
@@ -2921,12 +2893,12 @@ static const struct bw_table seraph_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
-static const struct pd_table seraph_pd_table[] = {
-	{ "iris-ctl" },
-	{ "vcodec"   },
-	{ "vpp0"     },
-	{ "vpp1"     },
+/* name, hw_trigger */
+static const struct regulator_table seraph_regulator_table[] = {
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
+	{ "vpp0",     0 },
+	{ "vpp1",     0 },
 };
 
 /* name, clock id, scaling */
@@ -2936,13 +2908,10 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
 	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
 	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
 	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
-	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
-	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
 	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
@@ -3099,8 +3068,8 @@ static const struct msm_vidc_platform_data seraph_data = {
 	/* resources dependent on other module */
 	.bw_tbl = seraph_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(seraph_bw_table),
-	.pd_tbl = seraph_pd_table,
-	.pd_tbl_size = ARRAY_SIZE(seraph_pd_table),
+	.regulator_tbl = seraph_regulator_table,
+	.regulator_tbl_size = ARRAY_SIZE(seraph_regulator_table),
 	.clk_tbl = seraph_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
 	.clk_rst_tbl = seraph_clk_reset_table,

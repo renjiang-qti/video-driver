@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_DRIVER_H_
@@ -75,6 +75,11 @@ static inline bool is_output_meta_buffer(enum msm_vidc_buffer_type buffer_type)
 static inline bool is_early_notify_enabled(struct msm_vidc_inst *inst)
 {
 	return !!(inst->capabilities[EARLY_NOTIFY_ENABLE].value);
+}
+
+static inline bool is_slice_decode_enabled(struct msm_vidc_inst *inst)
+{
+	return !!(inst->capabilities[SLICE_DECODE].value);
 }
 
 static inline bool is_ts_reorder_allowed(struct msm_vidc_inst *inst)
@@ -386,6 +391,9 @@ static inline bool is_split_mode_enabled(struct msm_vidc_inst *inst)
 	if (!is_decode_session(inst))
 		return false;
 
+	if (inst->codec == MSM_VIDC_APV)
+		return false;
+
 	if (is_linear_colorformat(inst->capabilities[PIX_FMTS].value) ||
 		is_dec_scaling_enabled(inst) ||
 		(inst->codec == MSM_VIDC_AV1 &&
@@ -551,6 +559,7 @@ int msm_vidc_smmu_fault_handler(struct iommu_domain *domain,
 int msm_vidc_trigger_ssr(struct msm_vidc_core *core,
 			 u64 trigger_ssr_val);
 void msm_vidc_ssr_handler(struct work_struct *work);
+void msm_vidc_hw_virt_ssr_handler(struct work_struct *work);
 int msm_vidc_trigger_stability(struct msm_vidc_core *core,
 			       u64 trigger_stability_val);
 void msm_vidc_stability_handler(struct work_struct *work);
@@ -684,7 +693,7 @@ bool is_hevc_10bit_decode_session(struct msm_vidc_inst *inst);
 int signal_session_msg_receipt(struct msm_vidc_inst *inst,
 			       enum signal_session_response cmd);
 int msm_vidc_get_properties(struct msm_vidc_inst *inst);
-int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, u64 time_us);
+int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, struct vb2_buffer *vb2, u64 time_us);
 int msm_vidc_add_buffer_stats(struct msm_vidc_inst *inst,
 			      struct msm_vidc_buffer *buf, u64 timestamp);
 int msm_vidc_remove_buffer_stats(struct msm_vidc_inst *inst,
@@ -704,6 +713,7 @@ struct context_bank_info
 struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
 bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
+int msm_vidc_pvm_event_handler(void *p);
 
 #endif // _MSM_VIDC_DRIVER_H_
 
