@@ -349,6 +349,7 @@ static const struct msm_platform_core_capability core_data_canoe[] = {
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
 	{SUPPORTS_REQUESTS, 0},
+	{SUPPORTS_MINIDUMP, 1},
 };
 
 static int msm_vidc_set_ring_buffer_count_canoe(void *instance,

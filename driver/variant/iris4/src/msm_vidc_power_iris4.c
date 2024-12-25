@@ -591,10 +591,14 @@ int msm_vidc_get_freq_corner(struct msm_vidc_inst *inst)
 	idx = get_clock_corner_index(core, vpp_freq, apv_freq, bse_freq, tensilica_freq);
 	if (idx < 0)
 		idx = 0;
-	if (increment)
-		idx -= 1;
-	else if (decrement)
-		idx += 1;
+
+	if (increment) {
+		if (idx > get_max_clock_index(core))
+			idx -= 1;
+	} else if (decrement) {
+		if (idx < get_min_clock_index(core))
+			idx += 1;
+	}
 
 	i_vpr_p(inst, "%s: requested rate: vpp %llu apv %llu bse %llu tensilica %llu\n",
 		__func__, vpp_freq, apv_freq, bse_freq, tensilica_freq);
