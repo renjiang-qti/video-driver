@@ -2921,12 +2921,12 @@ static const struct bw_table seraph_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
-static const struct pd_table seraph_pd_table[] = {
-	{ "iris-ctl" },
-	{ "vcodec"   },
-	{ "vpp0"     },
-	{ "vpp1"     },
+/* name, hw_trigger */
+static const struct regulator_table seraph_regulator_table[] = {
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
+	{ "vpp0",     0 },
+	{ "vpp1",     0 },
 };
 
 /* name, clock id, scaling */
@@ -2936,13 +2936,10 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
-	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
 	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
 	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
 	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
-	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
-	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
 	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
@@ -3099,8 +3096,8 @@ static const struct msm_vidc_platform_data seraph_data = {
 	/* resources dependent on other module */
 	.bw_tbl = seraph_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(seraph_bw_table),
-	.pd_tbl = seraph_pd_table,
-	.pd_tbl_size = ARRAY_SIZE(seraph_pd_table),
+	.regulator_tbl = seraph_regulator_table,
+	.regulator_tbl_size = ARRAY_SIZE(seraph_regulator_table),
 	.clk_tbl = seraph_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
 	.clk_rst_tbl = seraph_clk_reset_table,
