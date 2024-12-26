@@ -79,9 +79,9 @@ module_entry(
     deps = [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
-            "//vendor/qcom/opensource/synx-kernel:%b_synx_modules",
+            "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
-            "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_modules",
+            "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
 )
 
@@ -156,8 +156,8 @@ module_entry(
     deps = [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
-            "//vendor/qcom/opensource/synx-kernel:%b_synx_modules",
+            "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
-            "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_modules",
+            "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
 )
