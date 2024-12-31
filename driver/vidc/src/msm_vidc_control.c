@@ -632,18 +632,26 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 			ctrl_cfg.max = cap[idx].max;
 			ctrl_cfg.min = cap[idx].min;
 			ctrl_cfg.ops = core->v4l2_ctrl_ops;
-			if (cap[idx].flags & CAP_FLAG_MENU)
+			if (cap[idx].flags & CAP_FLAG_MENU) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_MENU;
-			else if (cap[idx].flags & CAP_FLAG_BITMASK)
+			} else if (cap[idx].flags & CAP_FLAG_BITMASK) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_BITMASK;
-			else if (cap[idx].flags & CAP_FLAG_U8)
+			} else if (cap[idx].flags & CAP_FLAG_BLOB) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_U8;
-			else
+				ctrl_cfg.dims[0] = ctrl_cfg.max; /* element count */
+				ctrl_cfg.elem_size = sizeof(u8); /* element size */
+				/**
+				 * overwrite blob range with max values, to avoid
+				 * v4l2 side data manipulation(in validate_new()).
+				 */
+				ctrl_cfg.min  = 0;
+				ctrl_cfg.max  = U8_MAX;
+				ctrl_cfg.step = 1;
+				ctrl_cfg.def  = 0;
+			} else {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_INTEGER;
-			if (ctrl_cfg.type & V4L2_CTRL_TYPE_U8) {
-				ctrl_cfg.elem_size = sizeof(u8);
-				ctrl_cfg.dims[0] = ctrl_cfg.max;
 			}
+
 			if (is_meta_cap(inst, idx)) {
 				/* bitmask is expected to be enabled for meta controls */
 				if (ctrl_cfg.type != V4L2_CTRL_TYPE_BITMASK) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #include <linux/types.h>
 
@@ -42,8 +42,8 @@ static u32 msm_vidc_decoder_bin_size_iris4(struct msm_vidc_inst *inst)
 	height = f->fmt.pix_mp.height;
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_BIN_H264D(size, width, height,
-			is_interlaced, vpp_delay, num_vpp_pipes);
+		HFI_BUFFER_BIN_H264D_IRIS4(size, width, height,
+			vpp_delay, num_vpp_pipes);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_BIN_H265D(size, width, height,
 			0, vpp_delay, num_vpp_pipes);

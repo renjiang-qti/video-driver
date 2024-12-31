@@ -630,6 +630,10 @@ int msm_vidc_scale_power(struct msm_vidc_inst *inst, bool scale_buses)
 	if (!inst->max_input_data_size)
 		return 0;
 
+	if (is_decode_session(inst) && is_slice_decode_enabled(inst))
+		inst->max_input_data_size = max(inst->max_input_data_size,
+				inst->slice_decode.frame_data_size);
+
 	core_lock(core, __func__);
 	/* detect inactive session */
 	list_for_each_entry(temp, &core->instances, list) {

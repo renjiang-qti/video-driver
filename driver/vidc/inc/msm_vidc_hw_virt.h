@@ -6,12 +6,16 @@
 #ifndef _H_MSM_VIDC_HW_VIRT_H_
 #define _H_MSM_VIDC_HW_VIRT_H_
 
+#define GVM_SSR_DEVICE_DRIVER       0x80000000
+#define GVM_SSR                     0x300
+
 struct msm_vidc_full_virtualization {
 	uint32_t vmid;
 	uint32_t device_core_mask;
 	bool virtualization_en;
 	bool is_gvm_open;
 	bool gvm_deinit;
+	struct task_struct *pvm_event_handler_thread;
 };
 
 #ifdef MSM_VIDC_HW_VIRT
