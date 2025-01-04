@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_DRIVER_H_
@@ -384,6 +384,9 @@ static inline bool is_rgba_colorformat(enum msm_vidc_colorformat_type colorforma
 static inline bool is_split_mode_enabled(struct msm_vidc_inst *inst)
 {
 	if (!is_decode_session(inst))
+		return false;
+
+	if (inst->codec == MSM_VIDC_APV)
 		return false;
 
 	if (is_linear_colorformat(inst->capabilities[PIX_FMTS].value) ||
