@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/v4l2-controls.h>
@@ -62,7 +62,13 @@ static const char *const mpeg_video_hevc_profile[] = {
 };
 
 static const char *const mpeg_vidc_apv_profile[] = {
-	"Baseline",
+	"422_10",
+	"422_12",
+	"444_10",
+	"444_12",
+	"4444_10",
+	"4444_12",
+	"400_10",
 	NULL,
 };
 
@@ -102,16 +108,62 @@ static const char * const av1_level[] = {
 };
 
 static const char * const mpeg_vidc_apv_level[] = {
-	"1.0",
-	"1.1",
-	"2.0",
-	"2.1",
-	"3.0",
-	"3.1",
-	"4.0",
-	"4.1",
-	"5.0",
-	"5.1",
+	"BAND0_1_0",
+	"BAND0_1_1",
+	"BAND0_2_0",
+	"BAND0_2_1",
+	"BAND0_3_0",
+	"BAND0_3_1",
+	"BAND0_4_0",
+	"BAND0_4_1",
+	"BAND0_5_0",
+	"BAND0_5_1",
+	"BAND0_6_0",
+	"BAND0_6_1",
+	"BAND0_7_0",
+	"BAND0_7_1",
+	"BAND1_1_0",
+	"BAND1_1_1",
+	"BAND1_2_0",
+	"BAND1_2_1",
+	"BAND1_3_0",
+	"BAND1_3_1",
+	"BAND1_4_0",
+	"BAND1_4_1",
+	"BAND1_5_0",
+	"BAND1_5_1",
+	"BAND1_6_0",
+	"BAND1_6_1",
+	"BAND1_7_0",
+	"BAND1_7_1",
+	"BAND2_1_0",
+	"BAND2_1_1",
+	"BAND2_2_0",
+	"BAND2_2_1",
+	"BAND2_3_0",
+	"BAND2_3_1",
+	"BAND2_4_0",
+	"BAND2_4_1",
+	"BAND2_5_0",
+	"BAND2_5_1",
+	"BAND2_6_0",
+	"BAND2_6_1",
+	"BAND2_7_0",
+	"BAND2_7_1",
+	"BAND3_1_0",
+	"BAND3_1_1",
+	"BAND3_2_0",
+	"BAND3_2_1",
+	"BAND3_3_0",
+	"BAND3_3_1",
+	"BAND3_4_0",
+	"BAND3_4_1",
+	"BAND3_5_0",
+	"BAND3_5_1",
+	"BAND3_6_0",
+	"BAND3_6_1",
+	"BAND3_7_0",
+	"BAND3_7_1",
 	NULL,
 };
 
