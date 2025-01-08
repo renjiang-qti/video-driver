@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-canoe.h>
@@ -3320,7 +3320,7 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
-	.supports_mmrm = 0,
+	.supports_mmrm = 1,
 
 	/* caps related resorces */
 	.core_data = core_data_canoe,
