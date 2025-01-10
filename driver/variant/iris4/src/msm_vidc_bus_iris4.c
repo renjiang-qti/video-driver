@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "perf_static_model.h"
@@ -822,8 +822,7 @@ static int calculate_bandwidth_encoder_iris4(
 	u32 en_vertical_tiles_width = 960;
 
 	u8 en_rotation_90_270 = 0;
-	/* TODO Can we use (codec_input.status_llc_onoff) for enc_llc_*? */
-	u8 en_llc_enable_ref_rd_crcb = 0;
+
 	u8 en_llc_enable_rec_wr_uncompleted = 0;
 	u8 en_llc_enable_ref_rd_y_overlap = 0;
 
@@ -847,6 +846,7 @@ static int calculate_bandwidth_encoder_iris4(
 
 	/*H265D BSE tlb in LLC will be pored in Kailua */
 	u8 llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
+	u8 en_llc_enable_ref_rd_crcb = (codec_input.status_llc_onoff) ? 1 : 0;
 
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;
