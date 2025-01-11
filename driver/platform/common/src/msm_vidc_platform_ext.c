@@ -313,10 +313,11 @@ int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl)
 		return 0;
 
 	v4l2_finfo = (struct v4l2_vidc_fence_info *)ctrl->p_new.p;
-	i_vpr_e(inst,
-		"%s: v4l2_type %u, index %d, num_rx %d, num_tx %d\n",
-		__func__, v4l2_finfo->v4l2_type, v4l2_finfo->index,
-		v4l2_finfo->num_rx_fds, v4l2_finfo->num_tx_fds);
+	if (v4l2_finfo->num_rx_fds >= ARRAY_SIZE(v4l2_finfo->fd)) {
+		i_vpr_e(inst, "%s: invalid rx fd count %u, max supported %lu\n",
+			__func__, v4l2_finfo->num_rx_fds, ARRAY_SIZE(v4l2_finfo->fd));
+		return -EINVAL;
+	}
 
 	v4l2_fence_info_to_driver(v4l2_finfo, &vidc_finfo);
 	buf = msm_vidc_fetch_buffer(inst, vidc_finfo.v4l2_type, vidc_finfo.index);
@@ -325,10 +326,26 @@ int msm_vidc_adjust_fence_info(void *instance, struct v4l2_ctrl *ctrl)
 		return -EINVAL;
 	}
 
+	/* print rx fd details */
+	if (vidc_finfo.num_rx_fds)
+		i_vpr_h(inst, "%s: %s: idx %2d, num_rx %d, rx_fds %*ph\n",
+			__func__, buf_name(buf->type), buf->index, vidc_finfo.num_rx_fds,
+			(int)(vidc_finfo.num_rx_fds * sizeof(vidc_finfo.fd[0])),
+			&vidc_finfo.fd[0]);
+
 	/* populate fence info */
 	rc = msm_vidc_populate_fence_info(inst, buf, &vidc_finfo);
 	if (rc)
 		return rc;
+
+	/* print tx fd details */
+	if (vidc_finfo.num_tx_fds)
+		i_vpr_h(inst, "%s: %s: idx %2d, num_tx %d, tx_fds %*ph, handle %*ph\n",
+			__func__, buf_name(buf->type), buf->index, vidc_finfo.num_tx_fds,
+			(int)(vidc_finfo.num_tx_fds * sizeof(vidc_finfo.fd[0])),
+			&vidc_finfo.fd[0],
+			(int)(vidc_finfo.num_tx_fds * sizeof(vidc_finfo.handle[0])),
+			&vidc_finfo.handle[0]);
 	v4l2_fence_info_from_driver(v4l2_finfo, &vidc_finfo);
 
 	return 0;

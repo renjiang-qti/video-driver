@@ -138,6 +138,7 @@ struct msm_vidc_inst {
 	struct msm_vidc_fence_context      input_tx_f_context;
 	struct msm_vidc_fence_context      output_rx_f_context;
 	struct msm_vidc_fence_context      output_tx_f_context;
+	struct msm_vidc_slice_decode       slice_decode;
 	bool                               active;
 	u64                                last_active_time_ns;
 	u64                                initial_time_us;

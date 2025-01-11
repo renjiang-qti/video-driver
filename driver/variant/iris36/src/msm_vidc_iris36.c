@@ -847,6 +847,10 @@ static int __prepare_pc_iris36(struct msm_vidc_core *core)
 	u32 wfi_status = 0, idle_status = 0, pc_ready = 0;
 	u32 ctrl_status = 0;
 
+	if (core->full_virtualization_data.virtualization_en)
+		return virtio_video_msm_cmd_pause_gvm_session(
+			core->capabilities[NUM_VPU].value, 0);
+
 	rc = __read_register(core, HFI_CTRL_STATUS_IRIS36, &ctrl_status);
 	if (rc)
 		return rc;

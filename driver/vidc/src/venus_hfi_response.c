@@ -1958,8 +1958,10 @@ static int handle_property_fence_array(struct msm_vidc_inst *inst,
 		inst->hfi_frame_info.fence_id[i] = cur_fence_id;
 		inst->hfi_frame_info.fence_count++;
 	}
-	i_vpr_l(inst, "%s: fence_id[0] %llu, received %d\n", __func__,
-		inst->hfi_frame_info.fence_id[0], inst->hfi_frame_info.fence_count);
+	i_vpr_l(inst, "%s: received %d, fence_id %*ph\n", __func__,
+		inst->hfi_frame_info.fence_count,
+		(int)(inst->hfi_frame_info.fence_count * sizeof(inst->hfi_frame_info.fence_id[0])),
+		&inst->hfi_frame_info.fence_id[0]);
 
 	return 0;
 }

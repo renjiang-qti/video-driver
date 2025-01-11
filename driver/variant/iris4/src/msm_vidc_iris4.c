@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
 #include <linux/reset.h>
 #include <media/videobuf2-core.h>
+#include <linux/pm_domain.h>
 
 #include "msm_vidc_iris4.h"
 #include "msm_vidc_buffer_iris4.h"
@@ -1027,6 +1028,28 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_power_on_substate;
 
+	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
+	if (rc)
+		goto fail_read_efuse;
+
+	/* VIDEO_CC_MVS0_VPP0_GDSCR --> vpp0 */
+	if (!(value & BIT(29))) {
+		rc = call_res_op(core, gdsc_on, core, "vpp0");
+		if (rc)
+			goto fail_regulator_vpp0;
+	}
+
+	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
+	if (!(value & BIT(28))) {
+		rc = call_res_op(core, gdsc_on, core, "vpp1");
+		if (rc)
+			goto fail_regulator_vpp1;
+	}
+
+	rc = call_res_op(core, gdsc_sw_ctrl, core);
+	if (rc)
+		goto fail_sw_ctrl;
+
 	rc = call_res_op(core, clk_enable, core, "gcc_video_axi0_clk");
 	if (rc)
 		goto fail_clk_axi;
@@ -1043,15 +1066,8 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_clk_bse_controller;
 
-	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
-	if (rc)
-		goto fail_read_efuse;
-
 	/* VIDEO_CC_MVS0_VPP0_GDSCR --> vpp0 */
 	if (!(value & BIT(29))) {
-		rc = call_res_op(core, gdsc_on, core, "vpp0");
-		if (rc)
-			goto fail_regulator_vpp0;
 		/*VIDEO_CC_MVS0_VPP0_CBCR --> video_cc_mvs0_vpp0_clk */
 		rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_vpp0_clk");
 		if (rc)
@@ -1060,9 +1076,6 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 
 	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
 	if (!(value & BIT(28))) {
-		rc = call_res_op(core, gdsc_on, core, "vpp1");
-		if (rc)
-			goto fail_regulator_vpp1;
 		/* VIDEO_CC_MVS0_VPP1_CBCR --> video_cc_mvs0_vpp1_clk */
 		rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_vpp1_clk");
 		if (rc)
@@ -1072,21 +1085,9 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	return 0;
 
 fail_clk_vpp1:
-	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
-	if (rc)
-		return rc;
-	if (!(value & BIT(28)))
-		call_res_op(core, gdsc_off, core, "vpp1");
-fail_regulator_vpp1:
-    call_res_op(core, clk_disable, core, "video_cc_mvs0_vpp0_clk");
-fail_clk_vpp0:
-	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
-	if (rc)
-		return rc;
 	if (!(value & BIT(29)))
-		call_res_op(core, gdsc_off, core, "vpp0");
-fail_regulator_vpp0:
-fail_read_efuse:
+		call_res_op(core, clk_disable, core, "video_cc_mvs0_vpp0_clk");
+fail_clk_vpp0:
 	call_res_op(core, clk_disable, core, "video_cc_mvs0b_clk");
 fail_clk_bse_controller:
 	call_res_op(core, clk_disable, core, "video_cc_mvs0_clk");
@@ -1095,7 +1096,14 @@ fail_clk_controller:
 fail_clk_freerun:
 	call_res_op(core, clk_disable, core, "gcc_video_axi0_clk");
 fail_clk_axi:
-	call_res_op(core, gdsc_hw_ctrl, core);
+fail_sw_ctrl:
+	if (!(value & BIT(28)))
+		call_res_op(core, gdsc_off, core, "vpp1");
+fail_regulator_vpp1:
+	if (!(value & BIT(29)))
+		call_res_op(core, gdsc_off, core, "vpp0");
+fail_regulator_vpp0:
+fail_read_efuse:
 fail_power_on_substate:
 	call_res_op(core, gdsc_off, core, "vcodec");
 fail_regulator:
@@ -1119,6 +1127,10 @@ static int __power_on_iris4_apv(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_regulator;
 
+	rc = call_res_op(core, gdsc_sw_ctrl, core);
+	if (rc)
+		goto fail_sw_ctrl;
+
 	/* VIDEO_CC_MVS0A_CBCR --> video_cc_mvs0a_clk */
 	rc = call_res_op(core, clk_enable, core, "video_cc_mvs0a_clk");
 	if (rc)
@@ -1127,6 +1139,7 @@ static int __power_on_iris4_apv(struct msm_vidc_core *core)
 	return 0;
 
 fail_clk_controller:
+fail_sw_ctrl:
 	call_res_op(core, gdsc_off, core, "apv");
 fail_regulator:
 fail_read_efuse:
@@ -1172,10 +1185,6 @@ static int __power_on_iris4(struct msm_vidc_core *core)
 		goto fail_power_on_apv;
 	}
 
-	rc = call_res_op(core, gdsc_sw_ctrl, core);
-	if (rc)
-		goto fail_sw_ctrl;
-
 	idx = core->power.clk_freq_idx ? core->power.clk_freq_idx : 0;
 	rc = call_res_op(core, set_clks, core, idx);
 	if (rc) {
@@ -1191,8 +1200,6 @@ static int __power_on_iris4(struct msm_vidc_core *core)
 
 	return rc;
 
-fail_sw_ctrl:
-	__power_off_iris4_apv(core);
 fail_power_on_apv:
 	__power_off_iris4_hardware(core);
 fail_power_on_hardware:
@@ -1334,31 +1341,44 @@ static int __noc_error_info_iris4(struct msm_vidc_core *core)
 	return rc;
 }
 
+static int __hw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_hw_ctrl, core);
+}
+
+static int __sw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_sw_ctrl, core);
+}
+
 static int __switch_gdsc_mode_iris4(struct msm_vidc_core *core, bool sw_mode)
 {
+	struct power_domain_info *pdinfo = NULL;
 	int rc;
 
 	if (sw_mode) {
-		rc = __write_register(core, WRAPPER_CORE_POWER_CONTROL_IRIS4, 0x0);
-		if (rc)
-			return rc;
-		rc = __read_register_with_poll_timeout(core, WRAPPER_CORE_POWER_STATUS_IRIS4,
-						       BIT(1), 0x2, 200, 2000);
-		if (rc) {
-			d_vpr_e("%s: Failed to read WRAPPER_CORE_POWER_STATUS_IRIS4 register to 0x1\n",
-				__func__);
-			return rc;
+		venus_hfi_for_each_power_domain(core, pdinfo) {
+			if (!strcmp(pdinfo->name, "iris-ctl"))
+				continue;
+
+			rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, false);
+			if (rc < 0) {
+				d_vpr_e("%s: failed to set sw mode: %s\n", __func__, pdinfo->name);
+				return rc;
+			}
+			d_vpr_h("%s: moved power domain %s into SW ctrl\n", __func__, pdinfo->name);
 		}
 	} else {
-		rc = __write_register(core, WRAPPER_CORE_POWER_CONTROL_IRIS4, 0x1);
-		if (rc)
-			return rc;
-		rc = __read_register_with_poll_timeout(core, WRAPPER_CORE_POWER_STATUS_IRIS4,
-						       BIT(1), 0x0, 200, 2000);
-		if (rc) {
-			d_vpr_e("%s: Failed to read WRAPPER_CORE_POWER_STATUS_IRIS4 register to 0x0\n",
-				__func__);
-			return rc;
+		venus_hfi_for_each_power_domain_reverse(core, pdinfo) {
+			if (!strcmp(pdinfo->name, "iris-ctl"))
+				continue;
+
+			rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, true);
+			if (rc < 0) {
+				d_vpr_e("%s: failed to set hw mode: %s\n", __func__, pdinfo->name);
+				return rc;
+			}
+			d_vpr_h("%s: moved power domain %s into HW ctrl\n", __func__, pdinfo->name);
 		}
 	}
 
@@ -1516,11 +1536,55 @@ decision_done:
 	return 0;
 }
 
-static int msm_vidc_decide_scaling_iris4(struct msm_vidc_inst *inst)
+static int msm_vidc_update_scaling_iris4(struct msm_vidc_inst *inst,
+		u32 aspect_ratio_w, u32 aspect_ratio_h)
 {
 	u32 wxh_contraint = 32;
-	u32 aspect_ratio_w = 0, aspect_ratio_h = 0;
+	u32 input_width, input_height;
 	u32 factor, factor_w, factor_h;
+
+	input_width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
+	input_height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
+
+	/* adjust compose width and height based on video hardware requirements */
+	factor_w = inst->compose.width / (aspect_ratio_w * wxh_contraint);
+
+	if ((factor_w * (aspect_ratio_w * wxh_contraint)) < inst->compose.width)
+		factor_w++;
+	factor_h = inst->compose.height / (aspect_ratio_h * wxh_contraint);
+	if ((factor_h * (aspect_ratio_h * wxh_contraint)) < inst->compose.height)
+		factor_h++;
+	factor = (factor_w < factor_h) ? factor_w : factor_h;
+
+	inst->compose.top = 0;
+	inst->compose.left = 0;
+	inst->compose.width = factor * aspect_ratio_w * wxh_contraint;
+	inst->compose.height = factor * aspect_ratio_h * wxh_contraint;
+
+	/* disable downscaling if updated compose >= input width/height */
+	if (inst->compose.width >= input_width ||
+	    inst->compose.height >= input_height) {
+		i_vpr_h(inst, "%s: compose wxh %ux%u >= input wxh %ux%u\n",
+			__func__, inst->compose.width, inst->compose.height,
+			input_width, input_height);
+		return -EINVAL;
+	}
+
+	/* disable downscaling if updated compose is beyond 1/8 of input */
+	if (inst->compose.width < input_width / 8 ||
+	    inst->compose.height < input_height / 8) {
+		i_vpr_h(inst, "%s: compose wxh %ux%u < 1/8 of input wxh %ux%u\n",
+			__func__, inst->compose.width, inst->compose.height,
+			input_width, input_height);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int msm_vidc_decide_scaling_iris4(struct msm_vidc_inst *inst)
+{
+	u32 aspect_ratio_w = 0, aspect_ratio_h = 0;
 	u32 input_width, input_height;
 
 	/* check if scaling requested */
@@ -1614,34 +1678,18 @@ static int msm_vidc_decide_scaling_iris4(struct msm_vidc_inst *inst)
 			aspect_ratio_h = 19;
 		}
 	}
-
 	if (!aspect_ratio_w || !aspect_ratio_h) {
 		i_vpr_h(inst, "%s: aspect ratio %ux%u\n",
 			__func__, aspect_ratio_w, aspect_ratio_h);
 		goto exit;
 	}
 
-	/* adjust compose width and height based on video hardware requirements */
-	factor_w = (inst->compose.width +
-			((aspect_ratio_w * wxh_contraint) >> 1)) /
-			(aspect_ratio_w * wxh_contraint);
-	factor_h = (inst->compose.height +
-			((aspect_ratio_h * wxh_contraint) >> 1)) /
-			(aspect_ratio_h * wxh_contraint);
-	factor = (factor_w > factor_h) ? factor_w : factor_h;
-	inst->compose.top = 0;
-	inst->compose.left = 0;
-	inst->compose.width = factor * aspect_ratio_w * wxh_contraint;
-	inst->compose.height = factor * aspect_ratio_h * wxh_contraint;
-
-	/* disable downscaling if updated compose >= input width/height */
-	if (inst->compose.width >= input_width ||
-	    inst->compose.height >= input_height)
+	if (msm_vidc_update_scaling_iris4(inst, aspect_ratio_w, aspect_ratio_h))
 		goto exit;
 
 	i_vpr_h(inst,
-		"scaling enabled, input wxh: %dx%d, compose wxh: %dx%d\n",
-		input_width, input_height,
+		"%s: scaling enabled, input wxh: %dx%d, compose wxh: %dx%d\n",
+		__func__, input_width, input_height,
 		inst->compose.width, inst->compose.height);
 
 	return 0;
@@ -1652,8 +1700,9 @@ exit:
 	inst->compose.width = inst->crop.width;
 	inst->compose.height = inst->crop.height;
 	msm_vidc_update_cap_value(inst, SCALE_ENABLE, 0, __func__);
-	i_vpr_h(inst, "scaling disabled, input wxh: %dx%d, compose wxh: %dx%d\n",
-		input_width, input_height,
+	i_vpr_h(inst,
+		"%s: scaling disabled, input wxh: %dx%d, compose wxh: %dx%d\n",
+		__func__, input_width, input_height,
 		inst->compose.width, inst->compose.height);
 
 	return 0;
@@ -1733,6 +1782,8 @@ static struct msm_vidc_venus_ops iris4_ops = {
 	.watchdog = __watchdog_iris4,
 	.noc_error_info = __noc_error_info_iris4,
 	.switch_gdsc_mode = __switch_gdsc_mode_iris4,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris4,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris4,
 	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v2,
 };
 
