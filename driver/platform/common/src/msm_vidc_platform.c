@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <media/v4l2-ioctl.h>
@@ -269,6 +269,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_CANOE)
 	{
 		.compat                     = "qcom,canoe-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_canoe,
+		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
+	{
+		.compat                     = "qcom,canoe-vidc-v2",
 		.get_platform_data          = msm_vidc_get_platform_data_canoe,
 		.init_platform              = msm_vidc_init_platform_canoe,
 		.init_iris                  = msm_vidc_init_iris4,
@@ -2566,48 +2572,6 @@ int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ct
 		adjusted_value = MSM_VIDC_FENCE_NONE;
 
 	msm_vidc_update_cap_value(inst, INPUT_TX_FENCE_TYPE, adjusted_value, __func__);
-
-	return 0;
-}
-
-int msm_vidc_adjust_dec_output_tx_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
-{
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	s64 adjusted_value, meta_output_fence = 0;
-
-	if (msm_vidc_get_parent_value(inst, OUTPUT_TX_FENCE_DIRECTION,
-			META_OUTPUT_TX_FENCE, &meta_output_fence, __func__))
-		return -EINVAL;
-
-	if (is_output_tx_fence_enabled(inst))
-		adjusted_value = MSM_VIDC_FENCE_DIR_TX;
-	else
-		adjusted_value = MSM_VIDC_FENCE_DIR_NONE;
-
-	msm_vidc_update_cap_value(inst, OUTPUT_TX_FENCE_DIRECTION, adjusted_value, __func__);
-
-	return 0;
-}
-
-int msm_vidc_adjust_dec_input_rx_fence_direction(void *instance, struct v4l2_ctrl *ctrl)
-{
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	struct msm_vidc_inst_cap *capability = inst->capabilities;
-	s64 adjusted_value, input_fence_enable = 0;
-
-	adjusted_value = ctrl ? ctrl->val :
-		capability[INPUT_RX_FENCE_DIRECTION].value;
-
-	if (msm_vidc_get_parent_value(inst, INPUT_RX_FENCE_DIRECTION,
-			INPUT_RX_FENCE_ENABLE, &input_fence_enable, __func__))
-		return -EINVAL;
-
-	if (is_input_rx_fence_enabled(inst))
-		adjusted_value = MSM_VIDC_FENCE_DIR_RX;
-	else
-		adjusted_value = MSM_VIDC_FENCE_DIR_NONE;
-
-	msm_vidc_update_cap_value(inst, INPUT_RX_FENCE_DIRECTION, adjusted_value, __func__);
 
 	return 0;
 }

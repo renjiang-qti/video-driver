@@ -337,8 +337,8 @@ static int __program_bootup_registers_iris4(struct msm_vidc_core *core)
 			return rc;
 	}
 
-	/* Based on below register programming, firmware WA for sm8750-v2 would be enabled */
-	if (of_device_is_compatible(dev->of_node, "qcom,sm8750-vidc-v2")) {
+	/* Based on below register programming, firmware WA for canoe-v2 would be enabled */
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")) {
 		rc = __write_register(core, WRAPPER_IRIS_VCODEC_VPU_WRAPPER_SPARE_0_IRIS4, 0x1);
 		if (rc)
 			return rc;
