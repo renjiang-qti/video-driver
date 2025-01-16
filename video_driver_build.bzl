@@ -72,14 +72,13 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             "//msm-kernel:all_headers",
         ],
     })
-    if target == "sun":
-        all_module_deps += select({
-            "//build/kernel/kleaf:socrepo_true": [
-                "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
-                "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
-            ],
-            "//build/kernel/kleaf:socrepo_false": [],
-        })
+    all_module_deps += select({
+        "//build/kernel/kleaf:socrepo_true": [
+            "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
+        ],
+        "//build/kernel/kleaf:socrepo_false": [],
+    })
     kernel_build_label = select({
         "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
         "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
@@ -145,14 +144,13 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "//msm-kernel:all_headers",
         ],
     })
-    if target == "sun":
-        all_module_deps += select({
-            "//build/kernel/kleaf:socrepo_true": [
-                "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
-                "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
-            ],
-            "//build/kernel/kleaf:socrepo_false": [],
-        })
+    all_module_deps += select({
+        "//build/kernel/kleaf:socrepo_true": [
+            "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
+        ],
+        "//build/kernel/kleaf:socrepo_false": [],
+    })
     kernel_build_label = select({
         "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
         "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),

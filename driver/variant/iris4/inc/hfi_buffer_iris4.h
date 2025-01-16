@@ -33,6 +33,7 @@ typedef HFI_U32 HFI_BOOL;
 #define BUF_SIZE_ALIGN_256 (256)
 #define BUF_SIZE_ALIGN_512 (512)
 #define BUF_SIZE_ALIGN_4096 (4096)
+#define CACHE_LINE_SIZE (64)
 
 #define HFI_ALIGN(a, b) (((b) & ((b) - 1)) ? (((a) + (b) - 1) / \
 	(b) * (b)) : (((a) + (b) - 1) & (~((b) - 1))))
@@ -1676,8 +1677,10 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 #define APV_NUM_SLIST APV_NUM_HW_PIC_BUF
 
 #define HFI_BUFFER_PERSIST_APVD(_size) { \
-		_size = HFI_ALIGN((APV_NUM_SLIST * APV_SIZE_QM_ALIGN) + \
-			HDR10_HIST_EXTRADATA_SIZE, VENUS_DMA_ALIGNMENT); \
+		_size = (APV_NUM_SLIST * APV_SIZE_QM_ALIGN) + \
+			 HDR10_HIST_EXTRADATA_SIZE + \
+			 CACHE_LINE_SIZE; \
+		_size = HFI_ALIGN(_size, VENUS_DMA_ALIGNMENT); \
 	}
 
 #define HFI_BUFFER_BITSTREAM_ENC(size, frame_width, frame_height, \

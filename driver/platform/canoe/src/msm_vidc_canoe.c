@@ -739,7 +739,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		V4L2_CID_MPEG_VIDC_CLIENT_ID},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1 | APV,
-		0, 1, 1, 0,
+		0, 0, 1, 0,
 		V4L2_CID_MPEG_VIDC_SECURE,
 		HFI_PROP_SECURE,
 		CAP_FLAG_NONE},
@@ -2379,7 +2379,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		MSM_VIDC_META_DYN_ENABLE | MSM_VIDC_META_TX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
 		V4L2_CID_MPEG_VIDC_METADATA_EVA_STATS,
-		HFI_PROP_EVA_STAT_INFO,
+		HFI_PROP_EVA_SV_STAT_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
 	{META_BUF_TAG, ENC, CODECS_ALL,
@@ -2716,7 +2716,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 		V4L2_CID_MPEG_VIDC_CLIENT_ID},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1,
-		0, 1, 1, 0,
+		0, 0, 1, 0,
 		V4L2_CID_MPEG_VIDC_SECURE,
 		HFI_PROP_SECURE,
 		CAP_FLAG_NONE},
@@ -4517,7 +4517,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 		V4L2_CID_MPEG_VIDC_CLIENT_ID},
 
 	{SECURE_MODE, ENC | DEC, H264 | HEVC | VP9 | AV1 | APV,
-		0, 1, 1, 0,
+		0, 0, 1, 0,
 		V4L2_CID_MPEG_VIDC_SECURE,
 		HFI_PROP_SECURE,
 		CAP_FLAG_NONE},
@@ -7780,7 +7780,8 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 			P_FRAME_QP, B_FRAME_QP, ENH_LAYER_COUNT, BIT_RATE,
 			META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
-			BLUR_TYPES, LOWLATENCY_MODE, META_TRANSCODING_STAT_INFO},
+			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
+			META_TRANSCODING_STAT_INFO},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -8244,7 +8245,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_all_intra,
 		NULL},
 
-	{META_EVA_STATS, ENC, HEVC | APV,
+	{META_EVA_STATS, ENC, H264 | HEVC | APV,
 		{0},
 		msm_vidc_adjust_eva_stats,
 		NULL},
@@ -8414,6 +8415,23 @@ const struct context_bank_table canoe_context_bank_table[] = {
 		MSM_VIDC_REGION_NONE,          0 },
 	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xdff00000, 0, 1,
 		MSM_VIDC_REGION_NONE,          0 },
+	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0,
+		MSM_VIDC_SECURE_PIXEL,         0 },
+	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
+		MSM_VIDC_SECURE_NONPIXEL,      0 },
+	{"qcom,vidc,cb-sec-bitstream",  0x00500000, 0xdfb00000, 1, 0,
+		MSM_VIDC_SECURE_BITSTREAM,     0 },
+};
+
+/* name, start, size, secure, dma_coherant, region, dma_mask */
+const struct context_bank_table canoe_context_bank_table_v2[] = {
+	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1,
+		MSM_VIDC_NON_SECURE |
+		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
+	{"qcom,vidc,cb-ns-bitstream",   0x00100000, 0xdff00000, 0, 1,
+		MSM_VIDC_REGION_NONE,          0 },
+	{"qcom,vidc,cb-ns-pxl",         0x00100000, 0xdff00000, 0, 1,
+		MSM_VIDC_NON_SECURE_PIXEL,     0 },
 	{"qcom,vidc,cb-sec-pxl",        0x00500000, 0xdfb00000, 1, 0,
 		MSM_VIDC_SECURE_PIXEL,         0 },
 	{"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
@@ -8813,7 +8831,9 @@ static int msm_vidc_canoe_check_ddr_type(void)
 
 int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 {
-	int rc = 0;
+	struct msm_platform_inst_capability *platform_cap_data = NULL;
+	struct device *dev = &core->pdev->dev;
+	int i, rc = 0;
 
 	d_vpr_h("%s: initialize canoe data\n", __func__);
 	core->platform->data = canoe_data;
@@ -8830,6 +8850,21 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 
 	if (core->platform->data.sku_version == SKU_VERSION_1)
 		core->platform->data = canoe_data_sku_v1;
+
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")) {
+		d_vpr_h("%s: update context bank table for canoe v2\n", __func__);
+		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
+		core->platform->data.context_bank_tbl_size =
+			ARRAY_SIZE(canoe_context_bank_table_v2);
+
+		platform_cap_data = core->platform->data.inst_cap_data;
+		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
+			if (platform_cap_data[i].cap_id == SECURE_MODE) {
+				platform_cap_data[i].max = 1;
+				break;
+			}
+		}
+	}
 
 	return rc;
 }

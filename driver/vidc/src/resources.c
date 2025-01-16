@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/sort.h>
@@ -151,33 +151,6 @@ static int devm_opp_dl_get(struct device *dev, struct device *supplier)
 	}
 
 	rc = devm_add_action_or_reset(dev, devm_opp_dl_release, (void *)link);
-	if (rc) {
-		d_vpr_e("%s: add action or reset failed\n", __func__);
-		return rc;
-	}
-
-	return rc;
-}
-
-static void devm_pm_runtime_put_sync(void *res)
-{
-	struct device *dev = (struct device *)res;
-
-	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
-	pm_runtime_put_sync(dev);
-}
-
-static int devm_pm_runtime_get_sync(struct device *dev)
-{
-	int rc = 0;
-
-	rc = pm_runtime_get_sync(dev);
-	if (rc < 0) {
-		d_vpr_e("%s: pm domain get sync failed\n", __func__);
-		return rc;
-	}
-
-	rc = devm_add_action_or_reset(dev, devm_pm_runtime_put_sync, (void *)dev);
 	if (rc) {
 		d_vpr_e("%s: add action or reset failed\n", __func__);
 		return rc;
@@ -393,7 +366,7 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	/* skip opp initialization if not supported */
 	if (opp_count < 2) {
 		d_vpr_h("%s: opp entries not available\n", __func__);
-		goto enable_runtime_pm;
+		return rc;
 	}
 
 	/* sanitize opp table */
@@ -429,30 +402,6 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	rc = devm_pm_opp_of_add_table(&core->pdev->dev);
 	if (rc) {
 		d_vpr_e("%s: failed to add opp table\n", __func__);
-		return rc;
-	}
-
-enable_runtime_pm:
-	/**
-	 * 1. power up mx & mmcx supply for RCG(mvs0_clk_src)
-	 * 2. power up gdsc0c for mvs0c branch clk
-	 * 3. power up gdsc0 for mvs0 branch clk
-	 */
-
-	/**
-	 * power up mxc, mmcx rails to enable supply for
-	 * RCG(video_cc_mvs0_clk_src)
-	 */
-	/* enable runtime pm */
-	rc = devm_pm_runtime_enable(&core->pdev->dev);
-	if (rc) {
-		d_vpr_e("%s: failed to enable runtime pm\n", __func__);
-		return rc;
-	}
-	/* power up rails(mxc & mmcx) */
-	rc = devm_pm_runtime_get_sync(&core->pdev->dev);
-	if (rc) {
-		d_vpr_e("%s: failed to get sync runtime pm\n", __func__);
 		return rc;
 	}
 
