@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-seraph.h>
@@ -2962,12 +2962,12 @@ static const struct subcache_table seraph_subcache_table[] = {
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table seraph_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x32000000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
-	{"qcom,vidc,cb-ns",            0x33000000, 0xbd000000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns",            0x33000000, 0xbd000000, 0, 1,
+		MSM_VIDC_NON_SECURE |
+		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-ns-pxl",        0x00500000, 0xefb00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xefb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xefb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
-	{"qcom,vidc,cb-ns-bitstream",  0x00500000, 0xefb00000, 0, 1,
-		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 };
 
 /* register, value, mask */
