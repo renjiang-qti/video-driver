@@ -680,7 +680,7 @@ void msm_vb2_buf_queue(struct vb2_buffer *vb2)
 	}
 
 	if (vb2->type == INPUT_MPLANE) {
-		rc = msm_vidc_update_input_rate(inst, div_u64(ktime_ns, 1000));
+		rc = msm_vidc_update_input_rate(inst, vb2, div_u64(ktime_ns, 1000));
 		if (rc)
 			goto exit;
 	}

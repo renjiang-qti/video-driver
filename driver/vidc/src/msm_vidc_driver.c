@@ -526,14 +526,14 @@ int msm_vidc_populate_fence_info(struct msm_vidc_inst *inst,
 	}
 
 	/* sanitize rx fence count */
-	if (rx_fence_count < 1 || rx_fence_count > MAX_FENCE_COUNT) {
+	if (rx_fence_count < 0 || rx_fence_count > MAX_FENCE_COUNT) {
 		i_vpr_e(inst, "%s: %s: invalid rx fence count %d\n", __func__,
 			buf_name(buf->type), rx_fence_count);
 		return -EINVAL;
 	}
 
 	/* sanitize tx fence count */
-	if (tx_fence_count < 1 || tx_fence_count > MAX_FENCE_COUNT) {
+	if (tx_fence_count < 0 || tx_fence_count > MAX_FENCE_COUNT) {
 		i_vpr_e(inst, "%s: %s: invalid tx fence count %d\n", __func__,
 			buf_name(buf->type), tx_fence_count);
 		return -EINVAL;
@@ -2145,15 +2145,31 @@ exit:
 	return rc;
 }
 
-int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, u64 time_us)
+int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, struct vb2_buffer *vb2, u64 time_us)
 {
 	struct msm_vidc_input_timer *input_timer;
 	struct msm_vidc_input_timer *prev_timer = NULL;
 	struct msm_vidc_core *core;
 	u64 counter = 0;
 	u64 input_timer_sum_us = 0;
+	u32 slice_size = 0;
 
 	core = inst->core;
+
+	if (is_decode_session(inst) && is_slice_decode_enabled(inst)) {
+		slice_size = vb2->planes[0].bytesused - vb2->planes[0].data_offset;
+		if (vb2->timestamp == inst->slice_decode.prev_ts) {
+			inst->slice_decode.slice_count++;
+			inst->slice_decode.frame_size += slice_size;
+			return 0;
+		}
+		/* first slice in frame */
+		inst->slice_decode.frame_data_size = max(inst->slice_decode.frame_size,
+				slice_size * inst->slice_decode.slice_count);
+		inst->slice_decode.prev_ts = vb2->timestamp;
+		inst->slice_decode.slice_count = 1;
+		inst->slice_decode.frame_size = slice_size;
+	}
 
 	input_timer = msm_vidc_pool_alloc(inst, MSM_MEM_POOL_BUF_TIMER);
 	if (!input_timer)
@@ -4356,6 +4372,33 @@ unlock:
 	return rc;
 }
 
+/* Handle events received from PVM through FE */
+int msm_vidc_pvm_event_handler(void *p)
+{
+	struct msm_vidc_core *core = p;
+	struct virtio_video_msm_hw_event evt = {0};
+
+	while (core->full_virtualization_data.is_gvm_open) {
+		if (!virtio_video_queue_event_wait(&evt)) {
+			switch (evt.event_type) {
+			case GVM_SSR:
+				core->ssr_dev = *(uint32_t *)evt.payload;
+				schedule_work(&core->full_virt_ssr_work);
+				break;
+			default:
+				d_vpr_e("%s: Unrecognized event %x\n",
+					__func__, evt.event_type);
+
+			};
+		} else {
+			d_vpr_e("Queue event wait failed. Exiting\n");
+			break;
+		}
+	}
+
+	return 0;
+}
+
 int msm_vidc_core_init(struct msm_vidc_core *core)
 {
 	enum msm_vidc_allow allow;
@@ -4702,6 +4745,27 @@ int msm_vidc_set_crc(struct msm_vidc_core *core)
 unlock:
 	core_unlock(core, __func__);
 	return rc;
+}
+
+void msm_vidc_hw_virt_ssr_handler(struct work_struct *work)
+{
+	struct msm_vidc_core *core = NULL;
+	struct hfi_packet pkt = {};
+
+	core = container_of(work, struct msm_vidc_core, full_virt_ssr_work);
+	if (!core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, core);
+		return;
+	}
+
+	/* set gvm deinit flag for special case where PVM driver failed */
+	if (core->ssr_dev == GVM_SSR_DEVICE_DRIVER)
+		core->full_virtualization_data.gvm_deinit = 1;
+
+	/* prepare dummy packet for system error handler */
+	pkt.type = HFI_SYS_ERROR_FATAL;
+
+	handle_system_error(core, &pkt);
 }
 
 void msm_vidc_ssr_handler(struct work_struct *work)

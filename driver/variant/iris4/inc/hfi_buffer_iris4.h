@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __HFI_BUFFER_IRIS4__
@@ -744,6 +744,17 @@ typedef HFI_U32 HFI_BOOL;
 		} else { \
 			_size = 0;  \
 		} \
+	} while (0)
+
+#define HFI_BUFFER_BIN_H264D_IRIS4(_size, frame_width, frame_height, delay, \
+			num_vpp_pipes) \
+	do { \
+		HFI_U32 n_aligned_w = HFI_ALIGN(frame_width, \
+				BUFFER_ALIGNMENT_16_BYTES);\
+		HFI_U32 n_aligned_h = HFI_ALIGN(frame_height, \
+				BUFFER_ALIGNMENT_16_BYTES); \
+		SIZE_H264D_HW_BIN_BUFFER(_size, n_aligned_w, \
+				n_aligned_h, delay, num_vpp_pipes); \
 	} while (0)
 
 #define NUM_SLIST_BUF_H264 (256 + 32)

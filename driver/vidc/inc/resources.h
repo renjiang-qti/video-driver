@@ -68,6 +68,8 @@ struct msm_vidc_core;
 /* Power domain set helpers */
 #define venus_hfi_for_each_power_domain(__device, __pdinfo) \
 	venus_hfi_for_each_thing(__device, __pdinfo, power_domain)
+#define venus_hfi_for_each_power_domain_reverse(__device, __pdinfo) \
+	venus_hfi_for_each_thing_reverse(__device, __pdinfo, power_domain)
 
 /* Clock set helpers */
 #define venus_hfi_for_each_clock(__device, __cinfo) \

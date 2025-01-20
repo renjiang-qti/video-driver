@@ -689,7 +689,7 @@ enum msm_vidc_inst_capability_flags {
 	CAP_FLAG_BITMASK                 = BIT(5),
 	CAP_FLAG_VOLATILE                = BIT(6),
 	CAP_FLAG_META                    = BIT(7),
-	CAP_FLAG_U8                      = BIT(8),
+	CAP_FLAG_BLOB                    = BIT(8),
 };
 
 struct msm_vidc_inst_cap {
@@ -1090,6 +1090,13 @@ struct msm_vidc_timestamps {
 struct msm_vidc_input_timer {
 	struct list_head       list;
 	u64                    time_us;
+};
+
+struct msm_vidc_slice_decode {
+	u64                    prev_ts;
+	u32                    slice_count;
+	u32                    frame_size;
+	u32                    frame_data_size;
 };
 
 enum msm_vidc_allow FOREACH_ALLOW(GENERATE_ENUM);

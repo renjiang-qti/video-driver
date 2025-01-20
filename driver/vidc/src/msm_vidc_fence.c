@@ -170,7 +170,8 @@ struct msm_vidc_fence *msm_vidc_get_sw_fence(
 	if (fence_fd != INVALID_FD) {
 		d_fence = sync_file_get_fence(fence_fd);
 		if (!d_fence) {
-			i_vpr_e(inst, "%s: getting dma fence failed\n", __func__);
+			i_vpr_e(inst, "%s: getting dma fence failed. fd %d\n",
+				__func__, fence_fd);
 			goto error;
 		}
 		fence_id = d_fence->seqno;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-seraph.h>
@@ -670,7 +670,7 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		0, sizeof(struct v4l2_vidc_fence_info), 1, 0,
 		V4L2_CID_MPEG_VIDC_FENCE_INFO,
 		0,
-		CAP_FLAG_U8 | CAP_FLAG_DYNAMIC_ALLOWED},
+		CAP_FLAG_BLOB | CAP_FLAG_DYNAMIC_ALLOWED},
 
 	/*
 	 * Client to do set_ctrl with INPUT_RX_FENCE_FD to set fence_fd.
@@ -2921,12 +2921,12 @@ static const struct bw_table seraph_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
-static const struct pd_table seraph_pd_table[] = {
-	{ "iris-ctl" },
-	{ "vcodec"   },
-	{ "vpp0"     },
-	{ "vpp1"     },
+/* name, hw_trigger */
+static const struct regulator_table seraph_regulator_table[] = {
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
+	{ "vpp0",     0 },
+	{ "vpp1",     0 },
 };
 
 /* name, clock id, scaling */
@@ -3099,8 +3099,8 @@ static const struct msm_vidc_platform_data seraph_data = {
 	/* resources dependent on other module */
 	.bw_tbl = seraph_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(seraph_bw_table),
-	.pd_tbl = seraph_pd_table,
-	.pd_tbl_size = ARRAY_SIZE(seraph_pd_table),
+	.regulator_tbl = seraph_regulator_table,
+	.regulator_tbl_size = ARRAY_SIZE(seraph_regulator_table),
 	.clk_tbl = seraph_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
 	.clk_rst_tbl = seraph_clk_reset_table,
