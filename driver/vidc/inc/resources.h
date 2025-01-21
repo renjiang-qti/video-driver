@@ -143,6 +143,7 @@ struct power_domain_info {
 	struct device             *genpd_dev;
 	const char                *name;
 	bool                       hw_power_collapse;
+	bool                       hw_enable;
 };
 
 struct power_domain_set {
