@@ -128,6 +128,7 @@ typedef enum {
 #define WRAPPER_IRIS_CPU_NOC_LPI_CONTROL	(WRAPPER_BASE_OFFS_IRIS3 + 0x5C)
 #define WRAPPER_IRIS_CPU_NOC_LPI_STATUS		(WRAPPER_BASE_OFFS_IRIS3 + 0x60)
 #define WRAPPER_CORE_POWER_STATUS		(WRAPPER_BASE_OFFS_IRIS3 + 0x80)
+#define WRAPPER_CORE_POWER_CONTROL		(WRAPPER_BASE_OFFS_IRIS3 + 0x84)
 #define WRAPPER_CORE_CLOCK_CONFIG_IRIS3		(WRAPPER_BASE_OFFS_IRIS3 + 0x88)
 
 /*
@@ -603,6 +604,15 @@ static int __power_on_iris3_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_regulator;
 
+	/* video controller and hardware powered on successfully */
+	rc = msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_POWER_ENABLE, __func__);
+	if (rc)
+		goto fail_power_on_substate;
+
+	rc = call_res_op(core, gdsc_sw_ctrl, core);
+	if (rc)
+		goto fail_sw_ctrl;
+
 	rc = call_res_op(core, clk_enable, core, "vcodec_clk");
 	if (rc)
 		goto fail_clk_controller;
@@ -610,6 +620,9 @@ static int __power_on_iris3_hardware(struct msm_vidc_core *core)
 	return 0;
 
 fail_clk_controller:
+	call_res_op(core, gdsc_hw_ctrl, core);
+fail_sw_ctrl:
+fail_power_on_substate:
 	call_res_op(core, gdsc_off, core, "vcodec");
 fail_regulator:
 	return rc;
@@ -653,10 +666,6 @@ static int __power_on_iris3(struct msm_vidc_core *core)
 		d_vpr_e("%s: failed to power on iris3 hardware\n", __func__);
 		goto fail_power_on_hardware;
 	}
-	/* video controller and hardware powered on successfully */
-	rc = msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_POWER_ENABLE, __func__);
-	if (rc)
-		goto fail_power_on_substate;
 
 	idx = core->power.clk_freq_idx ? core->power.clk_freq_idx : 0;
 	rc = call_res_op(core, set_clks, core, idx);
@@ -676,8 +685,6 @@ static int __power_on_iris3(struct msm_vidc_core *core)
 
 	return rc;
 
-fail_power_on_substate:
-	__power_off_iris3_hardware(core);
 fail_power_on_hardware:
 	__power_off_iris3_controller(core);
 fail_power_on_controller:
@@ -771,6 +778,37 @@ static int __watchdog_iris3(struct msm_vidc_core *core, u32 intr_status)
 	}
 
 	return rc;
+}
+
+static int __switch_gdsc_mode_iris3(struct msm_vidc_core *core, bool sw_mode)
+{
+	int rc;
+
+	if (sw_mode) {
+		rc = __write_register(core, WRAPPER_CORE_POWER_CONTROL, 0x0);
+		if (rc)
+			return rc;
+		rc = __read_register_with_poll_timeout(core, WRAPPER_CORE_POWER_STATUS,
+						       BIT(1), 0x2, 200, 2000);
+		if (rc) {
+			d_vpr_e("%s: Failed to read WRAPPER_CORE_POWER_STATUS register to 0x1\n",
+				__func__);
+			return rc;
+		}
+	} else {
+		rc = __write_register(core, WRAPPER_CORE_POWER_CONTROL, 0x1);
+		if (rc)
+			return rc;
+		rc = __read_register_with_poll_timeout(core, WRAPPER_CORE_POWER_STATUS,
+						       BIT(1), 0x0, 200, 2000);
+		if (rc) {
+			d_vpr_e("%s: Failed to read WRAPPER_CORE_POWER_STATUS register to 0x0\n",
+				__func__);
+			return rc;
+		}
+	}
+
+	return 0;
 }
 
 static int __hw_ctrl_gdsc_iris3(struct msm_vidc_core *core)
@@ -1131,6 +1169,7 @@ static struct msm_vidc_venus_ops iris3_ops = {
 	.prepare_pc = __prepare_pc_iris3,
 	.watchdog = __watchdog_iris3,
 	.noc_error_info = __noc_error_info_iris3,
+	.switch_gdsc_mode = __switch_gdsc_mode_iris3,
 	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris3,
 	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris3,
 	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,

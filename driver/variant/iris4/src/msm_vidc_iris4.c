@@ -1578,7 +1578,7 @@ static int msm_vidc_update_scaling_iris4(struct msm_vidc_inst *inst,
 static int msm_vidc_decide_scaling_iris4(struct msm_vidc_inst *inst)
 {
 	u32 aspect_ratio_w = 0, aspect_ratio_h = 0;
-	u32 input_width, input_height;
+	u32 input_width = 0, input_height = 0;
 
 	/* check if scaling requested */
 	if (!inst->capabilities[SCALE_ENABLE].value)
