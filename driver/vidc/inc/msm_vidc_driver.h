@@ -714,6 +714,10 @@ struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
 bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
 int msm_vidc_pvm_event_handler(void *p);
+int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
+int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
 
 #endif // _MSM_VIDC_DRIVER_H_
 
