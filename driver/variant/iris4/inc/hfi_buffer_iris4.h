@@ -1740,10 +1740,10 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 			bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
 			bitstream_size += bitstream_size / 2; \
 			bitstream_size *= 3; \
-			if (rc_type == HFI_RC_OFF) \
+			if ((rc_type == HFI_RC_OFF) || (yuv_size < (1280 * 720 * 4))) \
 				bitstream_size = (bitstream_size << 1); \
 			bitstream_size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
-			size = (yuv_size < bitstream_size) ? yuv_size : bitstream_size; \
+			size = bitstream_size; \
 		} while (0)
 
 #define HFI_IRIS3_ENC_TILE_SIZE_INFO(tile_size, tile_count, last_tile_size, \

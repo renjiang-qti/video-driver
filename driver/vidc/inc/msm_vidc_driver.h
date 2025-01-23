@@ -594,6 +594,8 @@ int cancel_stats_work_sync(struct msm_vidc_inst *inst);
 void msm_vidc_print_stats(struct msm_vidc_inst *inst);
 void msm_vidc_print_memory_stats(struct msm_vidc_inst *inst);
 enum msm_vidc_buffer_type v4l2_type_to_driver(u32 type, const char *func);
+u32 v4l2_type_from_driver(enum msm_vidc_buffer_type buffer_type,
+	const char *func);
 int msm_vidc_buf_queue(struct msm_vidc_inst *inst, struct msm_vidc_buffer *buf);
 int msm_vidc_queue_buffer_single(struct msm_vidc_inst *inst,
 				 struct vb2_buffer *vb2);
@@ -714,6 +716,10 @@ struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
 bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
 int msm_vidc_pvm_event_handler(void *p);
+int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
+int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
 
 #endif // _MSM_VIDC_DRIVER_H_
 

@@ -38,7 +38,7 @@
 extern struct msm_vidc_core *g_core;
 
 #define is_odd(val) ((val) % 2 == 1)
-#define is_in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
+#define check_in_range(val, min, max) (((min) <= (val)) && ((val) <= (max)))
 #define COUNT_BITS(a, out) {       \
 	while ((a) >= 1) {          \
 		(out) += (a) & (1); \
@@ -1196,6 +1196,83 @@ bool res_is_less_than_or_equal_to(u32 width, u32 height,
 		return false;
 }
 
+int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	int rc = 0;
+	enum msm_memory_cache_type cache_type;
+
+	if (!inst || !buf) {
+		d_vpr_e("%s: Invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	if (is_decode_session(inst) || is_encode_session(inst)) {
+		switch (buf->type) {
+		case MSM_VIDC_BUF_INPUT:
+			cache_type = MSM_MEM_CACHE_CLEAN_INVALIDATE;
+			break;
+		case MSM_VIDC_BUF_OUTPUT:
+			cache_type = MSM_MEM_CACHE_INVALIDATE;
+			break;
+		default:
+			i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
+				__func__, buf->type);
+			return -EINVAL;
+		}
+	} else {
+		i_vpr_e(inst, "%s: invalid session type %d\n", __func__, inst->domain);
+		return -EINVAL;
+	}
+
+	rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
+	if (rc)
+		print_vidc_buffer(VIDC_ERR, "err ", "qbuf cache ops failed", inst, buf);
+
+	return rc;
+}
+
+int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf)
+{
+	int rc = 0;
+	enum msm_memory_cache_type cache_type = MSM_MEM_CACHE_INVALIDATE;
+	bool skip = false;
+
+	if (!inst || !buf) {
+		d_vpr_e("%s: Invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	if (is_decode_session(inst) || is_encode_session(inst)) {
+		switch (buf->type) {
+		case MSM_VIDC_BUF_INPUT:
+			skip = true;
+			break;
+		case MSM_VIDC_BUF_OUTPUT:
+			cache_type = MSM_MEM_CACHE_INVALIDATE;
+			break;
+		default:
+			i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
+				__func__, buf->type);
+			return -EINVAL;
+		}
+	} else {
+		i_vpr_e(inst, "%s: invalid session type %d\n", __func__, inst->domain);
+		return -EINVAL;
+	}
+
+	/* skip caching for input buffer done(both encode & decode session) */
+	if (skip)
+		return 0;
+
+	rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
+	if (rc)
+		print_vidc_buffer(VIDC_ERR, "err ", "dqbuf cache ops failed", inst, buf);
+
+	return rc;
+}
+
 int signal_session_msg_receipt(struct msm_vidc_inst *inst,
 	enum signal_session_response cmd)
 {
@@ -1804,6 +1881,9 @@ struct msm_vidc_fence *msm_vidc_get_fence_from_id(
 	struct msm_vidc_fence *fence, *dummy_fence;
 	bool found = false;
 
+	if (!fence_list)
+		return NULL;
+
 	list_for_each_entry_safe(fence, dummy_fence, fence_list, list) {
 		if (fence->fence_id == fence_id) {
 			found = true;
@@ -2039,7 +2119,7 @@ int vb2_buffer_to_driver(struct vb2_buffer *vb2,
 	return rc;
 }
 
-int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
+static int msm_vidc_process_readonly_buffers(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *buf)
 {
 	int rc = 0;
@@ -2217,7 +2297,7 @@ int msm_vidc_update_input_rate(struct msm_vidc_inst *inst, struct vb2_buffer *vb
 	return 0;
 }
 
-int msm_vidc_flush_input_timer(struct msm_vidc_inst *inst)
+static int msm_vidc_flush_input_timer(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_input_timer *input_timer, *dummy_timer;
 	struct msm_vidc_core *core;
@@ -3052,6 +3132,12 @@ static int msm_vidc_queue_buffer(struct msm_vidc_inst *inst, struct msm_vidc_buf
 	rc = msm_vidc_populate_output_tx_fence_info(inst, buf);
 	if (rc)
 		return rc;
+
+	if (buf->type == MSM_VIDC_BUF_INPUT || buf->type == MSM_VIDC_BUF_OUTPUT) {
+		rc = msm_vidc_qbuf_cache_operation(inst, buf);
+		if (rc)
+			return rc;
+	}
 
 	if (msm_vidc_is_super_buffer(inst) && is_input_buffer(buf->type))
 		rc = venus_hfi_queue_super_buffer(inst, buf, meta);
@@ -4323,6 +4409,9 @@ int msm_vidc_core_deinit(struct msm_vidc_core *core, bool force)
 {
 	int rc = 0;
 
+	if (!core)
+		return -EINVAL;
+
 	core_lock(core, __func__);
 	rc = msm_vidc_core_deinit_locked(core, force);
 	core_unlock(core, __func__);
@@ -4604,7 +4693,8 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 				}
 			}
 			/* capture total mappings of each cb */
-			if (buf->region < MSM_VIDC_REGION_MAX) {
+			if (buf->region >= MSM_VIDC_REGION_NONE &&
+				buf->region < MSM_VIDC_REGION_MAX) {
 				if ((buf->attach && buf->sg_table) || is_internal_buffer(buf->type))
 					size_kb_arr[ilog2(buf->region)] += buf->buffer_size;
 			}
@@ -5819,8 +5909,8 @@ static bool msm_vidc_allow_image_encode_session(struct msm_vidc_inst *inst)
 	min_height = cap[FRAME_HEIGHT].min;
 	max_height = cap[FRAME_HEIGHT].max;
 	fmt = &inst->fmts[INPUT_PORT];
-	if (!is_in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
-		!is_in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
+	if (!check_in_range(fmt->fmt.pix_mp.width, min_width, max_width) ||
+		!check_in_range(fmt->fmt.pix_mp.height, min_height, max_height)) {
 		i_vpr_e(inst, "unsupported wxh [%u x %u], allowed [%u x %u] to [%u x %u]\n",
 			fmt->fmt.pix_mp.width, fmt->fmt.pix_mp.height,
 			min_width, min_height, max_width, max_height);
@@ -5921,8 +6011,8 @@ static int msm_vidc_check_resolution_supported(struct msm_vidc_inst *inst)
 
 	/* check if input width and height is in supported range */
 	if (is_decode_session(inst) || is_encode_session(inst)) {
-		if (!is_in_range(width, min_width, max_width) ||
-			!is_in_range(height, min_height, max_height)) {
+		if (!check_in_range(width, min_width, max_width) ||
+			!check_in_range(height, min_height, max_height)) {
 			i_vpr_e(inst,
 				"%s: unsupported input wxh [%u x %u], allowed range: [%u x %u] to [%u x %u]\n",
 				__func__, width, height, min_width,
