@@ -2485,6 +2485,36 @@ int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
+int msm_vidc_adjust_roi_info_iris4(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 adjusted_value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 rc_type = -1, pix_fmt = -1;
+
+	adjusted_value = ctrl ? ctrl->val : inst->capabilities[META_ROI_INFO].value;
+
+	if (msm_vidc_get_parent_value(inst, META_ROI_INFO, BITRATE_MODE,
+				      &rc_type, __func__))
+		return -EINVAL;
+
+	if (msm_vidc_get_parent_value(inst, META_ROI_INFO, PIX_FMTS,
+				      &pix_fmt, __func__))
+		return -EINVAL;
+
+	/*
+	 * iris4 onwards roi is supported for 10bit color format as well and
+	 * hence removed !is_8bit_colorformat(pix_fmt) condition here
+	 */
+	if ((rc_type != HFI_RC_VBR_CFR && rc_type != HFI_RC_CBR_CFR &&
+	     rc_type != HFI_RC_CBR_VFR) || is_scaling_enabled(inst) ||
+	     is_rotation_90_or_270(inst))
+		adjusted_value = 0;
+
+	msm_vidc_update_cap_value(inst, META_ROI_INFO, adjusted_value, __func__);
+
+	return 0;
+}
+
 int msm_vidc_adjust_dec_output_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;

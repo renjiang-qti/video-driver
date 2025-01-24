@@ -6825,7 +6825,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 
 	{META_ROI_INFO, ENC, H264 | HEVC,
 		{MIN_QUALITY, IR_PERIOD, BLUR_TYPES},
-		msm_vidc_adjust_roi_info,
+		msm_vidc_adjust_roi_info_iris4,
 		NULL},
 
 	{GRID_ENABLE, ENC, HEIC,
