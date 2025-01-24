@@ -1353,6 +1353,7 @@ static int __sw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
 
 static int __switch_gdsc_mode_iris4(struct msm_vidc_core *core, bool sw_mode)
 {
+#if (KERNEL_VERSION(6, 11, 0) <= LINUX_VERSION_CODE)
 	struct power_domain_info *pdinfo = NULL;
 	int rc;
 
@@ -1381,6 +1382,7 @@ static int __switch_gdsc_mode_iris4(struct msm_vidc_core *core, bool sw_mode)
 			d_vpr_h("%s: moved power domain %s into HW ctrl\n", __func__, pdinfo->name);
 		}
 	}
+#endif
 
 	return 0;
 }
