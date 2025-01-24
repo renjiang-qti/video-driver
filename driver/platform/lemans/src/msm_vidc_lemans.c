@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-lemans.h>
@@ -2597,10 +2597,10 @@ static const struct bw_table lemans_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
+/* name, hw_trigger */
 static const struct pd_table lemans_pd_table[] = {
-	{ "iris-ctl"},
-	{ "vcodec"},
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
 };
 
 /* name, clock id, scaling */

@@ -2891,10 +2891,10 @@ static const struct bw_table sun_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
+/* name, hw_trigger */
 static const struct pd_table sun_pd_table[] = {
-	{ "iris-ctl" },
-	{ "vcodec"   },
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
 };
 
 /* name, clock id, scaling */

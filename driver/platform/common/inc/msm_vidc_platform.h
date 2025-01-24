@@ -47,6 +47,7 @@ struct bw_table {
 
 struct pd_table {
 	const char      *name;
+	bool             hw_trigger;
 };
 
 struct regulator_table {
