@@ -344,12 +344,14 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	for (cnt = 0; cnt < pds->count; cnt++) {
 		pds->power_domain_tbl[cnt].name = pd_tbl[cnt].name;
 		pds->power_domain_tbl[cnt].hw_power_collapse = pd_tbl[cnt].hw_trigger;
+		pds->power_domain_tbl[cnt].hw_enable = pd_tbl[cnt].hw_enable;
 	}
 
 	/* print power domain fields */
 	venus_hfi_for_each_power_domain(core, pdinfo)
-		d_vpr_h("%s: pd name %s hw_power_collapse %d\n",
-			__func__, pdinfo->name, pdinfo->hw_power_collapse);
+		d_vpr_h("%s: pd name %s hw_power_collapse %d hw_enable %d\n", __func__,
+			pdinfo->name, pdinfo->hw_power_collapse, pdinfo->hw_enable);
+
 
 	/* get power domain handle */
 	venus_hfi_for_each_power_domain(core, pdinfo) {
@@ -881,6 +883,9 @@ static int __enable_power_domains(struct msm_vidc_core *core, const char *name)
 		if (strcmp(pdinfo->name, name))
 			continue;
 
+		if (!pdinfo->hw_enable)
+			continue;
+
 		rc = pm_runtime_get_sync(pdinfo->genpd_dev);
 		if (rc < 0) {
 			d_vpr_e("%s: failed to get sync: %s\n", __func__, pdinfo->name);
@@ -903,6 +908,9 @@ static int __disable_power_domains(struct msm_vidc_core *core, const char *name)
 	/* power down (gdsc0/gdsc0c) to disable (mvs0/mvs0c) branch clock */
 	venus_hfi_for_each_power_domain(core, pdinfo) {
 		if (strcmp(pdinfo->name, name))
+			continue;
+
+		if (!pdinfo->hw_enable)
 			continue;
 
 		rc = pm_runtime_put_sync(pdinfo->genpd_dev);
@@ -956,6 +964,10 @@ static int switch_gdsc_to_swmode(struct msm_vidc_core *core)
 	struct power_domain_info *pdinfo;
 
 	venus_hfi_for_each_power_domain(core, pdinfo) {
+		if (!pdinfo->hw_enable) {
+			d_vpr_h("%s: skip disabled hw domain %s\n", __func__, pdinfo->name);
+			continue;
+		}
 		/* skip non-collapsible domain */
 		if (!pdinfo->hw_power_collapse)
 			continue;
@@ -1018,6 +1030,10 @@ static int switch_gdsc_to_hwmode(struct msm_vidc_core *core)
 	int rc = 0, cnt = 0;
 
 	venus_hfi_for_each_power_domain(core, pdinfo) {
+		if (!pdinfo->hw_enable) {
+			d_vpr_h("%s: skip disabled hw domain %s\n", __func__, pdinfo->name);
+			continue;
+		}
 		/* skip non-collapsible domain */
 		if (!pdinfo->hw_power_collapse)
 			continue;

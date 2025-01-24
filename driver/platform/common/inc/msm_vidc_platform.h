@@ -48,6 +48,7 @@ struct bw_table {
 struct pd_table {
 	const char      *name;
 	bool             hw_trigger;
+	bool             hw_enable;
 };
 
 struct regulator_table {
@@ -206,7 +207,7 @@ struct msm_vidc_platform_data {
 	unsigned int bw_tbl_size;
 	const struct regulator_table *regulator_tbl;
 	unsigned int regulator_tbl_size;
-	const struct pd_table *pd_tbl;
+	struct pd_table *pd_tbl;
 	unsigned int pd_tbl_size;
 	const char * const *opp_tbl;
 	unsigned int opp_tbl_size;
