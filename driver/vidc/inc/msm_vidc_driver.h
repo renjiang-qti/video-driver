@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef _MSM_VIDC_DRIVER_H_
@@ -10,6 +10,15 @@
 #include "msm_vidc_inst.h"
 
 #define MSM_VIDC_SESSION_INACTIVE_THRESHOLD_MS 1000
+
+/*
+ * Offset base for buffers on the destination queue - used to distinguish
+ * between source and destination buffers when mmapping - they receive the same
+ * offsets but for different queues
+ */
+#define SRC_META_QUEUE_OFF_BASE	(1 << 29)
+#define DST_QUEUE_OFF_BASE	(1 << 30)
+#define DST_META_QUEUE_OFF_BASE	(1 << 31)
 
 enum msm_vidc_debugfs_event;
 struct vb2_buffer;
@@ -572,7 +581,7 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst);
 int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst);
 int msm_vidc_vb2_queue_init(struct msm_vidc_inst *inst);
 int msm_vidc_vb2_queue_deinit(struct msm_vidc_inst *inst);
-int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl);
+int msm_vidc_get_control(struct msm_vidc_inst *inst, void *ctrl);
 struct msm_vidc_buffers *msm_vidc_get_buffers(struct msm_vidc_inst *inst,
 					      enum msm_vidc_buffer_type buffer_type,
 					      const char *func);
@@ -714,6 +723,10 @@ struct context_bank_info
 	*msm_vidc_get_context_bank_for_device(struct msm_vidc_core *core, struct device *dev);
 bool msm_vidc_check_input_fence_allowed(struct msm_vidc_inst *inst);
 int msm_vidc_pvm_event_handler(void *p);
+int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
+int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
+	struct msm_vidc_buffer *buf);
 
 #endif // _MSM_VIDC_DRIVER_H_
 

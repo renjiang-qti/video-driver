@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/version.h>
@@ -22,6 +22,8 @@
 #include "resources.h"
 
 extern struct msm_vidc_core *g_core;
+
+static void msm_vb2_put(void *buf_priv);
 
 struct vb2_queue *msm_vidc_get_vb2q(struct msm_vidc_inst *inst,
 	u32 type, const char *func)
@@ -44,27 +46,88 @@ struct vb2_queue *msm_vidc_get_vb2q(struct msm_vidc_inst *inst,
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-void *msm_vb2_alloc(struct device *dev, unsigned long attrs,
+static void *msm_vb2_alloc(struct device *dev, unsigned long attrs,
 	unsigned long size, enum dma_data_direction dma_dir,
 	gfp_t gfp_flags)
 {
 	return (void *)0xdeadbeef;
 }
 
-void *msm_vb2_attach_dmabuf(struct device *dev, struct dma_buf *dbuf,
+static void *msm_vb2_attach_dmabuf(struct device *dev, struct dma_buf *dbuf,
 	unsigned long size, enum dma_data_direction dma_dir)
 {
 	return (void *)0xdeadbeef;
 }
 
 #else
-void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
+static void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
 	unsigned long size)
 {
-	return (void *)0xdeadbeef;
+	struct context_bank_info *cb = NULL;
+	enum msm_vidc_buffer_region region;
+	enum msm_vidc_buffer_type buf_type;
+	struct msm_vidc_buffer *buf;
+	struct msm_vidc_inst *inst;
+	struct msm_vidc_core *core;
+
+	if (!vb || !dev || !vb->vb2_queue)
+		return ERR_PTR(-EINVAL);
+
+	inst = vb->vb2_queue->drv_priv;
+	inst = get_inst_ref(g_core, inst);
+	if (!inst || !inst->core) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return NULL;
+	}
+
+	core = inst->core;
+
+	buf_type = v4l2_type_to_driver(vb->type, __func__);
+
+	buf = msm_vidc_fetch_buffer(inst, vb->type, vb->index);
+	if (!buf) {
+		i_vpr_e(inst, "%s: failed to fetch buffer\n", __func__);
+		buf = NULL;
+		goto exit;
+	}
+
+	region = call_mem_op(core, buffer_region, inst, buf_type);
+	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
+	if (!cb) {
+		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
+		goto exit;
+	}
+
+	buf->inst = inst;
+	buf->type = buf_type;
+	buf->index = vb->index;
+	buf->buffer_size = size;
+	buf->dma_attrs = vb->vb2_queue->dma_attrs;
+
+	buf->kvaddr = dma_alloc_attrs(cb->dev,
+					  buf->buffer_size,
+					  &buf->device_addr,
+					  GFP_KERNEL | vb->vb2_queue->gfp_flags,
+					  buf->dma_attrs);
+	if (!buf->kvaddr) {
+		i_vpr_e(inst, "dma alloc of size %lu failed\n", size);
+		return ERR_PTR(-ENOMEM);
+	}
+
+	buf->handler.refcount = &buf->refcount;
+	buf->handler.put = msm_vb2_put;
+	buf->handler.arg = buf;
+
+	refcount_set(&buf->refcount, 1);
+
+exit:
+	if (!buf)
+		msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
+	put_inst(inst);
+	return buf;
 }
 
-void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
+static void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
 	struct dma_buf *dbuf, unsigned long size)
 {
 	struct msm_vidc_inst *inst;
@@ -125,14 +188,302 @@ exit:
 
 void msm_vb2_put(void *buf_priv)
 {
+	struct msm_vidc_buffer *ro_buf, *dummy;
+	struct msm_vidc_buffer *buf = buf_priv;
+	struct msm_vidc_inst *inst = buf->inst;
+	struct msm_vidc_core *core = inst->core;
+	struct context_bank_info *cb = NULL;
+	enum msm_vidc_buffer_region region;
+
+	if (is_decode_session(inst) && is_output_buffer(buf->type)) {
+		list_for_each_entry_safe(ro_buf, dummy, &inst->buffers.read_only.list, list) {
+			if (ro_buf->device_addr != buf->device_addr)
+				continue;
+			buf->kvaddr = NULL;
+			buf->device_addr = 0x0;
+			return;
+		}
+	}
+
+	region = call_mem_op(core, buffer_region, inst, buf->type);
+	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
+	if (!cb) {
+		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
+		return;
+	}
+
+	if (!refcount_dec_and_test(&buf->refcount))
+		return;
+
+	if (buf->kvaddr && buf->device_addr) {
+		dma_free_attrs(cb->dev, buf->buffer_size, buf->kvaddr,
+			       buf->device_addr, buf->dma_attrs);
+		buf->kvaddr = NULL;
+		buf->device_addr = 0x0;
+	}
 }
 
-int msm_vb2_mmap(void *buf_priv, struct vm_area_struct *vma)
+static int msm_vb2_mmap(void *buf_priv, struct vm_area_struct *vma)
+{
+	struct msm_vidc_buffer *ro_buf, *dummy;
+	struct msm_vidc_buffer *buf = buf_priv;
+	struct msm_vidc_inst *inst = buf->inst;
+	struct msm_vidc_core *core = inst->core;
+	struct context_bank_info *cb = NULL;
+	enum msm_vidc_buffer_region region;
+	int ret;
+
+	if (!buf)
+		return -EINVAL;
+
+	if (is_decode_session(inst) && is_output_buffer(buf->type)) {
+		list_for_each_entry_safe(ro_buf, dummy, &inst->buffers.read_only.list, list) {
+			if (ro_buf->device_addr != buf->device_addr)
+				continue;
+			vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
+			vma->vm_private_data	= &ro_buf->handler;
+			vma->vm_ops		= &vb2_common_vm_ops;
+			return 0;
+		}
+	}
+
+	region = call_mem_op(core, buffer_region, inst, buf->type);
+	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
+	if (!cb) {
+		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
+		return 0;
+	}
+
+	ret = dma_mmap_attrs(cb->dev, vma, buf->kvaddr, buf->device_addr,
+			     buf->buffer_size, buf->dma_attrs);
+	if (ret) {
+		i_vpr_e(inst, "Remapping memory failed, error: %d\n", ret);
+		return ret;
+	}
+
+	vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
+	vma->vm_private_data = &buf->handler;
+	vma->vm_ops = &vb2_common_vm_ops;
+
+	vma->vm_ops->open(vma);
+
+	return 0;
+}
+
+struct msm_vb2_attachment {
+	struct sg_table sgt;
+	enum dma_data_direction dma_dir;
+};
+
+static int msm_vb2_dmabuf_ops_attach(struct dma_buf *dbuf,
+				     struct dma_buf_attachment *dbuf_attach)
+{
+	struct msm_vb2_attachment *attach;
+	unsigned int i;
+	struct scatterlist *rd, *wr;
+	struct sg_table *sgt;
+	struct msm_vidc_buffer *buf = dbuf->priv;
+	int ret;
+
+	attach = kzalloc(sizeof(*attach), GFP_KERNEL);
+	if (!attach)
+		return -ENOMEM;
+
+	sgt = &attach->sgt;
+	/* Copy the buf->base_sgt scatter list to the attachment, as we can't
+	 * map the same scatter list to multiple attachments at the same time.
+	 */
+	ret = sg_alloc_table(sgt, buf->sg_table->orig_nents, GFP_KERNEL);
+	if (ret) {
+		kfree(attach);
+		return -ENOMEM;
+	}
+
+	rd = buf->sg_table->sgl;
+	wr = sgt->sgl;
+	for (i = 0; i < sgt->orig_nents; ++i) {
+		sg_set_page(wr, sg_page(rd), rd->length, rd->offset);
+		rd = sg_next(rd);
+		wr = sg_next(wr);
+	}
+
+	attach->dma_dir = DMA_NONE;
+	dbuf_attach->priv = attach;
+
+	return 0;
+}
+
+static void msm_vb2_dmabuf_ops_detach(struct dma_buf *dbuf,
+	struct dma_buf_attachment *db_attach)
+{
+	struct msm_vb2_attachment *attach = db_attach->priv;
+	struct sg_table *sgt;
+
+	if (!attach)
+		return;
+
+	sgt = &attach->sgt;
+
+	/* release the scatterlist cache */
+	if (attach->dma_dir != DMA_NONE)
+		/*
+		 * Cache sync can be skipped here, as the vb2_dc memory is
+		 * allocated from device coherent memory, which means the
+		 * memory locations do not require any explicit cache
+		 * maintenance prior or after being used by the device.
+		 */
+		dma_unmap_sgtable(db_attach->dev, sgt, attach->dma_dir,
+				  DMA_ATTR_SKIP_CPU_SYNC);
+	sg_free_table(sgt);
+	kfree(attach);
+	db_attach->priv = NULL;
+}
+
+static struct sg_table *msm_vb2_dmabuf_ops_map(
+	struct dma_buf_attachment *db_attach, enum dma_data_direction dma_dir)
+{
+	struct msm_vb2_attachment *attach = db_attach->priv;
+	struct sg_table *sgt;
+
+	sgt = &attach->sgt;
+	/* return previously mapped sg table */
+	if (attach->dma_dir == dma_dir)
+		return sgt;
+
+	/* release any previous cache */
+	if (attach->dma_dir != DMA_NONE) {
+		dma_unmap_sgtable(db_attach->dev, sgt, attach->dma_dir,
+				  DMA_ATTR_SKIP_CPU_SYNC);
+		attach->dma_dir = DMA_NONE;
+	}
+
+	/*
+	 * mapping to the client with new direction, no cache sync
+	 * required see comment in msm_vb2_dmabuf_ops_detach()
+	 */
+	if (dma_map_sgtable(db_attach->dev, sgt, dma_dir,
+			    DMA_ATTR_SKIP_CPU_SYNC)) {
+		pr_err("failed to map scatterlist\n");
+		return ERR_PTR(-EIO);
+	}
+
+	attach->dma_dir = dma_dir;
+
+	return sgt;
+}
+
+static void msm_vb2_dmabuf_ops_unmap(struct dma_buf_attachment *db_attach,
+	struct sg_table *sgt, enum dma_data_direction dma_dir)
+{
+	/* nothing to be done here */
+}
+
+static void msm_vb2_dmabuf_ops_release(struct dma_buf *dbuf)
+{
+	/* drop reference obtained in vb2_dc_get_dmabuf */
+	msm_vb2_put(dbuf->priv);
+}
+
+static int
+msm_vb2_dmabuf_ops_begin_cpu_access(struct dma_buf *dbuf,
+				   enum dma_data_direction direction)
 {
 	return 0;
 }
 
-void msm_vb2_detach_dmabuf(void *buf_priv)
+static int
+msm_vb2_dmabuf_ops_end_cpu_access(struct dma_buf *dbuf,
+				 enum dma_data_direction direction)
+{
+	return 0;
+}
+
+static int msm_vb2_dmabuf_ops_mmap(struct dma_buf *dbuf,
+	struct vm_area_struct *vma)
+{
+	return msm_vb2_mmap(dbuf->priv, vma);
+}
+
+static const struct dma_buf_ops msm_vb2_dmabuf_ops = {
+	.attach = msm_vb2_dmabuf_ops_attach,
+	.detach = msm_vb2_dmabuf_ops_detach,
+	.map_dma_buf = msm_vb2_dmabuf_ops_map,
+	.unmap_dma_buf = msm_vb2_dmabuf_ops_unmap,
+	.begin_cpu_access = msm_vb2_dmabuf_ops_begin_cpu_access,
+	.end_cpu_access = msm_vb2_dmabuf_ops_end_cpu_access,
+	.mmap = msm_vb2_dmabuf_ops_mmap,
+	.release = msm_vb2_dmabuf_ops_release,
+};
+
+static struct sg_table *vb2_dc_get_base_sgt(struct msm_vidc_buffer *buf)
+{
+	struct msm_vidc_inst *inst = buf->inst;
+	struct msm_vidc_core *core = inst->core;
+	struct context_bank_info *cb = NULL;
+	enum msm_vidc_buffer_region region;
+	struct sg_table *sgt;
+	int ret;
+
+	sgt = kmalloc(sizeof(*sgt), GFP_KERNEL);
+	if (!sgt) {
+		i_vpr_e(inst, "%s: failed to alloc sg_table\n", __func__);
+		return NULL;
+	}
+
+	region = call_mem_op(core, buffer_region, inst, buf->type);
+	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
+	if (!cb) {
+		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
+		return NULL;
+	}
+
+	ret = dma_get_sgtable_attrs(cb->dev, sgt, buf->kvaddr, buf->device_addr,
+				    buf->buffer_size, buf->dma_attrs);
+	if (ret < 0) {
+		i_vpr_e(inst, "%s: failed to get scatterlist from DMA API\n", __func__);
+		kfree(sgt);
+		return NULL;
+	}
+
+	return sgt;
+}
+
+static struct dma_buf *msm_vb2_get_dmabuf(struct vb2_buffer *vb,
+				  void *buf_priv,
+				  unsigned long flags)
+{
+	struct dma_buf_export_info exp_info = {
+		.exp_name = KBUILD_MODNAME,
+		.owner = THIS_MODULE,
+	};
+	struct msm_vidc_buffer *buf = buf_priv;
+	struct msm_vidc_inst *inst = buf->inst;
+	struct dma_buf *dbuf;
+
+	exp_info.ops = &msm_vb2_dmabuf_ops;
+	exp_info.size = buf->buffer_size;
+	exp_info.flags = flags;
+	exp_info.priv = buf;
+
+	if (!buf->sg_table)
+		buf->sg_table = vb2_dc_get_base_sgt(buf);
+
+	if (WARN_ON(!buf->sg_table))
+		return NULL;
+
+	dbuf = dma_buf_export(&exp_info);
+	if (IS_ERR(dbuf)) {
+		i_vpr_e(inst, "%s: failed to export dma buf\n", __func__);
+		return NULL;
+	}
+
+	/* dmabuf keeps reference to vb2 buffer */
+	refcount_inc(&buf->refcount);
+
+	return dbuf;
+}
+
+static void msm_vb2_detach_dmabuf(void *buf_priv)
 {
 	struct msm_vidc_buffer *vbuf = buf_priv;
 	struct msm_vidc_buffer *ro_buf, *dummy;
@@ -173,7 +524,7 @@ exit:
 	return;
 }
 
-int msm_vb2_map_dmabuf(void *buf_priv)
+static int msm_vb2_map_dmabuf(void *buf_priv)
 {
 	int rc = 0;
 	struct msm_vidc_buffer *buf = buf_priv;
@@ -236,7 +587,7 @@ exit:
 	return rc;
 }
 
-void msm_vb2_unmap_dmabuf(void *buf_priv)
+static void msm_vb2_unmap_dmabuf(void *buf_priv)
 {
 	struct msm_vidc_buffer *vbuf = buf_priv;
 	struct msm_vidc_buffer *ro_buf, *dummy;
@@ -277,7 +628,7 @@ exit:
 	return;
 }
 
-int msm_vb2_queue_setup(struct vb2_queue *q,
+static int msm_vb2_queue_setup(struct vb2_queue *q,
 		unsigned int *num_buffers, unsigned int *num_planes,
 		unsigned int sizes[], struct device *alloc_devs[])
 {
@@ -405,7 +756,7 @@ int msm_vb2_queue_setup(struct vb2_queue *q,
 	return rc;
 }
 
-int msm_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
+static int msm_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	int rc = 0;
 	struct msm_vidc_inst *inst;
@@ -582,7 +933,7 @@ int msm_vidc_stop_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q)
 	return rc;
 }
 
-void msm_vb2_stop_streaming(struct vb2_queue *q)
+static void msm_vb2_stop_streaming(struct vb2_queue *q)
 {
 	struct msm_vidc_inst *inst;
 	int rc = 0;
@@ -606,7 +957,7 @@ void msm_vb2_stop_streaming(struct vb2_queue *q)
 	return;
 }
 
-void msm_vb2_buf_queue(struct vb2_buffer *vb2)
+static void msm_vb2_buf_queue(struct vb2_buffer *vb2)
 {
 	int rc = 0;
 	struct msm_vidc_inst *inst;
@@ -703,7 +1054,7 @@ exit:
 	}
 }
 
-int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
+static int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
 {
 	struct vb2_v4l2_buffer *vbuf;
 
@@ -717,7 +1068,7 @@ int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
 	return 0;
 }
 
-void msm_vb2_request_complete(struct vb2_buffer *vb)
+static void msm_vb2_request_complete(struct vb2_buffer *vb)
 {
 	struct msm_vidc_inst *inst;
 
@@ -734,4 +1085,32 @@ void msm_vb2_request_complete(struct vb2_buffer *vb)
 	i_vpr_l(inst, "%s: vb type %d, index %d\n",
 		__func__, vb->type, vb->index);
 	v4l2_ctrl_request_complete(vb->req_obj.req, &inst->ctrl_handler);
+}
+
+static const struct vb2_ops msm_vb2_ops = {
+	.queue_setup                    = msm_vb2_queue_setup,
+	.start_streaming                = msm_vb2_start_streaming,
+	.buf_queue                      = msm_vb2_buf_queue,
+	.stop_streaming                 = msm_vb2_stop_streaming,
+	.buf_out_validate               = msm_vb2_buf_out_validate,
+	.buf_request_complete           = msm_vb2_request_complete,
+};
+
+static const struct vb2_mem_ops msm_vb2_mem_ops = {
+	.alloc                          = msm_vb2_alloc,
+	.put                            = msm_vb2_put,
+	.mmap                           = msm_vb2_mmap,
+	.get_dmabuf                     = msm_vb2_get_dmabuf,
+	.attach_dmabuf                  = msm_vb2_attach_dmabuf,
+	.detach_dmabuf                  = msm_vb2_detach_dmabuf,
+	.map_dmabuf                     = msm_vb2_map_dmabuf,
+	.unmap_dmabuf                   = msm_vb2_unmap_dmabuf,
+};
+
+int msm_vidc_core_init_vb2_ops(struct msm_vidc_core *core)
+{
+	core->vb2_ops                   = &msm_vb2_ops;
+	core->vb2_mem_ops               = &msm_vb2_mem_ops;
+
+	return 0;
 }
