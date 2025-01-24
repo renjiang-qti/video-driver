@@ -67,6 +67,7 @@ USERINCLUDE    += -I$(VIDEO_ROOT)/include/uapi/vidc/media \
 ccflags-y += ${ccflags-m}
 ccflags-y += -Wmissing-prototypes
 ccflags-y += -Werror
+ccflags-y += -Wno-enum-conversion
 obj-m += video.o
 
 ifeq ($(CONFIG_MSM_VIDC_NIOBE), y)
