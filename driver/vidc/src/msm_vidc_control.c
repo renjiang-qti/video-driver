@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/v4l2-controls.h>
@@ -62,7 +62,13 @@ static const char *const mpeg_video_hevc_profile[] = {
 };
 
 static const char *const mpeg_vidc_apv_profile[] = {
-	"Baseline",
+	"422_10",
+	"422_12",
+	"444_10",
+	"444_12",
+	"4444_10",
+	"4444_12",
+	"400_10",
 	NULL,
 };
 
@@ -102,16 +108,62 @@ static const char * const av1_level[] = {
 };
 
 static const char * const mpeg_vidc_apv_level[] = {
-	"1.0",
-	"1.1",
-	"2.0",
-	"2.1",
-	"3.0",
-	"3.1",
-	"4.0",
-	"4.1",
-	"5.0",
-	"5.1",
+	"BAND0_1_0",
+	"BAND0_1_1",
+	"BAND0_2_0",
+	"BAND0_2_1",
+	"BAND0_3_0",
+	"BAND0_3_1",
+	"BAND0_4_0",
+	"BAND0_4_1",
+	"BAND0_5_0",
+	"BAND0_5_1",
+	"BAND0_6_0",
+	"BAND0_6_1",
+	"BAND0_7_0",
+	"BAND0_7_1",
+	"BAND1_1_0",
+	"BAND1_1_1",
+	"BAND1_2_0",
+	"BAND1_2_1",
+	"BAND1_3_0",
+	"BAND1_3_1",
+	"BAND1_4_0",
+	"BAND1_4_1",
+	"BAND1_5_0",
+	"BAND1_5_1",
+	"BAND1_6_0",
+	"BAND1_6_1",
+	"BAND1_7_0",
+	"BAND1_7_1",
+	"BAND2_1_0",
+	"BAND2_1_1",
+	"BAND2_2_0",
+	"BAND2_2_1",
+	"BAND2_3_0",
+	"BAND2_3_1",
+	"BAND2_4_0",
+	"BAND2_4_1",
+	"BAND2_5_0",
+	"BAND2_5_1",
+	"BAND2_6_0",
+	"BAND2_6_1",
+	"BAND2_7_0",
+	"BAND2_7_1",
+	"BAND3_1_0",
+	"BAND3_1_1",
+	"BAND3_2_0",
+	"BAND3_2_1",
+	"BAND3_3_0",
+	"BAND3_3_1",
+	"BAND3_4_0",
+	"BAND3_4_1",
+	"BAND3_5_0",
+	"BAND3_5_1",
+	"BAND3_6_0",
+	"BAND3_6_1",
+	"BAND3_7_0",
+	"BAND3_7_1",
 	NULL,
 };
 
@@ -632,18 +684,26 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 			ctrl_cfg.max = cap[idx].max;
 			ctrl_cfg.min = cap[idx].min;
 			ctrl_cfg.ops = core->v4l2_ctrl_ops;
-			if (cap[idx].flags & CAP_FLAG_MENU)
+			if (cap[idx].flags & CAP_FLAG_MENU) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_MENU;
-			else if (cap[idx].flags & CAP_FLAG_BITMASK)
+			} else if (cap[idx].flags & CAP_FLAG_BITMASK) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_BITMASK;
-			else if (cap[idx].flags & CAP_FLAG_U8)
+			} else if (cap[idx].flags & CAP_FLAG_BLOB) {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_U8;
-			else
+				ctrl_cfg.dims[0] = ctrl_cfg.max; /* element count */
+				ctrl_cfg.elem_size = sizeof(u8); /* element size */
+				/**
+				 * overwrite blob range with max values, to avoid
+				 * v4l2 side data manipulation(in validate_new()).
+				 */
+				ctrl_cfg.min  = 0;
+				ctrl_cfg.max  = U8_MAX;
+				ctrl_cfg.step = 1;
+				ctrl_cfg.def  = 0;
+			} else {
 				ctrl_cfg.type = V4L2_CTRL_TYPE_INTEGER;
-			if (ctrl_cfg.type & V4L2_CTRL_TYPE_U8) {
-				ctrl_cfg.elem_size = sizeof(u8);
-				ctrl_cfg.dims[0] = ctrl_cfg.max;
 			}
+
 			if (is_meta_cap(inst, idx)) {
 				/* bitmask is expected to be enabled for meta controls */
 				if (ctrl_cfg.type != V4L2_CTRL_TYPE_BITMASK) {

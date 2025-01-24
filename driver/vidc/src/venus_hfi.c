@@ -28,6 +28,7 @@
 #include "msm_vidc_state.h"
 #include "firmware.h"
 #include "resources.h"
+#include "msm_vidc_hw_virt.h"
 
 #define update_offset(offset, val)		((offset) += (val))
 #define update_timestamp(ts, val) \
@@ -490,7 +491,8 @@ static int __suspend(struct msm_vidc_core *core)
 	 * add new suspend code above this.
 	 */
 	if (core->full_virtualization_data.virtualization_en)
-		return rc;
+		return msm_vidc_change_core_sub_state(core,
+			CORE_SUBSTATE_POWER_ENABLE, 0, __func__);
 
 	rc = fw_suspend(core);
 	if (rc) {
@@ -530,8 +532,15 @@ static int __resume(struct msm_vidc_core *core)
 	 * virtualization is enabled, and fw code is skipped. please do not
 	 * add new resume code above this.
 	 */
-	if (core->full_virtualization_data.virtualization_en)
+	if (core->full_virtualization_data.virtualization_en) {
+		rc = virtio_video_msm_cmd_resume_gvm_session(
+			core->capabilities[NUM_VPU].value, 0);
+		if (!rc)
+			msm_vidc_change_core_sub_state(core, 0,
+				CORE_SUBSTATE_POWER_ENABLE, __func__);
+
 		return rc;
+	}
 
 	/* reset handoff done from core sub_state */
 	rc = msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
