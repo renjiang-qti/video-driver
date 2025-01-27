@@ -353,7 +353,7 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 
 static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 {
-	u32 num_buf_recon = 0;
+	u32 num_buf_recon = 0, profile;
 	s32 n_bframe, ltr_count, hp_layers = 0, hb_layers = 0;
 	bool is_hybrid_hp = false;
 	u32 hfi_codec = 0;
@@ -375,8 +375,11 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 		hfi_codec = HFI_CODEC_ENCODE_HEVC;
 	else if (inst->codec == MSM_VIDC_APV)
 		hfi_codec = HFI_CODEC_ENCODE_APV;
+
+	profile = inst->capabilities[PROFILE].value;
+
 	HFI_IRIS3_ENC_RECON_BUF_COUNT(num_buf_recon, n_bframe, ltr_count,
-			hp_layers, hb_layers, is_hybrid_hp, hfi_codec);
+			hp_layers, hb_layers, is_hybrid_hp, hfi_codec, profile);
 
 	return num_buf_recon;
 }
@@ -384,18 +387,19 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 static u32 msm_vidc_encoder_comv_size_iris4(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
-	u32 width, height, num_recon = 0;
+	u32 width, height, num_recon = 0, profile;
 	struct v4l2_format *f;
 
+	profile = inst->capabilities[PROFILE].value;
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 
 	num_recon = msm_vidc_get_recon_buf_count(inst);
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_COMV_H264E(size, width, height, num_recon);
+		HFI_BUFFER_COMV_H264E(size, width, height, num_recon, profile);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_COMV_H265E(size, width, height, num_recon);
+		HFI_BUFFER_COMV_H265E(size, width, height, num_recon, profile);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -634,7 +638,7 @@ exit:
 
 static int msm_vidc_input_min_count_iris4(struct msm_vidc_inst *inst)
 {
-	u32 input_min_count = 0;
+	u32 input_min_count = 0, hfi_codec = 0, profile;
 	u32 total_hb_layer = 0;
 
 	if (is_decode_session(inst)) {
@@ -646,8 +650,16 @@ static int msm_vidc_input_min_count_iris4(struct msm_vidc_inst *inst)
 			!inst->capabilities[LAYER_ENABLE].value) {
 			total_hb_layer = 0;
 		}
+
+		if (inst->codec == MSM_VIDC_H264)
+			hfi_codec = HFI_CODEC_ENCODE_AVC;
+		else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
+			hfi_codec = HFI_CODEC_ENCODE_HEVC;
+
+		profile = inst->capabilities[PROFILE].value;
+
 		HFI_IRIS3_ENC_MIN_INPUT_BUF_COUNT(input_min_count,
-			total_hb_layer);
+			total_hb_layer, hfi_codec, profile);
 	} else {
 		i_vpr_e(inst, "%s: invalid domain %d\n", __func__, inst->domain);
 		return 0;
