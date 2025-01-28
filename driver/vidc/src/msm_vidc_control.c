@@ -30,8 +30,9 @@ static bool is_priv_ctrl(u32 id)
 	switch (id) {
 	/*
 	 * TODO: V4L2_CID_MPEG_VIDEO_HEVC_PROFILE is std ctrl. But
-	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE and
-	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW support is not
+	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE,
+	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW and
+	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_MULTIVIEW support is not
 	 * available yet. Hence, make this as private ctrl for time being
 	 */
 	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
@@ -58,6 +59,7 @@ static const char *const mpeg_video_hevc_profile[] = {
 	"Main 10",
 	"Main 10 Still Picture",
 	"Main Multi View",
+	"Main 10 Multi View",
 	NULL,
 };
 
