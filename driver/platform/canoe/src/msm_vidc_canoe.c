@@ -847,24 +847,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	/* Fence direction for input rx buffer */
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
-			BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_OUTPUT_PORT},
-
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_TS_REORDER},
@@ -2842,24 +2824,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	/* Fence direction for input rx buffer */
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
-			BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_OUTPUT_PORT},
-
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_TS_REORDER},
@@ -4661,24 +4625,6 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	/* Fence direction for input rx buffer */
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
-			BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_OUTPUT_PORT},
-
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_TS_REORDER},
@@ -6278,18 +6224,17 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
-		EARLY_NOTIFY_ENABLE},
+		{OUTPUT_TX_FENCE_TYPE, SLICE_DECODE, EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, VP9,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
+		{OUTPUT_TX_FENCE_TYPE},
 		NULL,
 		NULL},
 
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
+		{INPUT_RX_FENCE_TYPE},
 		NULL,
 		NULL},
 
@@ -6323,15 +6268,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		msm_vidc_adjust_dec_output_rx_fence_type,
 		NULL},
 
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_input_rx_fence_direction,
-		NULL},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_output_tx_fence_direction,
-		NULL},
 
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
@@ -7024,18 +6960,17 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
-		EARLY_NOTIFY_ENABLE},
+		{OUTPUT_TX_FENCE_TYPE, SLICE_DECODE, EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, VP9,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
+		{OUTPUT_TX_FENCE_TYPE},
 		NULL,
 		NULL},
 
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
+		{INPUT_RX_FENCE_TYPE},
 		NULL,
 		NULL},
 
@@ -7067,16 +7002,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_rx_fence_type,
-		NULL},
-
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_input_rx_fence_direction,
-		NULL},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_output_tx_fence_direction,
 		NULL},
 
 	{HFLIP, ENC, H264 | HEVC | VP9 | HEIC | AV1,
@@ -7731,18 +7656,17 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
-		EARLY_NOTIFY_ENABLE},
+		{OUTPUT_TX_FENCE_TYPE, SLICE_DECODE, EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, VP9,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
+		{OUTPUT_TX_FENCE_TYPE},
 		NULL,
 		NULL},
 
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
+		{INPUT_RX_FENCE_TYPE},
 		NULL,
 		NULL},
 
@@ -7774,16 +7698,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_rx_fence_type,
-		NULL},
-
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_input_rx_fence_direction,
-		NULL},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_output_tx_fence_direction,
 		NULL},
 
 	{HFLIP, ENC, CODECS_ALL,

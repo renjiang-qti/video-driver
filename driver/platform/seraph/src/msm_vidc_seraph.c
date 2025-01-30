@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <dt-bindings/clock/qcom,gcc-seraph.h>
@@ -719,24 +719,6 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	/* Fence direction for input rx buffer */
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_INPUT_PORT},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		MSM_VIDC_FENCE_DIR_NONE, MSM_VIDC_FENCE_DIR_RX,
-		BIT(MSM_VIDC_FENCE_DIR_NONE) | BIT(MSM_VIDC_FENCE_DIR_TX) |
-			BIT(MSM_VIDC_FENCE_DIR_RX),
-		MSM_VIDC_FENCE_DIR_NONE,
-		0,
-		HFI_PROP_FENCE_DIRECTION,
-		CAP_FLAG_MENU | CAP_FLAG_OUTPUT_PORT},
 
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
@@ -2252,18 +2234,17 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, H264 | HEVC | AV1,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION, SLICE_DECODE,
-		EARLY_NOTIFY_ENABLE},
+		{OUTPUT_TX_FENCE_TYPE, SLICE_DECODE, EARLY_NOTIFY_ENABLE},
 		NULL,
 		NULL},
 
 	{META_OUTPUT_TX_FENCE, DEC, VP9,
-		{OUTPUT_TX_FENCE_TYPE, OUTPUT_TX_FENCE_DIRECTION},
+		{OUTPUT_TX_FENCE_TYPE},
 		NULL,
 		NULL},
 
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | AV1 | VP9,
-		{INPUT_RX_FENCE_TYPE, INPUT_RX_FENCE_DIRECTION},
+		{INPUT_RX_FENCE_TYPE},
 		NULL,
 		NULL},
 
@@ -2297,15 +2278,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 		msm_vidc_adjust_dec_output_rx_fence_type,
 		NULL},
 
-	{INPUT_RX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_input_rx_fence_direction,
-		NULL},
-
-	{OUTPUT_TX_FENCE_DIRECTION, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		msm_vidc_adjust_dec_output_tx_fence_direction,
-		NULL},
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
 		NULL,
@@ -2953,12 +2925,6 @@ static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_mvs0c_freerun_reset",          0  },
 };
 
-/* name, llcc_id */
-static const struct subcache_table seraph_subcache_table[] = {
-	{ "vidsc0",     LLCC_VIDSC0 },
-	{ "vidvsp",     LLCC_VIDVSP },
-};
-
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table seraph_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x32000000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
@@ -3102,8 +3068,6 @@ static const struct msm_vidc_platform_data seraph_data = {
 	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
 	.clk_rst_tbl = seraph_clk_reset_table,
 	.clk_rst_tbl_size = ARRAY_SIZE(seraph_clk_reset_table),
-	.subcache_tbl = seraph_subcache_table,
-	.subcache_tbl_size = ARRAY_SIZE(seraph_subcache_table),
 
 	/* populate context bank */
 	.context_bank_tbl = seraph_context_bank_table,
@@ -3115,7 +3079,7 @@ static const struct msm_vidc_platform_data seraph_data = {
 	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu40_2v",
 	.pas_id = 9,
-	.supports_mmrm = 1,
+	.supports_mmrm = 0,
 
 	/* caps related resorces */
 	.core_data = core_data_seraph,
