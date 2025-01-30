@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_PLATFORM_H_
@@ -365,10 +365,8 @@ int msm_vidc_adjust_roi_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_all_intra(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_input_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_input_rx_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_output_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_output_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
-int msm_vidc_adjust_dec_output_tx_fence_direction(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_enable(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_line_count(void *instance, struct v4l2_ctrl *ctrl);
