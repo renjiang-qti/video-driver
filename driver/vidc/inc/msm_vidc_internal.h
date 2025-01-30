@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_INTERNAL_H_
@@ -300,11 +300,9 @@ enum msm_vidc_metadata_bits {
 	CAP(INPUT_TX_FENCE_ENABLE)                \
 	CAP(INPUT_RX_FENCE_TYPE)                  \
 	CAP(INPUT_TX_FENCE_TYPE)                  \
-	CAP(INPUT_RX_FENCE_DIRECTION)             \
 	CAP(OUTPUT_RX_FENCE_ENABLE)               \
 	CAP(OUTPUT_RX_FENCE_TYPE)                 \
 	CAP(OUTPUT_TX_FENCE_TYPE)                 \
-	CAP(OUTPUT_TX_FENCE_DIRECTION)            \
 	CAP(PROFILE)                              \
 	CAP(ENH_LAYER_COUNT)                      \
 	CAP(BIT_RATE)                             \
