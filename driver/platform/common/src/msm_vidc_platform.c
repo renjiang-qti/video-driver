@@ -273,6 +273,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_platform              = msm_vidc_init_platform_canoe,
 		.init_iris                  = msm_vidc_init_iris4,
 	},
+	{
+		.compat                     = "qcom,canoe-vidc-v2",
+		.get_platform_data          = msm_vidc_get_platform_data_canoe,
+		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
 	{
@@ -891,6 +897,9 @@ int msm_vidc_adjust_profile(void *instance, struct v4l2_ctrl *ctrl)
 	if (pix_fmt == MSM_VIDC_FMT_TP10C || pix_fmt == MSM_VIDC_FMT_P010) {
 		if (is_image_session(inst))
 			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE;
+		else if (inst->capabilities[PROFILE].value ==
+				V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_MULTIVIEW)
+			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_MULTIVIEW;
 		else
 			adjusted_value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10;
 	} else {

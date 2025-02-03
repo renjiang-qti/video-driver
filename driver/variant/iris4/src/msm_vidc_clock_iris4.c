@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "perf_static_model.h"
@@ -411,6 +411,12 @@ static int calculate_vsp_min_freq(struct api_calculation_input codec_input,
 	 * different methodology from Lahaina
 	 */
 	u32 vsp_hw_min_frequency = 0;
+
+	if (codec_input.codec == CODEC_APV) {
+		codec_output->vsp_min_freq = 0;
+		return 0;
+	}
+
 	/* UInt32 decoder_vsp_fw_overhead = 100 + 5; // amplified by 100x */
 	u32 fw_sw_vsp_offset = 1000 + 55;      /* amplified by 1000x */
 	/*

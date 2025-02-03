@@ -80,7 +80,7 @@ video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/sun/src/sun.o \
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
-msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/seraph/src/seraph.o \
+video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/seraph/src/seraph.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_buffer_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_power_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_bus_iris4.o \

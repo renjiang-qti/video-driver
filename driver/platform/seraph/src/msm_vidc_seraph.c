@@ -2908,10 +2908,13 @@ static const struct clk_table seraph_clk_table[] = {
 	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0 },
 	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0 },
 	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0 },
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0 },
 	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0 },
 	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0 },
 	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0 },
 	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
 	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
 	 (u64[]) {630000000, 533000000, 444000000, 420000000, 338000000, 240000000}, 6},
@@ -2928,12 +2931,12 @@ static const struct clk_rst_table seraph_clk_reset_table[] = {
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table seraph_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x32000000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
-	{"qcom,vidc,cb-ns",            0x33000000, 0xbd000000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns",            0x33000000, 0xbd000000, 0, 1,
+		MSM_VIDC_NON_SECURE |
+		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-ns-pxl",        0x00500000, 0xefb00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
 	{"qcom,vidc,cb-sec-bitstream", 0x00500000, 0xefb00000, 1, 0, MSM_VIDC_SECURE_BITSTREAM, 0 },
 	{"qcom,vidc,cb-sec-pxl",       0x00500000, 0xefb00000, 1, 0, MSM_VIDC_SECURE_PIXEL,     0 },
-	{"qcom,vidc,cb-ns-bitstream",  0x00500000, 0xefb00000, 0, 1,
-		MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
 };
 
 /* register, value, mask */
