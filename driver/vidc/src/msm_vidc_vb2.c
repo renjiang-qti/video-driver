@@ -609,59 +609,58 @@ exit:
 	return;
 }
 
-static int msm_vb2_queue_setup(struct vb2_queue *q,
-		unsigned int *num_buffers, unsigned int *num_planes,
-		unsigned int sizes[], struct device *alloc_devs[])
+static struct msm_vidc_inst *msm_vb2_check_basic_data(struct vb2_queue *q,
+		unsigned int *num_buffers, unsigned int *num_planes, unsigned int sizes[])
 {
-	int rc = 0;
 	struct msm_vidc_inst *inst;
-	struct msm_vidc_core *core;
-	int port;
-	struct v4l2_format *f;
-	enum msm_vidc_buffer_type buffer_type = 0;
-	enum msm_vidc_buffer_region region = MSM_VIDC_REGION_NONE;
-	struct context_bank_info *cb = NULL;
-	struct msm_vidc_buffers *buffers;
 
 	if (!q || !num_buffers || !num_planes
 		|| !sizes || !q->drv_priv) {
 		d_vpr_e("%s: invalid params, q = %pK, %pK, %pK\n",
 			__func__, q, num_buffers, num_planes);
-		return -EINVAL;
+		return NULL;
 	}
 	inst = q->drv_priv;
 	if (!inst || !inst->core) {
 		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
-		return -EINVAL;
-	}
-	core = inst->core;
-
-	if (is_state(inst, MSM_VIDC_STREAMING)) {
-		i_vpr_e(inst, "%s: invalid state %d\n", __func__, inst->state);
-		return -EINVAL;
+		return NULL;
 	}
 
-	port = v4l2_type_to_driver_port(inst, q->type, __func__);
-	if (port < 0)
-		return -EINVAL;
+	return inst;
+}
 
-	/* prepare dependency list once per session */
-	if (!inst->caps_list_prepared) {
-		rc = msm_vidc_prepare_dependency_list(inst);
-		if (rc)
-			return rc;
-		inst->caps_list_prepared = true;
-	}
+static int msm_vb2_adjust_properties(struct msm_vidc_inst *inst, int port)
+{
+	int rc = 0;
 
-	/* adjust v4l2 properties for master port */
-	if ((is_encode_session(inst) && port == OUTPUT_PORT) ||
-		(is_decode_session(inst) && port == INPUT_PORT)) {
-		rc = msm_vidc_adjust_v4l2_properties(inst);
-		if (rc) {
-			i_vpr_e(inst, "%s: failed to adjust properties\n", __func__);
-			return rc;
+	if (!is_state(inst, MSM_VIDC_STREAMING)) {
+		/* prepare dependency list once per session */
+		if (!inst->caps_list_prepared) {
+			rc = msm_vidc_prepare_dependency_list(inst);
+			if (rc)
+				return rc;
+			inst->caps_list_prepared = true;
+		}
+
+		/* adjust v4l2 properties for master port */
+		if ((is_encode_session(inst) && port == OUTPUT_PORT) ||
+			(is_decode_session(inst) && port == INPUT_PORT)) {
+			rc = msm_vidc_adjust_v4l2_properties(inst);
+			if (rc) {
+				i_vpr_e(inst, "%s: failed to adjust properties\n", __func__);
+				return rc;
+			}
 		}
 	}
+
+	return 0;
+}
+
+static int msm_vb2_check_format(struct msm_vidc_inst *inst,
+					unsigned int *num_planes,
+					unsigned int image_sizes, int port)
+{
+	struct v4l2_format *f;
 
 	if (*num_planes && (port == INPUT_PORT || port == OUTPUT_PORT)) {
 		f = &inst->fmts[port];
@@ -670,50 +669,114 @@ static int msm_vb2_queue_setup(struct vb2_queue *q,
 			__func__, *num_planes, f->fmt.pix_mp.num_planes);
 			return -EINVAL;
 		}
-		if (sizes[0] < inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage) {
+		if (image_sizes < inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage) {
 			i_vpr_e(inst, "%s: requested size %d not acceptable\n",
-			__func__, sizes[0]);
+			__func__, image_sizes);
 			return -EINVAL;
 		}
 	}
+
+	return 0;
+}
+
+static int msm_vb2_clean_buffers(struct msm_vidc_inst *inst,
+				enum msm_vidc_buffer_type buffer_type)
+{
+	int ret = 0;
+
+	if (!is_state(inst, MSM_VIDC_STREAMING))
+		ret = msm_vidc_free_buffers(inst, buffer_type);
+
+	return ret;
+}
+
+static int msm_vb2_update_buffers_info(struct msm_vidc_inst *inst, int port,
+			unsigned int sizes, unsigned int *num_buffers,
+			struct msm_vidc_buffers *buffers, enum msm_vidc_buffer_type buffer_type)
+{
+	struct msm_vidc_core *core = inst->core;
+
+	if (!is_state(inst, MSM_VIDC_STREAMING)) {
+		buffers->min_count = call_session_op(core, min_count, inst, buffer_type);
+		buffers->extra_count = call_session_op(core, extra_count, inst, buffer_type);
+		if (*num_buffers < buffers->min_count + buffers->extra_count)
+			*num_buffers = buffers->min_count + buffers->extra_count;
+		buffers->actual_count = *num_buffers;
+	} else {
+		buffers->actual_count += *num_buffers;
+	}
+
+	buffers->size = call_session_op(core, buffer_size, inst, buffer_type);
+	if (port == INPUT_PORT || port == OUTPUT_PORT) {
+		inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage = buffers->size;
+		sizes = inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage;
+	} else if (port == OUTPUT_META_PORT) {
+		inst->fmts[port].fmt.meta.buffersize = buffers->size;
+		sizes = inst->fmts[port].fmt.meta.buffersize;
+	} else if (port == INPUT_META_PORT) {
+		inst->fmts[port].fmt.meta.buffersize = buffers->size;
+		if (inst->capabilities[SUPER_FRAME].value)
+			sizes = inst->capabilities[SUPER_FRAME].value *
+				inst->fmts[port].fmt.meta.buffersize;
+		else
+			sizes = inst->fmts[port].fmt.meta.buffersize;
+	}
+
+	return sizes;
+}
+
+static int msm_vb2_queue_setup(struct vb2_queue *q,
+		unsigned int *num_buffers, unsigned int *num_planes,
+		unsigned int sizes[], struct device *alloc_devs[])
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst;
+	struct msm_vidc_core *core;
+	int port;
+	enum msm_vidc_buffer_type buffer_type = 0;
+	enum msm_vidc_buffer_region region = MSM_VIDC_REGION_NONE;
+	struct context_bank_info *cb = NULL;
+	struct msm_vidc_buffers *buffers;
+
+	inst = msm_vb2_check_basic_data(q, num_buffers, num_planes, sizes);
+	if (!inst) {
+		d_vpr_e("%s: invalid params %pK\n", __func__, inst);
+		return -EINVAL;
+	}
+	core = inst->core;
+
+	port = v4l2_type_to_driver_port(inst, q->type, __func__);
+	if (port < 0)
+		return -EINVAL;
+
+	rc = msm_vb2_adjust_properties(inst, port);
+	if (rc)
+		return rc;
+
+	rc = msm_vb2_check_format(inst, num_planes, sizes[0], port);
+	if (rc)
+		return rc;
 
 	buffer_type = v4l2_type_to_driver(q->type, __func__);
 	if (!buffer_type)
 		return -EINVAL;
 
-	rc = msm_vidc_free_buffers(inst, buffer_type);
+	rc = msm_vb2_clean_buffers(inst, buffer_type);
 	if (rc) {
 		i_vpr_e(inst, "%s: failed to free buffers, type %s\n",
 			__func__, v4l2_type_name(q->type));
 		return rc;
+
 	}
 
 	buffers = msm_vidc_get_buffers(inst, buffer_type, __func__);
 	if (!buffers)
 		return -EINVAL;
 
-	buffers->min_count = call_session_op(core, min_count, inst, buffer_type);
-	buffers->extra_count = call_session_op(core, extra_count, inst, buffer_type);
-	if (*num_buffers < buffers->min_count + buffers->extra_count)
-		*num_buffers = buffers->min_count + buffers->extra_count;
-	buffers->actual_count = *num_buffers;
-	*num_planes = 1;
+	sizes[0] = msm_vb2_update_buffers_info(inst, port, sizes[0],
+						num_buffers, buffers, buffer_type);
 
-	buffers->size = call_session_op(core, buffer_size, inst, buffer_type);
-	if (port == INPUT_PORT || port == OUTPUT_PORT) {
-		inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage = buffers->size;
-		sizes[0] = inst->fmts[port].fmt.pix_mp.plane_fmt[0].sizeimage;
-	} else if (port == OUTPUT_META_PORT) {
-		inst->fmts[port].fmt.meta.buffersize = buffers->size;
-		sizes[0] = inst->fmts[port].fmt.meta.buffersize;
-	} else if (port == INPUT_META_PORT) {
-		inst->fmts[port].fmt.meta.buffersize = buffers->size;
-		if (inst->capabilities[SUPER_FRAME].value)
-			sizes[0] = inst->capabilities[SUPER_FRAME].value *
-				inst->fmts[port].fmt.meta.buffersize;
-		else
-			sizes[0] = inst->fmts[port].fmt.meta.buffersize;
-	}
+	*num_planes = 1;
 
 	rc = msm_vidc_allocate_buffers(inst, buffer_type, *num_buffers);
 	if (rc) {
