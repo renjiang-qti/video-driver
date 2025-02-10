@@ -2897,8 +2897,8 @@ static const struct bw_table seraph_bw_table[] = {
 static const struct regulator_table seraph_regulator_table[] = {
 	{ "iris-ctl", 0 },
 	{ "vcodec",   1 },
-	{ "vpp0",     0 },
-	{ "vpp1",     0 },
+	{ "vpp0",     1 },
+	{ "vpp1",     1 },
 };
 
 /* name, clock id, scaling */
