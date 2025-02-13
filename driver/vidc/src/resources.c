@@ -341,12 +341,15 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	pds->count = pd_count;
 
 	/* populate power domain fields */
-	for (cnt = 0; cnt < pds->count; cnt++)
+	for (cnt = 0; cnt < pds->count; cnt++) {
 		pds->power_domain_tbl[cnt].name = pd_tbl[cnt].name;
+		pds->power_domain_tbl[cnt].hw_power_collapse = pd_tbl[cnt].hw_trigger;
+	}
 
 	/* print power domain fields */
 	venus_hfi_for_each_power_domain(core, pdinfo)
-		d_vpr_h("%s: pd name %s\n", __func__, pdinfo->name);
+		d_vpr_h("%s: pd name %s hw_power_collapse %d\n",
+			__func__, pdinfo->name, pdinfo->hw_power_collapse);
 
 	/* get power domain handle */
 	venus_hfi_for_each_power_domain(core, pdinfo) {
@@ -923,24 +926,41 @@ static int __disable_power_domains(struct msm_vidc_core *core, const char *name)
 	return 0;
 }
 
-static int __hand_off_power_domains(struct msm_vidc_core *core)
+static int __switch_gdsc_to_swmode(struct msm_vidc_core *core, struct power_domain_info *pdinfo)
 {
 	int rc = 0;
 
-	if (is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
-		d_vpr_h("%s: power domains are already in HW ctrl mode\n",
-			__func__);
-		return 0;
+	if (core->venus_ops && core->venus_ops->switch_gdsc_mode) {
+		rc = call_venus_op(core, switch_gdsc_mode, core, true);
+	} else {
+#if (KERNEL_VERSION(6, 11, 0) <= LINUX_VERSION_CODE)
+		rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, false);
+#else
+		d_vpr_e("%s: unexpected %s\n", __func__, pdinfo->name);
+		rc = -EINVAL;
+#endif
 	}
-
-	rc = call_venus_op(core, switch_gdsc_mode, core, false);
-	if (rc) {
-		d_vpr_e("Failed to switch GDSC into HW control, err: %d\n", rc);
+	if (rc < 0) {
+		d_vpr_e("%s: failed to set sw mode: %s\n",
+			__func__, pdinfo->name);
 		return rc;
 	}
+	d_vpr_h("%s: moved power domain %s into sw ctrl\n",
+		__func__, pdinfo->name);
 
-	d_vpr_h("%s: moved power doamin into HW control\n", __func__);
-	msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_GDSC_HANDOFF, __func__);
+	return 0;
+}
+
+static int switch_gdsc_to_swmode(struct msm_vidc_core *core)
+{
+	struct power_domain_info *pdinfo;
+
+	venus_hfi_for_each_power_domain(core, pdinfo) {
+		/* skip non-collapsible domain */
+		if (!pdinfo->hw_power_collapse)
+			continue;
+		__switch_gdsc_to_swmode(core, pdinfo);
+	}
 
 	return 0;
 }
@@ -955,9 +975,9 @@ static int __acquire_power_domains(struct msm_vidc_core *core)
 		return 0;
 	}
 
-	rc = call_venus_op(core, switch_gdsc_mode, core, true);
+	rc = switch_gdsc_to_swmode(core);
 	if (rc) {
-		d_vpr_e("Failed to switch GDSC into SW control, err: %d\n", rc);
+		d_vpr_e("%s: failed to switch GDSC into SW control, err: %d\n", __func__, rc);
 		return rc;
 	}
 
@@ -965,6 +985,76 @@ static int __acquire_power_domains(struct msm_vidc_core *core)
 	msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
 
 	return 0;
+}
+
+static int __switch_gdsc_to_hwmode(struct msm_vidc_core *core, struct power_domain_info *pdinfo)
+{
+	int rc = 0;
+
+	if (core->venus_ops && core->venus_ops->switch_gdsc_mode) {
+		rc = call_venus_op(core, switch_gdsc_mode, core, false);
+	} else {
+#if (KERNEL_VERSION(6, 11, 0) <= LINUX_VERSION_CODE)
+		rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, true);
+#else
+		d_vpr_e("%s: unexpected %s\n", __func__, pdinfo->name);
+		rc = -EINVAL;
+#endif
+	}
+	if (rc < 0) {
+		d_vpr_e("%s: failed to set hw mode: %s\n",
+			__func__, pdinfo->name);
+		return rc;
+	}
+	d_vpr_h("%s: moved power domain %s into hw ctrl\n",
+		__func__, pdinfo->name);
+
+	return 0;
+}
+
+static int switch_gdsc_to_hwmode(struct msm_vidc_core *core)
+{
+	struct power_domain_info *pdinfo;
+	int rc = 0, cnt = 0;
+
+	venus_hfi_for_each_power_domain(core, pdinfo) {
+		/* skip non-collapsible domain */
+		if (!pdinfo->hw_power_collapse)
+			continue;
+		rc = __switch_gdsc_to_hwmode(core, pdinfo);
+		if (rc)
+			goto err_pd_handoff_failed;
+		cnt++;
+	}
+
+	return rc;
+err_pd_handoff_failed:
+	venus_hfi_for_each_power_domain_reverse_continue(core, pdinfo, cnt)
+		__switch_gdsc_to_swmode(core, pdinfo);
+
+	return rc;
+}
+
+static int __hand_off_power_domains(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	if (is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
+		d_vpr_h("%s: power domains are already in HW ctrl mode\n",
+			__func__);
+		return 0;
+	}
+
+	rc = switch_gdsc_to_hwmode(core);
+	if (rc) {
+		d_vpr_e("%s: failed to switch GDSC into HW control, err: %d\n", __func__, rc);
+		return rc;
+	}
+
+	d_vpr_h("%s: moved power doamin into HW control\n", __func__);
+	msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_GDSC_HANDOFF, __func__);
+
+	return rc;
 }
 
 static int __disable_subcaches(struct msm_vidc_core *core)

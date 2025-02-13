@@ -7,7 +7,6 @@
 #include <linux/delay.h>
 #include <linux/reset.h>
 #include <media/videobuf2-core.h>
-#include <linux/pm_domain.h>
 
 #include "msm_vidc_iris4.h"
 #include "msm_vidc_buffer_iris4.h"
@@ -1355,42 +1354,6 @@ static int __sw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
 	return call_res_op(core, gdsc_sw_ctrl, core);
 }
 
-static int __switch_gdsc_mode_iris4(struct msm_vidc_core *core, bool sw_mode)
-{
-#if (KERNEL_VERSION(6, 11, 0) <= LINUX_VERSION_CODE)
-	struct power_domain_info *pdinfo = NULL;
-	int rc;
-
-	if (sw_mode) {
-		venus_hfi_for_each_power_domain(core, pdinfo) {
-			if (!strcmp(pdinfo->name, "iris-ctl"))
-				continue;
-
-			rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, false);
-			if (rc < 0) {
-				d_vpr_e("%s: failed to set sw mode: %s\n", __func__, pdinfo->name);
-				return rc;
-			}
-			d_vpr_h("%s: moved power domain %s into SW ctrl\n", __func__, pdinfo->name);
-		}
-	} else {
-		venus_hfi_for_each_power_domain_reverse(core, pdinfo) {
-			if (!strcmp(pdinfo->name, "iris-ctl"))
-				continue;
-
-			rc = dev_pm_genpd_set_hwmode(pdinfo->genpd_dev, true);
-			if (rc < 0) {
-				d_vpr_e("%s: failed to set hw mode: %s\n", __func__, pdinfo->name);
-				return rc;
-			}
-			d_vpr_h("%s: moved power domain %s into HW ctrl\n", __func__, pdinfo->name);
-		}
-	}
-#endif
-
-	return 0;
-}
-
 int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
 {
 	u32 work_mode;
@@ -1787,7 +1750,6 @@ static struct msm_vidc_venus_ops iris4_ops = {
 	.prepare_pc = __prepare_pc_iris4,
 	.watchdog = __watchdog_iris4,
 	.noc_error_info = __noc_error_info_iris4,
-	.switch_gdsc_mode = __switch_gdsc_mode_iris4,
 	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris4,
 	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris4,
 	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v2,

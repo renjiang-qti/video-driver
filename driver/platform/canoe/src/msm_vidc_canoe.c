@@ -8356,13 +8356,13 @@ static const struct bw_table canoe_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name */
+/* name, hw_trigger */
 static const struct pd_table canoe_pd_table[] = {
-	{ "iris-ctl" },
-	{ "vcodec"   },
-	{ "vpp0"     },
-	{ "vpp1"     },
-	{ "apv"      },
+	{ "iris-ctl", 0 },
+	{ "vcodec",   1 },
+	{ "vpp0",     1 },
+	{ "vpp1",     1 },
+	{ "apv",      1 },
 };
 
 /* name, clock id, scaling */

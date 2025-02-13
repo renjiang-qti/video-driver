@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_RESOURCES_H_
@@ -70,6 +70,10 @@ struct msm_vidc_core;
 	venus_hfi_for_each_thing(__device, __pdinfo, power_domain)
 #define venus_hfi_for_each_power_domain_reverse(__device, __pdinfo) \
 	venus_hfi_for_each_thing_reverse(__device, __pdinfo, power_domain)
+#define venus_hfi_for_each_power_domain_reverse_continue(__device, __pdinfo, \
+		__from) \
+	venus_hfi_for_each_thing_reverse_continue(__device, __pdinfo, \
+			power_domain, __from)
 
 /* Clock set helpers */
 #define venus_hfi_for_each_clock(__device, __cinfo) \
@@ -138,6 +142,7 @@ struct regulator_set {
 struct power_domain_info {
 	struct device             *genpd_dev;
 	const char                *name;
+	bool                       hw_power_collapse;
 };
 
 struct power_domain_set {
