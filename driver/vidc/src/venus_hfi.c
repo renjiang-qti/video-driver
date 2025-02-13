@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/soc/qcom/llcc-qcom.h>
@@ -307,6 +307,32 @@ skip_power_off:
 	return -EAGAIN;
 }
 
+static u32 __get_hfi_subcache_type(u32 llcc_id)
+{
+	u32 subcache_type = HFI_BUF_SUBCACHE_NONE;
+
+	switch (llcc_id) {
+	case LLCC_VIDSC0:
+		subcache_type = HFI_BUF_SUBCACHE_VIDSC0;
+		break;
+	case LLCC_VIDVSP:
+		subcache_type = HFI_BUF_SUBCACHE_VIDSC_VSP;
+		break;
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+	case LLCC_VIDDEC:
+		subcache_type = HFI_BUF_SUBCACHE_VIDSC_DECODE;
+		break;
+	case LLCC_VIDEO_APV:
+		subcache_type = HFI_BUF_SUBCACHE_VIDEO_APV;
+		break;
+#endif
+	default:
+		d_vpr_e("%s: Invalid llcc_id %u\n", __func__, llcc_id);
+	}
+
+	return subcache_type;
+}
+
 static int __release_subcaches(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -335,6 +361,7 @@ static int __release_subcaches(struct msm_vidc_core *core)
 			continue;
 
 		buf.index = sinfo->subcache->slice_id;
+		buf.u.subtype = __get_hfi_subcache_type(sinfo->llcc_id);
 		buf.buffer_size = sinfo->subcache->slice_size;
 
 		rc = hfi_create_packet(core->packet,
@@ -398,6 +425,7 @@ static int __set_subcaches(struct msm_vidc_core *core)
 			continue;
 		buf.index = sinfo->subcache->slice_id;
 		buf.buffer_size = sinfo->subcache->slice_size;
+		buf.u.subtype = __get_hfi_subcache_type(sinfo->llcc_id);
 
 		rc = hfi_create_packet(core->packet,
 			core->packet_size,

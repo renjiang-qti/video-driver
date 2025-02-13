@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __H_MSM_VIDC_BUFFER_H__
@@ -21,6 +21,7 @@ enum msm_vidc_buffer_type;
 
 u32 msm_vidc_input_min_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_output_min_count(struct msm_vidc_inst *inst);
+u32 msm_vidc_output_min_count_iris4(struct msm_vidc_inst *inst);
 u32 msm_vidc_input_extra_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_output_extra_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,

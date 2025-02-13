@@ -724,7 +724,7 @@ int msm_buffer_min_count_iris4(struct msm_vidc_inst *inst,
 		break;
 	case MSM_VIDC_BUF_OUTPUT:
 	case MSM_VIDC_BUF_OUTPUT_META:
-		count = msm_vidc_output_min_count(inst);
+		count = msm_vidc_output_min_count_iris4(inst);
 		count = msm_buffer_delivery_mode_based_min_count_iris4(inst, count);
 		break;
 	case MSM_VIDC_BUF_BIN:
