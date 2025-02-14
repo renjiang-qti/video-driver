@@ -8401,8 +8401,10 @@ static const struct clk_rst_table canoe_clk_reset_table[] = {
 
 /* name, llcc_id */
 static const struct subcache_table canoe_subcache_table[] = {
-	{ "vidsc0",     LLCC_VIDSC0 },
-	{ "vidvsp",     LLCC_VIDVSP },
+	{ "vidsc0",     LLCC_VIDSC0,   },
+	{ "vidvsp",     LLCC_VIDVSP    },
+	{ "viddec",     LLCC_VIDDEC    },
+	{ "vidapv",     LLCC_VIDEO_APV },
 };
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
