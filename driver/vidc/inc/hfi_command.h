@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __H_HFI_COMMAND_H__
@@ -37,7 +37,10 @@ struct hfi_buffer {
 	u32 data_size;
 	u64 timestamp;
 	u32 flags;
-	u32 reserved[5];
+	union {
+		u32 subtype;
+	} u;
+	u32 reserved[4];
 };
 
 enum hfi_packet_host_flags {
@@ -96,6 +99,16 @@ enum hfi_buffer_type {
 	HFI_BUFFER_PERSIST        = 0x0000000C,
 	HFI_BUFFER_VPSS           = 0x0000000D,
 	HFI_BUFFER_EXTERNAL_METADATA  = 0x00000011,
+};
+
+enum hfi_buffer_subcache_type {
+	HFI_BUF_SUBCACHE_NONE            = 0x00000000,
+	HFI_BUF_SUBCACHE_VIDSC0          = 0x00000001,
+	HFI_BUF_SUBCACHE_VIDSC_VSP       = 0x00000002,
+	HFI_BUF_SUBCACHE_VIDEOFW         = 0x00000003,
+	HFI_BUF_SUBCACHE_VIDSC_DECODE    = 0x00000004,
+	HFI_BUF_SUBCACHE_VIDEO_APV       = 0x00000005,
+	HFI_BUF_SUBCACHE_DPB             = 0x00000006
 };
 
 enum hfi_buffer_host_flags {
