@@ -343,6 +343,11 @@ static const struct msm_platform_core_capability core_data_seraph[] = {
 	{SUPPORTS_SYNX_V2_FENCE, 1},
 	{SUPPORTS_REMOTE_PROC, 1},
 	{SUPPORTS_FREEZE, 1},
+#ifdef CONFIG_DEEPSLEEP
+	{SUPPORTS_DEEPSLEEP, 1},
+#else
+	{SUPPORTS_DEEPSLEEP, 0},
+#endif
 };
 
 static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
