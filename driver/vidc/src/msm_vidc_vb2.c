@@ -724,27 +724,34 @@ static int msm_vb2_check_format(struct msm_vidc_inst *inst,
 }
 
 static int msm_vb2_clean_buffers(struct msm_vidc_inst *inst,
+				unsigned int *num_buffers,
 				enum msm_vidc_buffer_type buffer_type)
 {
 	int ret = 0;
 
-	if (!is_state(inst, MSM_VIDC_STREAMING))
+	if (!is_state(inst, MSM_VIDC_STREAMING) && !(*num_buffers))
 		ret = msm_vidc_free_buffers(inst, buffer_type);
 
 	return ret;
 }
 
-static int msm_vb2_update_buffers_info(struct msm_vidc_inst *inst, int port,
-			unsigned int sizes, unsigned int *num_buffers,
+static int msm_vb2_update_buffers_info(struct vb2_queue *q, struct msm_vidc_inst *inst,
+			int port, unsigned int sizes, unsigned int *num_buffers,
 			struct msm_vidc_buffers *buffers, enum msm_vidc_buffer_type buffer_type)
 {
 	struct msm_vidc_core *core = inst->core;
+	unsigned int q_buffers_num = 0;
 
-	if (!is_state(inst, MSM_VIDC_STREAMING)) {
-		buffers->min_count = call_session_op(core, min_count, inst, buffer_type);
-		buffers->extra_count = call_session_op(core, extra_count, inst, buffer_type);
-		if (*num_buffers < buffers->min_count + buffers->extra_count)
-			*num_buffers = buffers->min_count + buffers->extra_count;
+	buffers->min_count = call_session_op(core, min_count, inst, buffer_type);
+	buffers->extra_count = call_session_op(core, extra_count, inst, buffer_type);
+
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+	q_buffers_num = vb2_get_num_buffers(q);
+#else
+	q_buffers_num = q->num_buffers;
+#endif
+	if ((q_buffers_num + *num_buffers) < (buffers->min_count + buffers->extra_count)) {
+		*num_buffers = buffers->min_count + buffers->extra_count;
 		buffers->actual_count = *num_buffers;
 	} else {
 		buffers->actual_count += *num_buffers;
@@ -805,7 +812,7 @@ static int msm_vb2_queue_setup(struct vb2_queue *q,
 	if (!buffer_type)
 		return -EINVAL;
 
-	rc = msm_vb2_clean_buffers(inst, buffer_type);
+	rc = msm_vb2_clean_buffers(inst, num_buffers, buffer_type);
 	if (rc) {
 		i_vpr_e(inst, "%s: failed to free buffers, type %s\n",
 			__func__, v4l2_type_name(q->type));
@@ -817,7 +824,7 @@ static int msm_vb2_queue_setup(struct vb2_queue *q,
 	if (!buffers)
 		return -EINVAL;
 
-	sizes[0] = msm_vb2_update_buffers_info(inst, port, sizes[0],
+	sizes[0] = msm_vb2_update_buffers_info(q, inst, port, sizes[0],
 						num_buffers, buffers, buffer_type);
 
 	*num_planes = 1;
