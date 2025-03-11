@@ -754,7 +754,10 @@ static int msm_vb2_update_buffers_info(struct vb2_queue *q, struct msm_vidc_inst
 		*num_buffers = buffers->min_count + buffers->extra_count;
 		buffers->actual_count = *num_buffers;
 	} else {
-		buffers->actual_count += *num_buffers;
+		if (*num_buffers > (buffers->min_count + buffers->extra_count))
+			buffers->actual_count = *num_buffers;
+		else
+			buffers->actual_count += *num_buffers;
 	}
 
 	buffers->size = call_session_op(core, buffer_size, inst, buffer_type);
