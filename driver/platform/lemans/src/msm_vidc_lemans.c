@@ -2597,10 +2597,10 @@ static const struct bw_table lemans_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name, hw_trigger */
-static const struct pd_table lemans_pd_table[] = {
-	{ "iris-ctl", 0 },
-	{ "vcodec",   1 },
+/* name, hw_trigger, hw_enable */
+static struct pd_table lemans_pd_table[] = {
+	{ "iris-ctl", 0, 1 },
+	{ "vcodec",   1, 1 },
 };
 
 /* name, clock id, scaling */

@@ -9,6 +9,7 @@
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
+#include <soc/qcom/socinfo.h>
 
 #include <media/v4l2_vidc_extensions.h>
 #include "msm_vidc_canoe.h"
@@ -779,6 +780,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	{MB_CYCLES_FW_VPP, ENC, CODECS_ALL, 48405, 48405, 1, 48405},
 
 	{MB_CYCLES_FW_VPP, DEC, CODECS_ALL, 66234, 66234, 1, 66234},
+
+	{CODEC_MODE, ENC, CODECS_ALL,
+		HFI_CODEC_MODE_NONE,
+		HFI_CODEC_MODE_LOOKAHEAD,
+		1, HFI_CODEC_MODE_NONE,
+		0,
+		HFI_PROP_CODEC_MODE},
 
 	{ENC_RING_BUFFER_COUNT, ENC, H264,
 		0, MAX_ENC_RING_BUF_COUNT, 1, 0},
@@ -2172,6 +2180,18 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	{LAST_FLAG_EVENT_ENABLE, DEC|ENC, CODECS_ALL,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_LAST_FLAG_EVENT_ENABLE},
+
+	{LOOKAHEAD_ENCODE_ENABLE, ENC, H264 | HEVC,
+		0, 1, 1, 0,
+		V4L2_CID_MPEG_VIDC_LOOKAHEAD_ENCODE_ENABLE,
+		0,
+		CAP_FLAG_OUTPUT_PORT},
+
+	{LOOKAHEAD_ENCODE_SIZE, ENC, H264 | HEVC,
+		0, 32, 1, 26,
+		0,
+		HFI_PROP_LOOKAHEAD_SIZE,
+		CAP_FLAG_OUTPUT_PORT},
 
 	{META_BITSTREAM_RESOLUTION, DEC, AV1,
 		MSM_VIDC_META_DISABLE,
@@ -8004,6 +8024,9 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{PIX_FMTS, DEC, HEVC | HEIC,
 		{PROFILE}},
 
+	{CODEC_MODE, ENC, CODECS_ALL,
+		{0}},
+
 	{PIX_FMTS, ENC | DEC, APV,
 		{0},
 		NULL,
@@ -8162,7 +8185,8 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 			P_FRAME_QP, B_FRAME_QP, ENH_LAYER_COUNT, BIT_RATE,
 			META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
-			BLUR_TYPES, LOWLATENCY_MODE, META_TRANSCODING_STAT_INFO},
+			BLUR_TYPES, LOWLATENCY_MODE, META_TRANSCODING_STAT_INFO,
+			LOOKAHEAD_ENCODE_ENABLE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -8172,7 +8196,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 			BIT_RATE, META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
 			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
-			META_TRANSCODING_STAT_INFO, OPEN_GOP},
+			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -8660,6 +8684,16 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		msm_vidc_set_signal_color_info},
+
+	{LOOKAHEAD_ENCODE_ENABLE, ENC, H264 | HEVC,
+		{LOOKAHEAD_ENCODE_SIZE},
+		msm_vidc_adjust_lookahead_encode_enable,
+		NULL},
+
+	{LOOKAHEAD_ENCODE_SIZE, ENC, H264 | HEVC,
+		{0},
+		msm_vidc_adjust_lookahead_encode_size,
+		msm_vidc_set_u32},
 
 	{META_SEI_MASTERING_DISP, ENC, HEVC | HEIC,
 		{0},
@@ -10867,13 +10901,13 @@ static const struct bw_table canoe_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name, hw_trigger */
-static const struct pd_table canoe_pd_table[] = {
-	{ "iris-ctl", 0 },
-	{ "vcodec",   1 },
-	{ "vpp0",     1 },
-	{ "vpp1",     1 },
-	{ "apv",      1 },
+/* name, hw_trigger, hw_enable */
+static struct pd_table canoe_pd_table[] = {
+	{ "iris-ctl", 0, 1 },
+	{ "vcodec",   1, 1 },
+	{ "vpp0",     1, 1 },
+	{ "vpp1",     1, 1 },
+	{ "apv",      1, 1 },
 };
 
 /* name, clock id, scaling */
@@ -11176,8 +11210,19 @@ static const struct msm_vidc_platform_data canoe_data = {
 
 	.msm_vidc_ssr_type = canoe_msm_vidc_ssr_type,
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(canoe_msm_vidc_ssr_type),
+
+	/* Fuse specific resources */
+	.efuse_data = efuse_data_canoe,
+	.efuse_data_size = ARRAY_SIZE(efuse_data_canoe),
+	.sku_version = SKU_VERSION_0,
 };
 
+/*
+ * SKU Version: 2
+ * IRIS4-2P
+ * No APV
+ * Same Decoder and Encoder specs as Knp v1.
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v2 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11251,6 +11296,13 @@ static const struct msm_vidc_platform_data canoe_data_sku_v2 = {
 	.sku_version = SKU_VERSION_2,
 };
 
+/*
+ * SKU Version: 1
+ * IRIS4-1P + APV
+ * Dec: 8k30 10-bit
+ * Enc: 4k60 10-bit
+ * No inline DS support
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v1 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11330,6 +11382,14 @@ static const struct msm_vidc_platform_data canoe_data_sku_v1 = {
 	.sku_version = SKU_VERSION_1,
 };
 
+/*
+ * SKU Version: 3
+ * KaM
+ * IRIS4-1P no APV
+ * Dec: 8k30 10-bit
+ * Enc: 4k60 10-bit
+ * No inline DS support
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v3 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11423,6 +11483,7 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 	struct msm_platform_inst_capability *platform_cap_data = NULL;
 	struct device *dev = &core->pdev->dev;
 	int i, rc = 0;
+	u32 part_count = 0, part_info = 0;
 
 	d_vpr_h("%s: initialize canoe data\n", __func__);
 	core->platform->data = canoe_data;
@@ -11434,14 +11495,52 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		return rc;
 	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_2)
-		core->platform->data = canoe_data_sku_v2;
+	part_count = socinfo_get_part_count(PART_VIDEO);
 
-	if (core->platform->data.sku_version == SKU_VERSION_1)
-		core->platform->data = canoe_data_sku_v1;
+	rc = socinfo_get_subpart_info(PART_VIDEO, &part_info, part_count);
+	if (!rc) {
+		for (i = 0 ; i < core->platform->data.pd_tbl_size; i++) {
+			if (part_info == 0x2) {
+				core->platform->data = canoe_data_sku_v1;
+				core->platform->data.sku_version = SKU_VERSION_1;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp1")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			} else if (part_info == 0x1) {
+				core->platform->data = canoe_data_sku_v1;
+				core->platform->data.sku_version = SKU_VERSION_1;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp0")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			} else if (part_info == 0x10) {
+				core->platform->data = canoe_data_sku_v2;
+				core->platform->data.sku_version = SKU_VERSION_2;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			} else if (part_info == 0x11) {
+				core->platform->data = canoe_data_sku_v3;
+				core->platform->data.sku_version = SKU_VERSION_3;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp0"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+			} else if (part_info == 0x12) {
+				core->platform->data = canoe_data_sku_v3;
+				core->platform->data.sku_version = SKU_VERSION_3;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp1"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+			}
+		}
+	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_3)
-		core->platform->data = canoe_data_sku_v3;
+	d_vpr_h("sku platform version 0x%x part_info: %d\n",
+			core->platform->data.sku_version, part_info);
 
 	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")) {
 		d_vpr_h("%s: update context bank table for canoe v2\n", __func__);

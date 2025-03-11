@@ -343,6 +343,7 @@ enum msm_vidc_metadata_bits {
 	CAP(MB_CYCLES_LP)                         \
 	CAP(MB_CYCLES_FW)                         \
 	CAP(MB_CYCLES_FW_VPP)                     \
+	CAP(CODEC_MODE)                           \
 	CAP(ENC_RING_BUFFER_COUNT)                \
 	CAP(CLIENT_ID)                            \
 	CAP(SECURE_MODE)                          \
@@ -429,6 +430,8 @@ enum msm_vidc_metadata_bits {
 	CAP(ALLINTRA_MAX_BITRATE)                 \
 	CAP(LOWLATENCY_MAX_BITRATE)               \
 	CAP(LAST_FLAG_EVENT_ENABLE)               \
+	CAP(LOOKAHEAD_ENCODE_ENABLE)              \
+	CAP(LOOKAHEAD_ENCODE_SIZE)                \
 	CAP(NUM_COMV)                             \
 	CAP(SIGNAL_COLOR_INFO)                    \
 	CAP(OPEN_GOP)                             \

@@ -558,12 +558,10 @@ typedef HFI_U32 HFI_BOOL;
 #define HFI_BUFFER_LINE_H264D_IRIS4(_size, frame_width, frame_height, \
 				    is_opb, num_vpp_pipes) \
 	do { \
-		HFI_U32 LUT_SIZE_H264D_LEFT_LB[RES] = { 507640, 750848, 1490432, 2998528 }; \
+		HFI_U32 LUT_SIZE_H264D_LEFT_FE[RES] = { 880640, 1320960, 2818048, 5636096 }; \
+		HFI_U32 LUT_SIZE_H264D_DPB_OPB[RES] = { 494592, 740352, 1575936, 3148800}; \
+		HFI_U32 LUT_SIZE_H264D_LEFT_SE[RES] = { 1280, 1920, 4096, 8192 }; \
 		HFI_U32 LUT_SIZE_H264D_TOP_LB[RES] = { 207360, 310528, 665080, 1320192 }; \
-		HFI_U32 LUT_SIZE_H264D_RECON[RES] = { 23552, 34816, 69632, 139264 }; \
-		HFI_U32 LUT_SIZE_H264D_QP[RES] = { 30720, 65280, 278528, 1114112 }; \
-		HFI_U32 LUT_SIZE_H264D_VPSS_LB[RES] = { 36352, 46592, 81408, 146944 }; \
-		HFI_U32 vpss_lb_size = 0; \
 		HFI_U32 res = 0; \
 		if (frame_height <= SIZE_HD) { \
 			res = RES_HD; \
@@ -574,8 +572,10 @@ typedef HFI_U32 HFI_BOOL;
 		} else { \
 			res = RES_8K; \
 		} \
-		_size = (HFI_ALIGN(LUT_SIZE_H264D_LEFT_LB[res], VENUS_DMA_ALIGNMENT) * \
-			 num_vpp_pipes); \
+		_size = (HFI_ALIGN(LUT_SIZE_H264D_LEFT_FE[res], VENUS_DMA_ALIGNMENT)) + \
+				((HFI_ALIGN(LUT_SIZE_H264D_DPB_OPB[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H264D_LEFT_SE[res], VENUS_DMA_ALIGNMENT)) * \
+				num_vpp_pipes); \
 		if (frame_width <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_width <= SIZE_FHD) { \
@@ -586,21 +586,16 @@ typedef HFI_U32 HFI_BOOL;
 			res = RES_8K; \
 		} \
 		_size += HFI_ALIGN(LUT_SIZE_H264D_TOP_LB[res], VENUS_DMA_ALIGNMENT) + \
-			(HFI_ALIGN(LUT_SIZE_H264D_RECON[res], VENUS_DMA_ALIGNMENT) * 4) + \
-			HFI_ALIGN(LUT_SIZE_H264D_QP[res], VENUS_DMA_ALIGNMENT); \
-		if (is_opb) \
-			vpss_lb_size = HFI_ALIGN(LUT_SIZE_H264D_VPSS_LB[res], \
-						 VENUS_DMA_ALIGNMENT); \
-		_size = _size + vpss_lb_size; \
+			HFI_ALIGN(SIZE_H264D_QP(frame_width, frame_height), VENUS_DMA_ALIGNMENT); \
 	} while (0)
 
 #define HFI_BUFFER_LINE_H264D_DS_IRIS4(_size, frame_width, frame_height, \
 				       ds_width, ds_height, is_opb, num_vpp_pipes) \
 	do { \
-		HFI_U32 LUT_SIZE_H264D_LEFT_LB[RES] = { 507640, 750848, 1490432, 2998528 }; \
+		HFI_U32 LUT_SIZE_H264D_LEFT_FE[RES] = { 880640, 1320960, 2818048, 5636096 }; \
+		HFI_U32 LUT_SIZE_H264D_DPB_OPB[RES] = { 494592, 740352, 1575936, 3148800}; \
+		HFI_U32 LUT_SIZE_H264D_LEFT_SE[RES] = { 1280, 1920, 4096, 8192 }; \
 		HFI_U32 LUT_SIZE_H264D_TOP_LB[RES] = { 207360, 310528, 665080, 1320192 }; \
-		HFI_U32 LUT_SIZE_H264D_RECON[RES] = { 23552, 34816, 69632, 139264 }; \
-		HFI_U32 LUT_SIZE_H264D_QP[RES] = { 30720, 65280, 278528, 1114112 }; \
 		HFI_U32 vpss_lb_size = 0; \
 		HFI_U32 res = 0; \
 		if (frame_height <= SIZE_HD) { \
@@ -612,8 +607,10 @@ typedef HFI_U32 HFI_BOOL;
 		} else { \
 			res = RES_8K; \
 		} \
-		_size = (HFI_ALIGN(LUT_SIZE_H264D_LEFT_LB[res], VENUS_DMA_ALIGNMENT) * \
-			 num_vpp_pipes); \
+		_size = (HFI_ALIGN(LUT_SIZE_H264D_LEFT_FE[res], VENUS_DMA_ALIGNMENT)) + \
+				((HFI_ALIGN(LUT_SIZE_H264D_DPB_OPB[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H264D_LEFT_SE[res], VENUS_DMA_ALIGNMENT)) * \
+				num_vpp_pipes); \
 		if (frame_width <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_width <= SIZE_FHD) { \
@@ -624,8 +621,7 @@ typedef HFI_U32 HFI_BOOL;
 			res = RES_8K; \
 		} \
 		_size += HFI_ALIGN(LUT_SIZE_H264D_TOP_LB[res], VENUS_DMA_ALIGNMENT) + \
-			(HFI_ALIGN(LUT_SIZE_H264D_RECON[res], VENUS_DMA_ALIGNMENT) * 4) + \
-			HFI_ALIGN(LUT_SIZE_H264D_QP[res], VENUS_DMA_ALIGNMENT); \
+			HFI_ALIGN(SIZE_H264D_QP(frame_width, frame_height), VENUS_DMA_ALIGNMENT); \
 		if (is_opb) \
 			SIZE_VPSS_LB_DS(vpss_lb_size, frame_width, frame_height, ds_width, \
 					ds_height, num_vpp_pipes); \
@@ -916,13 +912,12 @@ typedef HFI_U32 HFI_BOOL;
 #define HFI_BUFFER_LINE_H265D_IRIS4(_size, frame_width, frame_height, \
 				    is_opb, num_vpp_pipes) \
 	do { \
-		HFI_U32 vpss_lb_size = 0; \
 		HFI_U32 res = 0; \
-		HFI_U32 LUT_SIZE_H265D_LEFT_LB[RES] = { 589312, 1176832, 2351872, 4586240 }; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_FE[RES] = { 880640, 1320960, 2818048, 5636096 }; \
+		HFI_U32 LUT_SIZE_H265D_DPB_OPB[RES] = { 494592, 740352, 1575936, 3148800}; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_SE[RES] = { 2672, 3952, 8304, 16496 }; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_VSP[RES] = { 2560, 3840, 8192, 16384}; \
 		HFI_U32 LUT_SIZE_H265D_TOP_LB[RES] = { 178176, 266496, 566784, 1132032 }; \
-		HFI_U32 LUT_SIZE_H265D_RECON[RES] = { 23552, 34816, 69632, 139264 }; \
-		HFI_U32 LUT_SIZE_H265D_QP[RES] = { 30720, 65280, 278528, 1114112 }; \
-		HFI_U32 LUT_SIZE_H265D_VPSS_LB[RES] = { 36352, 46592, 56832, 146944 }; \
 		if (frame_height <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_height <= SIZE_FHD) { \
@@ -932,8 +927,11 @@ typedef HFI_U32 HFI_BOOL;
 		} else { \
 			res = RES_8K; \
 		} \
-		_size = (HFI_ALIGN(LUT_SIZE_H265D_LEFT_LB[res], VENUS_DMA_ALIGNMENT) * \
-			 num_vpp_pipes); \
+		_size = (HFI_ALIGN(LUT_SIZE_H265D_LEFT_FE[res], VENUS_DMA_ALIGNMENT)) + \
+				((HFI_ALIGN(LUT_SIZE_H265D_DPB_OPB[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H265D_LEFT_SE[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H265D_LEFT_VSP[res], VENUS_DMA_ALIGNMENT)) * \
+				num_vpp_pipes); \
 		if (frame_width <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_width <= SIZE_FHD) { \
@@ -944,13 +942,7 @@ typedef HFI_U32 HFI_BOOL;
 			res = RES_8K; \
 		} \
 		_size += HFI_ALIGN(LUT_SIZE_H265D_TOP_LB[res], VENUS_DMA_ALIGNMENT) + \
-				(HFI_ALIGN(LUT_SIZE_H265D_RECON[res], VENUS_DMA_ALIGNMENT) * 4) + \
-				HFI_ALIGN(LUT_SIZE_H265D_QP[res], VENUS_DMA_ALIGNMENT); \
-		if (is_opb) { \
-			vpss_lb_size = HFI_ALIGN(LUT_SIZE_H265D_VPSS_LB[res], \
-						 VENUS_DMA_ALIGNMENT); \
-		} \
-		_size = _size + vpss_lb_size; \
+			HFI_ALIGN(SIZE_H265D_QP(frame_width, frame_height), VENUS_DMA_ALIGNMENT); \
 	} while (0)
 
 
@@ -959,10 +951,11 @@ typedef HFI_U32 HFI_BOOL;
 	do { \
 		HFI_U32 vpss_lb_size = 0; \
 		HFI_U32 res = 0; \
-		HFI_U32 LUT_SIZE_H265D_LEFT_LB[RES] = { 589312, 1176832, 2351872, 4586240 }; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_FE[RES] = { 880640, 1320960, 2818048, 5636096 }; \
+		HFI_U32 LUT_SIZE_H265D_DPB_OPB[RES] = { 494592, 740352, 1575936, 3148800}; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_SE[RES] = { 2672, 3952, 8304, 16496 }; \
+		HFI_U32 LUT_SIZE_H265D_LEFT_VSP[RES] = { 2560, 3840, 8192, 16384}; \
 		HFI_U32 LUT_SIZE_H265D_TOP_LB[RES] = { 178176, 266496, 566784, 1132032 }; \
-		HFI_U32 LUT_SIZE_H265D_RECON[RES] = { 23552, 34816, 69632, 139264 }; \
-		HFI_U32 LUT_SIZE_H265D_QP[RES] = { 30720, 65280, 278528, 1114112 }; \
 		if (frame_height <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_height <= SIZE_FHD) { \
@@ -972,8 +965,11 @@ typedef HFI_U32 HFI_BOOL;
 		} else { \
 			res = RES_8K; \
 		} \
-		_size = (HFI_ALIGN(LUT_SIZE_H265D_LEFT_LB[res], VENUS_DMA_ALIGNMENT) * \
-			 num_vpp_pipes); \
+		_size = (HFI_ALIGN(LUT_SIZE_H265D_LEFT_FE[res], VENUS_DMA_ALIGNMENT)) + \
+				((HFI_ALIGN(LUT_SIZE_H265D_DPB_OPB[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H265D_LEFT_SE[res], VENUS_DMA_ALIGNMENT) + \
+				HFI_ALIGN(LUT_SIZE_H265D_LEFT_VSP[res], VENUS_DMA_ALIGNMENT)) * \
+				num_vpp_pipes); \
 		if (frame_width <= SIZE_HD) { \
 			res = RES_HD; \
 		} else if (frame_width <= SIZE_FHD) { \
@@ -984,8 +980,7 @@ typedef HFI_U32 HFI_BOOL;
 			res = RES_8K; \
 		} \
 		_size += HFI_ALIGN(LUT_SIZE_H265D_TOP_LB[res], VENUS_DMA_ALIGNMENT) + \
-				(HFI_ALIGN(LUT_SIZE_H265D_RECON[res], VENUS_DMA_ALIGNMENT) * 4) + \
-				HFI_ALIGN(LUT_SIZE_H265D_QP[res], VENUS_DMA_ALIGNMENT); \
+			HFI_ALIGN(SIZE_H265D_QP(frame_width, frame_height), VENUS_DMA_ALIGNMENT); \
 		if (is_opb) \
 			SIZE_VPSS_LB_DS(vpss_lb_size, frame_width, frame_height, \
 					ds_width, ds_height, num_vpp_pipes); \
@@ -1835,9 +1830,12 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 	HFI_BUFFER_INPUT_METADATA_ENC(size_metadata, frame_width, \
 		frame_height, is_roi_enabled, is_rpu_enabled, 32) \
 
-#define HFI_BUFFER_ARP_ENC(size) \
+#define HFI_BUFFER_ARP_ENC(size, lookahead) \
 	do { \
 		size = 204800; \
+		if (lookahead) { \
+			size = (size << 1); \
+		} \
 	} while (0)
 
 #define HFI_MAX_COL_FRAME 6
@@ -1856,7 +1854,8 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 #endif
 
 #define HFI_IRIS3_ENC_RECON_BUF_COUNT(num_recon, n_bframe, ltr_count, \
-	_total_hp_layers, _total_hb_layers, hybrid_hp, codec_standard, profile) \
+	_total_hp_layers, _total_hb_layers, hybrid_hp, codec_standard, profile, \
+	lookahead) \
 	do { \
 		HFI_U32 num_ref = 1; \
 		if (n_bframe) \
@@ -1889,6 +1888,8 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 			} \
 		} \
 		num_recon = num_ref + 1; \
+		if (lookahead) \
+			num_recon = num_recon * 2; \
 	} while (0)
 
 #define SIZE_BIN_BITSTREAM_ENC(_size, rc_type, frame_width, frame_height, \
@@ -1961,7 +1962,7 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 	} while (0)
 
 #define HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, lcu_size, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count) \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead) \
 	do { \
 		HFI_U32 bitstream_size = 0, total_bitbin_buffers = 0, \
 			size_single_pipe = 0, bitbin_size = 0; \
@@ -1987,20 +1988,24 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		else \
 			/* Avoid 512 Bytes allocation in case of 1Pipe HEVC Direct Mode*/ \
 			_size = 0; \
+		if (lookahead) \
+			_size = (_size << 1) + bitstream_size; \
 	} while (0)
 
 #define HFI_BUFFER_BIN_H264E(_size, rc_type, frame_width, frame_height, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count) \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			lookahead) \
 	do { \
 		HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 16, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count); \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead); \
 	} while (0)
 
 #define HFI_BUFFER_BIN_H265E(_size, rc_type, frame_width, frame_height, \
-			work_mode, num_vpp_pipes, profile, ring_buf_count)    \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, \
+			lookahead)    \
 	do { \
 		HFI_BUFFER_BIN_ENC(_size, rc_type, frame_width, frame_height, 32,\
-			work_mode, num_vpp_pipes, profile, ring_buf_count); \
+			work_mode, num_vpp_pipes, profile, ring_buf_count, lookahead); \
 	} while (0)
 
 #define SIZE_ENC_SLICE_INFO_BUF(num_lcu_in_frame) HFI_ALIGN((256 + \
@@ -2547,7 +2552,7 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 
 
 #define HFI_BUFFER_LINE_ENC_IRIS4(_size, frame_width, frame_height, is_ten_bit, \
-			num_vpp_pipes_enc, lcu_size, standard, is_dual_core) \
+			num_vpp_pipes_enc, lcu_size, standard, is_dual_core, lookahead) \
 	do { \
 		HFI_U32 width_in_lcus = 0, height_in_lcus = 0, \
 			frame_width_coded = 0, frame_height_coded = 0; \
@@ -2581,19 +2586,19 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 			vpss_lb_size + \
 			dma_opb_lb_size + \
 			dse_lb_size; \
-		if (is_dual_core) \
+		if (is_dual_core || lookahead) \
 			_size = (_size << 1); \
 	} while (0)
 
 #define HFI_BUFFER_LINE_H264E_IRIS4(_size, frame_width, frame_height, is_ten_bit, \
-		num_vpp_pipes, is_dual_core) \
+		num_vpp_pipes, is_dual_core, lookahead) \
 	HFI_BUFFER_LINE_ENC_IRIS4(_size, frame_width, frame_height, 0, \
-		num_vpp_pipes, 16, HFI_CODEC_ENCODE_AVC, is_dual_core)
+		num_vpp_pipes, 16, HFI_CODEC_ENCODE_AVC, is_dual_core, lookahead)
 
 #define HFI_BUFFER_LINE_H265E_IRIS4(_size, frame_width, frame_height, is_ten_bit, \
-			num_vpp_pipes, is_dual_core) \
+			num_vpp_pipes, is_dual_core, lookahead) \
 	HFI_BUFFER_LINE_ENC_IRIS4(_size, frame_width, frame_height, \
-		is_ten_bit, num_vpp_pipes, 32, HFI_CODEC_ENCODE_HEVC, is_dual_core)
+		is_ten_bit, num_vpp_pipes, 32, HFI_CODEC_ENCODE_HEVC, is_dual_core, lookahead)
 
 
 #define HFI_BUFFER_LINE_H264E(_size, frame_width, frame_height, is_ten_bit, \
@@ -2649,7 +2654,7 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		num_recon, HFI_CODEC_ENCODE_HEVC, profile)
 
 #define HFI_BUFFER_NON_COMV_ENC(_size, frame_width, frame_height, \
-			num_vpp_pipes_enc, lcu_size, standard, profile) \
+			num_vpp_pipes_enc, lcu_size, standard, profile, lookahead) \
 	do { \
 		HFI_U32 width_in_lcus = 0, height_in_lcus = 0, \
 		frame_width_coded = 0, frame_height_coded = 0, \
@@ -2676,22 +2681,30 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 			   SIZE_IR_BUF(num_lcu_in_frame) + \
 			   (((standard == HFI_CODEC_ENCODE_HEVC) && \
 				(profile == HFI_H265_PROFILE_MAIN_10)) ? HDR10_LUT_TBL_SIZE : 0); \
+		if (lookahead) { \
+			_size = (_size << 1); \
+		} \
 	} while (0)
 
 #define HFI_BUFFER_NON_COMV_H264E(_size, frame_width, frame_height, \
-				num_vpp_pipes_enc, profile) \
+				num_vpp_pipes_enc, profile, lookahead) \
 	do { \
 		HFI_BUFFER_NON_COMV_ENC(_size, frame_width, frame_height, \
-				num_vpp_pipes_enc, 16, HFI_CODEC_ENCODE_AVC, profile); \
+				num_vpp_pipes_enc, 16, HFI_CODEC_ENCODE_AVC, profile, \
+				lookahead); \
 	} while (0)
 
 #define SIZE_ONE_SLICE_BUF 256
 #define HFI_BUFFER_NON_COMV_H265E(_size, frame_width, frame_height, \
-				num_vpp_pipes_enc, profile) \
+				num_vpp_pipes_enc, profile, lookahead) \
 	do { \
 		HFI_BUFFER_NON_COMV_ENC(_size, frame_width, frame_height, \
-			num_vpp_pipes_enc, 32, HFI_CODEC_ENCODE_HEVC, profile); \
-		_size += SIZE_ONE_SLICE_BUF; \
+			num_vpp_pipes_enc, 32, HFI_CODEC_ENCODE_HEVC, profile, \
+			lookahead); \
+		if (!lookahead) \
+			_size += SIZE_ONE_SLICE_BUF; \
+		else \
+			_size += (SIZE_ONE_SLICE_BUF << 1); \
 	} while (0)
 
 /*
@@ -2810,7 +2823,8 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 		} \
 	} while (0)
 
-#define HFI_IRIS3_ENC_MIN_INPUT_BUF_COUNT(numInput, TotalHBLayers, profile, codec_standard) \
+#define HFI_IRIS3_ENC_MIN_INPUT_BUF_COUNT(numInput, TotalHBLayers, profile, codec_standard, \
+					lookahead_size) \
 	do { \
 		numInput = 3;                                             \
 		if (TotalHBLayers >= 2) { \
@@ -2820,6 +2834,7 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 				profile == HFI_H265_PROFILE_MULTIVIEW_MAIN_10)) \
 				numInput = (((1 << (TotalHBLayers - 1)) * 2) - 1) + 2; \
 		}                                                         \
+		numInput = numInput + lookahead_size; \
 	} while (0)
 
 #endif /* __HFI_BUFFER_IRIS4__ */

@@ -327,7 +327,7 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes, stage, profile, ring_buf_count;
+	u32 width, height, num_vpp_pipes, stage, profile, ring_buf_count, lookahead_enable;
 	struct v4l2_format *f;
 
 	core = inst->core;
@@ -339,13 +339,14 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 	height = f->fmt.pix_mp.height;
 	profile = inst->capabilities[PROFILE].value;
 	ring_buf_count = inst->capabilities[ENC_RING_BUFFER_COUNT].value;
+	lookahead_enable = inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
 
 	if (inst->codec == MSM_VIDC_H264)
 		HFI_BUFFER_BIN_H264E(size, inst->hfi_rc_type, width,
-			height, stage, num_vpp_pipes, profile, ring_buf_count);
+			height, stage, num_vpp_pipes, profile, ring_buf_count, lookahead_enable);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
 		HFI_BUFFER_BIN_H265E(size, inst->hfi_rc_type, width,
-			height, stage, num_vpp_pipes, profile, ring_buf_count);
+			height, stage, num_vpp_pipes, profile, ring_buf_count, lookahead_enable);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -354,12 +355,13 @@ static u32 msm_vidc_encoder_bin_size_iris4(struct msm_vidc_inst *inst)
 static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 {
 	u32 num_buf_recon = 0, profile;
-	s32 n_bframe, ltr_count, hp_layers = 0, hb_layers = 0;
+	s32 n_bframe, ltr_count, lookahead_enable, hp_layers = 0, hb_layers = 0;
 	bool is_hybrid_hp = false;
 	u32 hfi_codec = 0;
 
 	n_bframe = inst->capabilities[B_FRAME].value;
 	ltr_count = inst->capabilities[LTR_COUNT].value;
+	lookahead_enable = inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
 
 	if (inst->hfi_layer_type == HFI_HIER_B) {
 		hb_layers = inst->capabilities[ENH_LAYER_COUNT].value + 1;
@@ -379,7 +381,7 @@ static u32 msm_vidc_get_recon_buf_count(struct msm_vidc_inst *inst)
 	profile = inst->capabilities[PROFILE].value;
 
 	HFI_IRIS3_ENC_RECON_BUF_COUNT(num_buf_recon, n_bframe, ltr_count,
-			hp_layers, hb_layers, is_hybrid_hp, hfi_codec, profile);
+			hp_layers, hb_layers, is_hybrid_hp, hfi_codec, profile, lookahead_enable);
 
 	return num_buf_recon;
 }
@@ -409,7 +411,7 @@ static u32 msm_vidc_encoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
 	u32 size = 0;
-	u32 width, height, num_vpp_pipes, profile;
+	u32 width, height, num_vpp_pipes, profile, lookahead_enable;
 	struct v4l2_format *f;
 
 	core = inst->core;
@@ -419,11 +421,14 @@ static u32 msm_vidc_encoder_non_comv_size_iris4(struct msm_vidc_inst *inst)
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
+	lookahead_enable = inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_NON_COMV_H264E(size, width, height, num_vpp_pipes, profile);
+		HFI_BUFFER_NON_COMV_H264E(size, width, height, num_vpp_pipes, profile,
+					lookahead_enable);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes, profile);
+		HFI_BUFFER_NON_COMV_H265E(size, width, height, num_vpp_pipes, profile,
+					lookahead_enable);
 	else if (inst->codec == MSM_VIDC_APV)
 		HFI_BUFFER_NON_COMV_APVE(size);
 
@@ -435,13 +440,14 @@ static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
 	u32 size = 0;
-	u32 width, height, pixfmt, num_vpp_pipes;
+	u32 width, height, pixfmt, num_vpp_pipes, lookahead_enable;
 	bool is_tenbit = false;
 	struct v4l2_format *f;
 
 	core = inst->core;
 	num_vpp_pipes = core->capabilities[NUM_VPP_PIPE].value;
 	pixfmt = inst->capabilities[PIX_FMTS].value;
+	lookahead_enable = inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
 
 	f = &inst->fmts[OUTPUT_PORT];
 	width = f->fmt.pix_mp.width;
@@ -450,9 +456,11 @@ static u32 msm_vidc_encoder_line_size_iris4(struct msm_vidc_inst *inst)
 	is_tenbit |= (pixfmt == MSM_VIDC_FMT_P210 || pixfmt == MSM_VIDC_FMT_P210C);
 
 	if (inst->codec == MSM_VIDC_H264)
-		HFI_BUFFER_LINE_H264E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
+		HFI_BUFFER_LINE_H264E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0,
+						lookahead_enable);
 	else if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC)
-		HFI_BUFFER_LINE_H265E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0);
+		HFI_BUFFER_LINE_H265E_IRIS4(size, width, height, is_tenbit, num_vpp_pipes, 0,
+						lookahead_enable);
 
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
@@ -486,7 +494,7 @@ static u32 msm_vidc_encoder_arp_size_iris4(struct msm_vidc_inst *inst)
 {
 	u32 size = 0;
 
-	HFI_BUFFER_ARP_ENC(size);
+	HFI_BUFFER_ARP_ENC(size, inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value);
 	i_vpr_l(inst, "%s: size %d\n", __func__, size);
 	return size;
 }
@@ -659,7 +667,8 @@ static int msm_vidc_input_min_count_iris4(struct msm_vidc_inst *inst)
 		profile = inst->capabilities[PROFILE].value;
 
 		HFI_IRIS3_ENC_MIN_INPUT_BUF_COUNT(input_min_count,
-			total_hb_layer, hfi_codec, profile);
+			total_hb_layer, hfi_codec, profile,
+			inst->capabilities[LOOKAHEAD_ENCODE_SIZE].value);
 	} else {
 		i_vpr_e(inst, "%s: invalid domain %d\n", __func__, inst->domain);
 		return 0;

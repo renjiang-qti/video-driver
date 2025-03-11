@@ -48,6 +48,7 @@ struct bw_table {
 struct pd_table {
 	const char      *name;
 	bool             hw_trigger;
+	bool             hw_enable;
 };
 
 struct regulator_table {
@@ -206,7 +207,7 @@ struct msm_vidc_platform_data {
 	unsigned int bw_tbl_size;
 	const struct regulator_table *regulator_tbl;
 	unsigned int regulator_tbl_size;
-	const struct pd_table *pd_tbl;
+	struct pd_table *pd_tbl;
 	unsigned int pd_tbl_size;
 	const char * const *opp_tbl;
 	unsigned int opp_tbl_size;
@@ -416,5 +417,7 @@ int msm_vidc_set_vui_timing_info(void *instance, enum msm_vidc_inst_capability_t
 int msm_vidc_adjust_histogram_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_hdr10_max_rgb_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_set_conceal_color(void *instance, enum msm_vidc_inst_capability_type cap_id);
+int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl);
 
 #endif // _MSM_VIDC_PLATFORM_H_

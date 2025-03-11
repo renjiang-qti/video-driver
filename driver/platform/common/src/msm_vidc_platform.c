@@ -2960,6 +2960,103 @@ adjust:
 	return 0;
 }
 
+int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct v4l2_format *f;
+	u32 width, height, frame_rate;
+	s64 hfi_rc_type = -1;
+
+	value = ctrl ? ctrl->val : inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;
+	/*
+	 * IRIS4 Lookahead mode supports for:
+	 *   AVC/HEVC encoders only, HEVC does not include HFI_H265_PROFILE_MULTIVIEW_MAIN
+	 *      and HFI_H265_PROFILE_MULTIVIEW_MAIN_10 profiles
+	 *   VBR rate control only
+	 *   Up to UHD@60fps
+	 */
+	if (inst->codec != MSM_VIDC_H264 && inst->codec != MSM_VIDC_HEVC)
+		goto disable;
+	if (inst->codec == MSM_VIDC_HEVC) {
+		if (inst->capabilities[PROFILE].value !=
+		    V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN &&
+		    inst->capabilities[PROFILE].value !=
+		    V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10)
+			goto disable;
+	}
+
+	if (msm_vidc_get_parent_value(inst, LOOKAHEAD_ENCODE_ENABLE,
+				      BITRATE_MODE, &hfi_rc_type, __func__))
+		return -EINVAL;
+	if (hfi_rc_type != HFI_RC_VBR_CFR)
+		goto disable;
+
+	f = &inst->fmts[OUTPUT_PORT];
+	width = f->fmt.pix_mp.width;
+	height = f->fmt.pix_mp.height;
+	if (res_is_greater_than(width, height, 4096, 2176))
+		goto disable;
+
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	if (frame_rate > 60)
+		goto disable;
+
+	msm_vidc_update_cap_value(inst, LOOKAHEAD_ENCODE_ENABLE, value, __func__);
+
+	/* update CODEC_MODE with lookahead bit */
+	if (value)
+		inst->capabilities[CODEC_MODE].value |= HFI_CODEC_MODE_LOOKAHEAD;
+	else
+		inst->capabilities[CODEC_MODE].value &= ~(HFI_CODEC_MODE_LOOKAHEAD);
+
+	i_vpr_h(inst, "%s: codec mode %llx\n", __func__,
+		inst->capabilities[CODEC_MODE].value);
+	return 0;
+
+disable:
+	i_vpr_h(inst, "%s: disable lookahead encode, wxh %ux%u, fps %d, hfi rc %lld\n",
+			__func__, width, height, frame_rate, hfi_rc_type);
+	msm_vidc_update_cap_value(inst, LOOKAHEAD_ENCODE_ENABLE, 0, __func__);
+	return 0;
+}
+
+int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 lookahead_enable = 0;
+	int lookahead_size = 0;
+	struct v4l2_format *f;
+	u32 width, height;
+
+	/*
+	 * IRIS4 chipsets
+	 *    if (resolution < UHD)
+	 *        size = 16;
+	 *    else if (resolution == UHD)
+	 *        size = 10;
+	 *    else
+	 *        size = 0;
+	 */
+
+	if (msm_vidc_get_parent_value(inst, LOOKAHEAD_ENCODE_SIZE,
+			LOOKAHEAD_ENCODE_ENABLE, &lookahead_enable, __func__))
+		return -EINVAL;
+
+	if (lookahead_enable) {
+		f = &inst->fmts[OUTPUT_PORT];
+		width = f->fmt.pix_mp.width;
+		height = f->fmt.pix_mp.height;
+		if (width * height < 3840 * 2160)
+			lookahead_size = 16;
+		else
+			lookahead_size = 10;
+	}
+
+	msm_vidc_update_cap_value(inst, LOOKAHEAD_ENCODE_SIZE, lookahead_size, __func__);
+	return 0;
+}
+
 /******************* End of Control Adjust functions *************************/
 
 /************************* Control Set functions *****************************/

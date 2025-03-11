@@ -1368,21 +1368,60 @@ error:
 
 int venus_hfi_session_set_codec(struct msm_vidc_inst *inst)
 {
+	struct msm_vidc_core *core = inst->core;
 	u32 codec;
 	int rc = 0;
 
+	core_lock(core, __func__);
+	if (!inst->packet) {
+		i_vpr_e(inst, "%s: invalid session\n", __func__);
+		rc = -EINVAL;
+		goto unlock;
+	}
+	if (!__validate_instance(core, inst, __func__)) {
+		rc = -EINVAL;
+		goto unlock;
+	}
+
+	rc = hfi_create_header(inst->packet, inst->packet_size,
+			       inst->session_id,
+			       core->header_id++);
+	if (rc)
+		goto unlock;
+
 	codec = get_hfi_codec(inst);
-	rc = venus_hfi_session_command(inst,
+	rc = hfi_create_packet(inst->packet,
+				inst->packet_size,
 				HFI_PROP_CODEC,
 				HFI_HOST_FLAGS_NONE,
-				HFI_PORT_NONE,
-				inst->session_id,
 				HFI_PAYLOAD_U32_ENUM,
+				HFI_PORT_NONE,
+				core->packet_id++,
 				&codec,
-				sizeof(u32),
-				__func__);
+				sizeof(u32));
 	if (rc)
-		return rc;
+		goto unlock;
+
+	if (inst->capabilities[CODEC_MODE].value) {
+		rc = hfi_create_packet(inst->packet,
+					inst->packet_size,
+					HFI_PROP_CODEC_MODE,
+					HFI_HOST_FLAGS_NONE,
+					HFI_PAYLOAD_U32_ENUM,
+					HFI_PORT_NONE,
+					core->packet_id++,
+					&inst->capabilities[CODEC_MODE].value,
+					sizeof(u32));
+		if (rc)
+			goto unlock;
+	}
+
+	rc = __cmdq_write(core, inst->packet);
+	if (rc)
+		goto unlock;
+
+unlock:
+	core_unlock(core, __func__);
 
 	return rc;
 }
