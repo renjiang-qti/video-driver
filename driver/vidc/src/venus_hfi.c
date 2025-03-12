@@ -40,7 +40,6 @@
 
 extern struct msm_vidc_core *g_core;
 
-static int __resume(struct msm_vidc_core *core);
 static int __suspend(struct msm_vidc_core *core);
 
 static void __fatal_error(bool fatal)
@@ -538,7 +537,7 @@ err_tzbsp_suspend:
 	return rc;
 }
 
-static int __resume(struct msm_vidc_core *core)
+int __resume(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
@@ -563,9 +562,11 @@ static int __resume(struct msm_vidc_core *core)
 	if (core->full_virtualization_data.virtualization_en) {
 		rc = virtio_video_msm_cmd_resume_gvm_session(
 			core->capabilities[NUM_VPU].value, 0);
-		if (!rc)
+		if (!rc) {
 			msm_vidc_change_core_sub_state(core, 0,
 				CORE_SUBSTATE_POWER_ENABLE, __func__);
+			call_venus_op(core, enable_intr, core);
+		}
 
 		return rc;
 	}
@@ -592,20 +593,20 @@ static int __resume(struct msm_vidc_core *core)
 		goto err_set_video_state;
 	}
 
-	/*
-	 * Hand off control of regulators to h/w _after_ loading fw.
-	 * Note that the GDSC will turn off when switching from normal
-	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
-	 * present.
-	 */
-	call_venus_op(core, hw_ctrl_gdsc, core);
-
 	/* Wait for boot completion */
 	rc = call_venus_op(core, boot_firmware, core);
 	if (rc) {
 		d_vpr_e("Failed to reset venus core\n");
 		goto err_reset_core;
 	}
+
+	/*
+	 * Hand off control of regulators to h/w _after_ fw bootup.
+	 * Note that the GDSC will turn off when switching from normal
+	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
+	 * present.
+	 */
+	 call_venus_op(core, hw_ctrl_gdsc, core);
 
 	__sys_set_debug(core, (msm_fw_debug & FW_LOGMASK) >> FW_LOGSHIFT);
 
@@ -658,13 +659,6 @@ int __load_fw(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_load_fw;
 
-	/*
-	 * Hand off control of regulators to h/w _after_ loading fw.
-	 * Note that the GDSC will turn off when switching from normal
-	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
-	 * present.
-	 */
-	call_venus_op(core, hw_ctrl_gdsc, core);
 	trace_msm_v4l2_vidc_fw_load("END");
 
 	return rc;
@@ -936,6 +930,38 @@ static int __sys_image_version(struct msm_vidc_core *core)
 	return 0;
 }
 
+static int __core_init_full_virtualization(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	if (core->full_virtualization_data.is_gvm_open)
+		return rc;
+
+	d_vpr_h("%s: Hardware virtualization enabled. Calling open_gvm\n",
+		__func__);
+	rc = virtio_video_msm_cmd_open_gvm(
+		core->full_virtualization_data.vmid,
+		core->capabilities[NUM_VPU].value,
+		&core->full_virtualization_data.device_core_mask);
+	if (rc) {
+		d_vpr_e("%s: open_gvm failed\n", __func__);
+		return rc;
+	}
+	core->full_virtualization_data.is_gvm_open = 1;
+
+	/* set up core state and substate */
+	msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
+		__func__);
+	msm_vidc_change_core_sub_state(core, 0,
+		CORE_SUBSTATE_POWER_ENABLE, __func__);
+	call_venus_op(core, enable_intr, core);
+	/*
+	 * skip core init in hw virtualization case, as pvm will do
+	 * core_init on behalf of gvm
+	 */
+	return 0;
+}
+
 int venus_hfi_core_init(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -955,38 +981,18 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 	 * code is skipped using the conditional block below. please do not
 	 * add any new initialization code above this.
 	 */
-	if (core->full_virtualization_data.virtualization_en) {
-		if (!core->full_virtualization_data.is_gvm_open) {
-			d_vpr_h("%s: Hardware virtualization enabled.\n"
-				"Calling open_gvm\n", __func__);
-			rc = virtio_video_msm_cmd_open_gvm(
-				core->full_virtualization_data.vmid,
-				core->capabilities[NUM_VPU].value,
-				&core->full_virtualization_data.device_core_mask);
-			if (rc) {
-				d_vpr_e("%s: open_gvm failed\n", __func__);
-				goto error;
-			}
-			core->full_virtualization_data.is_gvm_open = 1;
-
-			/* set up core state and substate */
-			msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
-				__func__);
-			msm_vidc_change_core_sub_state(core, 0,
-				CORE_SUBSTATE_POWER_ENABLE, __func__);
-		}
-		/*
-		 * skip core init in hw virtualization case, as pvm will do
-		 * core_init on behalf of gvm
-		 */
-		return 0;
-	}
+	if (core->full_virtualization_data.virtualization_en)
+		return __core_init_full_virtualization(core);
 
 	rc = __load_fw(core);
 	if (rc)
 		goto error;
 
 	rc = call_venus_op(core, boot_firmware, core);
+	if (rc)
+		goto error;
+
+	rc = call_venus_op(core, hw_ctrl_gdsc, core);
 	if (rc)
 		goto error;
 
@@ -1345,8 +1351,14 @@ int venus_hfi_session_open_locked(struct msm_vidc_inst *inst)
 	struct msm_vidc_core *core = inst->core;
 
 	if (core->full_virtualization_data.virtualization_en) {
-		return virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
+		rc = virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
 			&inst->session_id);
+		if (!rc) {
+			__resume(core);
+			call_venus_op(core, enable_intr, core);
+		}
+
+		return rc;
 	}
 
 	__sys_set_debug(inst->core,

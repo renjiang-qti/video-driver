@@ -236,6 +236,18 @@ static int __init_irq(struct msm_vidc_core *core)
 		d_vpr_e("%s: Failed to allocate venus IRQ\n", __func__);
 		return rc;
 	}
+
+	/*
+	 * In case of hardware virtualization, primary VM will load the firmware
+	 * and power on video hardware; guest VMs (virtualization_en = 1) do not
+	 * need to load and power on the video hardware.
+	 * Video driver normally disables the irq initially and enable it when
+	 * powering on video hardware.
+	 * As guest VMs do not handle power on, skip the disable_irq.
+	 */
+	if (core->full_virtualization_data.virtualization_en)
+		return rc;
+
 	disable_irq_nosync(res->irq);
 
 	return rc;

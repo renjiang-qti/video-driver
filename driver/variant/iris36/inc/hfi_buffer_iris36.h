@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __HFI_BUFFER_IRIS36__
@@ -780,8 +780,10 @@ typedef u64     HFI_U64;
 	} while (0)
 
 #define VPX_DECODER_FRAME_CONCURENCY_LVL (2)
-#define VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO (1 / 2)
-#define VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO (3 / 2)
+#define VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO_NUMERATOR (1)
+#define VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO_DENOMINATOR (2)
+#define VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO_NUMERATOR (3)
+#define VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO_DENOMINATOR (2)
 
 #define HFI_BUFFER_BIN_VP9D(_size, frame_width, frame_height, \
 				is_interlaced, num_vpp_pipes) \
@@ -792,11 +794,13 @@ typedef u64     HFI_U64;
 		if (!is_interlaced) { \
 			_size = HFI_ALIGN(((MAX(_size_yuv, \
 			((BIN_BUFFER_THRESHOLD * 3) >> 1)) * \
-			VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO * \
+			VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO_NUMERATOR / \
+			VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO_DENOMINATOR * \
 			VPX_DECODER_FRAME_CONCURENCY_LVL) / num_vpp_pipes), \
 			VENUS_DMA_ALIGNMENT) + HFI_ALIGN(((MAX(_size_yuv, \
 			((BIN_BUFFER_THRESHOLD * 3) >> 1)) * \
-			VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO * \
+			VPX_DECODER_FRAME_BIN_RES_BUDGET_RATIO_NUMERATOR / \
+			VPX_DECODER_FRAME_BIN_HDR_BUDGET_RATIO_DENOMINATOR * \
 			VPX_DECODER_FRAME_CONCURENCY_LVL) / num_vpp_pipes), \
 			VENUS_DMA_ALIGNMENT);  \
 			_size = _size * num_vpp_pipes;   \
