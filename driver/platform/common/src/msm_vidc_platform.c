@@ -460,7 +460,7 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	void __iomem *base;
-	u32 i = 0, efuse = 0, efuse_data_count = 0;
+	u32 i = 0, efuse = 0, efuse_data_count = 0, sku_value = 0;
 	struct msm_vidc_efuse_data *efuse_data = NULL;
 	struct msm_vidc_platform_data *platform_data;
 
@@ -483,19 +483,19 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 				return -EINVAL;
 			}
 			efuse = readl_relaxed(base);
-			platform_data->sku_version =
-					(efuse & efuse_data[i].mask) >>
-					efuse_data[i].shift;
+			sku_value = sku_value | ((efuse & efuse_data[i].mask) >>
+						efuse_data[i].shift);
 			break;
 		default:
 			break;
 		}
-		if (platform_data->sku_version) {
+		if (sku_value) {
 			d_vpr_h("efuse 0x%x, platform version 0x%x\n",
-				efuse, platform_data->sku_version);
+				efuse, sku_value);
 			break;
 		}
 	}
+	platform_data->sku_version = sku_value;
 	return rc;
 }
 
