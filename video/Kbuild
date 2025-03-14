@@ -23,6 +23,14 @@ include $(VIDEO_ROOT)/config/seraph_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/seraph_video.h
 endif
 
+ifeq ($(CONFIG_ARCH_LEMANS), y)
+ifeq ($(TARGET_BOARD_PLATFORM), gen5)
+KBUILD_CPPFLAGS += -DMSM_VIDC_HW_VIRT
+include $(VIDEO_ROOT)/config/nordau_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/nordau_video.h
+endif
+endif
+
 ifeq ($(CONFIG_MSM_VIDC_NIOBE), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/niobe/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc
@@ -41,6 +49,11 @@ endif
 ifeq ($(CONFIG_MSM_VIDC_SERAPH), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/seraph/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris4/inc
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_NORDAU), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/nordau/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris36/inc
 endif
 
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/common/inc \
@@ -86,6 +99,15 @@ video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/seraph/src/seraph.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_bus_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_clock_iris4.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris4/src/msm_vidc_iris4.o
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_NORDAU), y)
+video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/nordau/src/nordau.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_buffer_iris36.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_power_iris36.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_bus_iris36.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_clock_iris36.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris36/src/msm_vidc_iris36.o
 endif
 
 video-objs +=     $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform.o \
