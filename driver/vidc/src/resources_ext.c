@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -84,104 +84,53 @@ static int __init_regulators(struct msm_vidc_core *core)
 	return rc;
 }
 
-static int __acquire_regulator(struct msm_vidc_core *core,
-			       struct regulator_info *rinfo)
+static int __acquire_regulator(struct msm_vidc_core *core, struct regulator_info *rinfo)
 {
 	int rc = 0;
 
-	if (rinfo->hw_power_collapse) {
-		if (!rinfo->regulator) {
-			d_vpr_e("%s: invalid regulator\n", __func__);
-			rc = -EINVAL;
-			goto exit;
-		}
+	if (!rinfo->hw_power_collapse)
+		return 0;
 
-		if (!is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
-			d_vpr_l("%s: regulator (%s) is already in software ctrl\n",
-				__func__, rinfo->name);
-			return rc;
-		}
-
-		if (regulator_get_mode(rinfo->regulator) ==
-				REGULATOR_MODE_NORMAL) {
-			/* clear handoff from core sub_state */
-			msm_vidc_change_core_sub_state(core,
-				CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
-			d_vpr_h("Skip acquire regulator %s\n", rinfo->name);
-			goto exit;
-		}
-
-		rc = regulator_set_mode(rinfo->regulator,
-				REGULATOR_MODE_NORMAL);
-		if (rc) {
-			/*
-			 * This is somewhat fatal, but nothing we can do
-			 * about it. We can't disable the regulator w/o
-			 * getting it back under s/w control
-			 */
-			d_vpr_e("Failed to acquire regulator control: %s\n",
-				rinfo->name);
-			goto exit;
-		} else {
-			/* reset handoff from core sub_state */
-			msm_vidc_change_core_sub_state(core,
-				CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
-			d_vpr_h("Acquired regulator control from HW: %s\n",
-					rinfo->name);
-
-		}
-
-		if (!regulator_is_enabled(rinfo->regulator)) {
-			d_vpr_e("%s: Regulator is not enabled %s\n",
-				__func__, rinfo->name);
-			__fatal_error(true);
-		}
+	if (regulator_get_mode(rinfo->regulator) == REGULATOR_MODE_NORMAL) {
+		d_vpr_h("skip moving regulator %s into sw ctrl\n", rinfo->name);
+		return 0;
 	}
 
-exit:
-	return rc;
+	rc = regulator_set_mode(rinfo->regulator, REGULATOR_MODE_NORMAL);
+	if (rc) {
+		d_vpr_e("%s: failed to set sw mode: %s\n", __func__, rinfo->name);
+		return rc;
+	}
+	d_vpr_h("%s: moved regulator %s into sw ctrl\n", __func__, rinfo->name);
+
+	if (!regulator_is_enabled(rinfo->regulator)) {
+		d_vpr_e("%s: Regulator is not enabled %s\n", __func__, rinfo->name);
+		__fatal_error(true);
+	}
+
+	return 0;
 }
 
-static int __hand_off_regulator(struct msm_vidc_core *core,
-	struct regulator_info *rinfo)
+static int __hand_off_regulator(struct msm_vidc_core *core, struct regulator_info *rinfo)
 {
 	int rc = 0;
 
-	if (rinfo->hw_power_collapse) {
-		if (!rinfo->regulator) {
-			d_vpr_e("%s: invalid regulator\n", __func__);
-			goto exit;
-		}
+	if (!rinfo->hw_power_collapse)
+		return 0;
 
-		if (is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
-			d_vpr_l("%s: regulator (%s) is already in Hardware ctrl\n",
-				__func__, rinfo->name);
-			return rc;
-		}
+	rc = regulator_set_mode(rinfo->regulator, REGULATOR_MODE_FAST);
+	if (rc) {
+		d_vpr_e("%s: failed to set hw mode: %s\n", __func__, rinfo->name);
+		return rc;
+	}
+	d_vpr_h("%s: moved regulator %s into hw ctrl\n", __func__, rinfo->name);
 
-		rc = regulator_set_mode(rinfo->regulator,
-				REGULATOR_MODE_FAST);
-		if (rc) {
-			d_vpr_e("Failed to hand off regulator control: %s\n",
-				rinfo->name);
-			goto exit;
-		} else {
-			/* set handoff done in core sub_state */
-			msm_vidc_change_core_sub_state(core,
-				0, CORE_SUBSTATE_GDSC_HANDOFF, __func__);
-			d_vpr_h("Hand off regulator control to HW: %s\n",
-					rinfo->name);
-		}
-
-		if (!regulator_is_enabled(rinfo->regulator)) {
-			d_vpr_e("%s: Regulator is not enabled %s\n",
-				__func__, rinfo->name);
-			__fatal_error(true);
-		}
+	if (!regulator_is_enabled(rinfo->regulator)) {
+		d_vpr_e("%s: regulator is not enabled %s\n", __func__, rinfo->name);
+		__fatal_error(true);
 	}
 
-exit:
-	return rc;
+	return 0;
 }
 
 static int __enable_regulator(struct msm_vidc_core *core, const char *reg_name)
@@ -274,39 +223,85 @@ exit:
 	return rc;
 }
 
-static int __hand_off_regulators(struct msm_vidc_core *core)
+static int switch_regulators_to_hwmode(struct msm_vidc_core *core)
 {
 	struct regulator_info *rinfo;
-	int rc = 0, c = 0;
+	int rc = 0, cnt = 0;
 
 	venus_hfi_for_each_regulator(core, rinfo) {
+		/* skip non-collapsible domain */
+		if (!rinfo->hw_power_collapse)
+			continue;
 		rc = __hand_off_regulator(core, rinfo);
-		/*
-		 * If one regulator hand off failed, driver should take
-		 * the control for other regulators back.
-		 */
 		if (rc)
 			goto err_reg_handoff_failed;
-		c++;
+		cnt++;
 	}
 
 	return rc;
 err_reg_handoff_failed:
-	venus_hfi_for_each_regulator_reverse_continue(core, rinfo, c)
+	venus_hfi_for_each_regulator_reverse_continue(core, rinfo, cnt)
 		__acquire_regulator(core, rinfo);
 
 	return rc;
 }
 
+static int __hand_off_regulators(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	if (is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
+		d_vpr_h("%s: regulators are already in HW ctrl mode\n",
+			__func__);
+		return 0;
+	}
+
+	rc = switch_regulators_to_hwmode(core);
+	if (rc) {
+		d_vpr_e("%s: failed to switch GDSC into HW control, err: %d\n", __func__, rc);
+		return rc;
+	}
+
+	d_vpr_h("%s: moved regulator into HW control\n", __func__);
+	msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_GDSC_HANDOFF, __func__);
+
+	return rc;
+}
+
+static int switch_regulators_to_swmode(struct msm_vidc_core *core)
+{
+	struct regulator_info *rinfo;
+
+	venus_hfi_for_each_regulator(core, rinfo) {
+		/* skip non-collapsible domain */
+		if (!rinfo->hw_power_collapse)
+			continue;
+		__acquire_regulator(core, rinfo);
+	}
+
+	return 0;
+}
+
 static int __acquire_regulators(struct msm_vidc_core *core)
 {
 	int rc = 0;
-	struct regulator_info *rinfo;
 
-	venus_hfi_for_each_regulator(core, rinfo)
-		__acquire_regulator(core, rinfo);
+	if (!is_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF)) {
+		d_vpr_h("%s: regulators are already in SW ctrl mode\n",
+			__func__);
+		return 0;
+	}
 
-	return rc;
+	rc = switch_regulators_to_swmode(core);
+	if (rc) {
+		d_vpr_e("%s: failed to switch GDSC into SW control, err: %d\n", __func__, rc);
+		return rc;
+	}
+
+	d_vpr_h("%s: moved regulator into SW control\n", __func__);
+	msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_GDSC_HANDOFF, 0, __func__);
+
+	return 0;
 }
 
 #ifdef CONFIG_MSM_MMRM

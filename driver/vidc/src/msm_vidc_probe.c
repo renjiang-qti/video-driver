@@ -72,6 +72,12 @@ static inline bool is_video_context_bank_device(struct device *dev)
 	return is_video_context_bank_device_node(dev->of_node);
 }
 
+static inline bool is_deepsleep_supported(struct msm_vidc_core *core)
+{
+	return (!!core->capabilities[SUPPORTS_DEEPSLEEP].value &&
+		pm_suspend_target_state == PM_SUSPEND_MEM);
+}
+
 static int msm_vidc_init_resources(struct msm_vidc_core *core)
 {
 	struct msm_vidc_resource *res = NULL;
@@ -1023,6 +1029,36 @@ static int msm_vidc_probe(struct platform_device *pdev)
 	return -EINVAL;
 }
 
+static int msm_vidc_pm_deinit_locked(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	if (!list_empty(&core->instances)) {
+		d_vpr_e("%s: video session running. skip freeze\n", __func__);
+		return -EINVAL;
+	}
+
+	d_vpr_h("%s: deiniting the core\n", __func__);
+	rc = msm_vidc_core_deinit_locked(core, true);
+	if (rc) {
+		d_vpr_e("%s: failed to deinit core\n", __func__);
+		return rc;
+	}
+
+	return rc;
+}
+
+static int msm_vidc_pm_deinit(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	core_lock(core, __func__);
+	rc = msm_vidc_pm_deinit_locked(core);
+	core_unlock(core, __func__);
+
+	return rc;
+}
+
 static int msm_vidc_pm_suspend(struct device *dev)
 {
 	int rc = 0;
@@ -1059,13 +1095,23 @@ static int msm_vidc_pm_suspend(struct device *dev)
 	}
 
 	d_vpr_h("%s\n", __func__);
-	rc = msm_vidc_suspend(core);
-	if (rc == -ENOTSUPP)
-		rc = 0;
-	else if (rc)
-		d_vpr_e("Failed to suspend: %d\n", rc);
-	else
-		msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_PM_SUSPEND, __func__);
+	if (is_deepsleep_supported(core)) {
+		d_vpr_h("%s: entering deepsleep\n", __func__);
+		rc = msm_vidc_pm_deinit_locked(core);
+		if (rc) {
+			d_vpr_e("%s: fail to deepsleep\n", __func__);
+			rc = -ECANCELED;
+			goto unlock;
+		}
+	} else {
+		rc = msm_vidc_suspend(core);
+		if (rc == -EOPNOTSUPP)
+			rc = 0;
+		else if (rc)
+			d_vpr_e("Failed to suspend: %d\n", rc);
+		else
+			msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_PM_SUSPEND, __func__);
+	}
 
 unlock:
 	core_unlock(core, __func__);
@@ -1092,6 +1138,10 @@ static int msm_vidc_pm_resume(struct device *dev)
 	}
 
 	d_vpr_h("%s\n", __func__);
+	if (is_deepsleep_supported(core)) {
+		d_vpr_h("%s: resuming from deepsleep\n", __func__);
+		return 0;
+	}
 
 	/* remove PM suspend from core sub_state */
 	core_lock(core, __func__);
@@ -1125,20 +1175,13 @@ static int msm_vidc_pm_freeze(struct device *dev)
 	if (!core->capabilities[SUPPORTS_FREEZE].value)
 		return -EOPNOTSUPP;
 
-	core_lock(core, __func__);
-	if (!list_empty(&core->instances)) {
-		d_vpr_e("%s: video session running. skip freeze\n", __func__);
-		rc = -ECANCELED;
-		goto unlock;
+	d_vpr_h("%s: entering freeze\n", __func__);
+	rc = msm_vidc_pm_deinit(core);
+	if (rc) {
+		d_vpr_e("%s: fail to freeze\n", __func__);
+		return -ECANCELED;
 	}
 
-	d_vpr_h("%s: deiniting the core\n", __func__);
-	rc = msm_vidc_core_deinit_locked(core, true);
-	if (rc)
-		d_vpr_e("%s: failed to deinit core\n", __func__);
-
-unlock:
-	core_unlock(core, __func__);
 	return rc;
 }
 
