@@ -324,7 +324,7 @@ static int __program_bootup_registers_iris4(struct msm_vidc_core *core)
 		if (rc)
 			return rc;
 	} else {
-		d_vpr_e("%s: skip device region programming\n", __func__);
+		d_vpr_h("%s: skip device region programming\n", __func__);
 		/* ignore the error for now for backward compatibility */
 		/* return -EINVAL; */
 	}
