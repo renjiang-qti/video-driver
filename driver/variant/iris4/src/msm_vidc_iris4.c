@@ -1408,6 +1408,9 @@ int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
+	if (work_mode >= inst->capabilities[STAGE].max)
+		work_mode = inst->capabilities[STAGE].max;
+
 exit:
 	i_vpr_h(inst, "Configuring work mode = %u low latency = %llu, gop size = %llu\n",
 		work_mode, inst->capabilities[LOWLATENCY_MODE].value,

@@ -592,20 +592,20 @@ static int __resume(struct msm_vidc_core *core)
 		goto err_set_video_state;
 	}
 
-	/*
-	 * Hand off control of regulators to h/w _after_ loading fw.
-	 * Note that the GDSC will turn off when switching from normal
-	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
-	 * present.
-	 */
-	call_venus_op(core, hw_ctrl_gdsc, core);
-
 	/* Wait for boot completion */
 	rc = call_venus_op(core, boot_firmware, core);
 	if (rc) {
 		d_vpr_e("Failed to reset venus core\n");
 		goto err_reset_core;
 	}
+
+	/*
+	 * Hand off control of regulators to h/w _after_ fw bootup.
+	 * Note that the GDSC will turn off when switching from normal
+	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
+	 * present.
+	 */
+	 call_venus_op(core, hw_ctrl_gdsc, core);
 
 	__sys_set_debug(core, (msm_fw_debug & FW_LOGMASK) >> FW_LOGSHIFT);
 
@@ -658,13 +658,6 @@ int __load_fw(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_load_fw;
 
-	/*
-	 * Hand off control of regulators to h/w _after_ loading fw.
-	 * Note that the GDSC will turn off when switching from normal
-	 * (s/w triggered) to fast (HW triggered) unless the h/w vote is
-	 * present.
-	 */
-	call_venus_op(core, hw_ctrl_gdsc, core);
 	trace_msm_v4l2_vidc_fw_load("END");
 
 	return rc;
@@ -987,6 +980,10 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 		goto error;
 
 	rc = call_venus_op(core, boot_firmware, core);
+	if (rc)
+		goto error;
+
+	rc = call_venus_op(core, hw_ctrl_gdsc, core);
 	if (rc)
 		goto error;
 

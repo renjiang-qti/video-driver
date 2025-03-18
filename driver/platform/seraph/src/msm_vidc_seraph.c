@@ -343,6 +343,11 @@ static const struct msm_platform_core_capability core_data_seraph[] = {
 	{SUPPORTS_SYNX_V2_FENCE, 1},
 	{SUPPORTS_REMOTE_PROC, 1},
 	{SUPPORTS_FREEZE, 1},
+#ifdef CONFIG_DEEPSLEEP
+	{SUPPORTS_DEEPSLEEP, 1},
+#else
+	{SUPPORTS_DEEPSLEEP, 0},
+#endif
 };
 
 static int msm_vidc_set_ring_buffer_count_seraph(void *instance,
@@ -1733,8 +1738,8 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 
 	{STAGE, DEC|ENC, H264 | HEVC | VP9 | HEIC | AV1,
 		MSM_VIDC_STAGE_1,
-		MSM_VIDC_STAGE_2, 1,
-		MSM_VIDC_STAGE_2,
+		MSM_VIDC_STAGE_1, 1,
+		MSM_VIDC_STAGE_1,
 		0,
 		HFI_PROP_STAGE},
 
@@ -2942,16 +2947,16 @@ const struct context_bank_table seraph_context_bank_table[] = {
 /* register, value, mask */
 static const struct reg_preset_table seraph_reg_preset_table[] = {
 	{ 0xB0088, 0x0,        0xFFFFFFFF},
-	{ 0x13030, 0x33332211, 0xFFFFFFFF},
+	{ 0x13030, 0x33332222, 0xFFFFFFFF},
 	{ 0x13034, 0x44444444, 0xFFFFFFFF},
-	{ 0x13038, 0x1011,     0xFFFFFFFF},
-	{ 0x13040, 0xFFAA5500, 0xFFFFFFFF},
-	{ 0x13048, 0xFF,       0xFFFFFFFF},
-	{ 0x13430, 0x33332211, 0xFFFFFFFF},
+	{ 0x13038, 0x1022,     0xFFFFFFFF},
+	{ 0x13040, 0x0,        0xFFFFFFFF},
+	{ 0x13048, 0xFFFF,     0xFFFFFFFF},
+	{ 0x13430, 0x33332222, 0xFFFFFFFF},
 	{ 0x13434, 0x44444444, 0xFFFFFFFF},
-	{ 0x13438, 0x1011,     0xFFFFFFFF},
-	{ 0x13440, 0xFFAA5500, 0xFFFFFFFF},
-	{ 0x13448, 0xFF,       0xFFFFFFFF},
+	{ 0x13438, 0x1022,     0xFFFFFFFF},
+	{ 0x13440, 0x0,        0xFFFFFFFF},
+	{ 0x13448, 0xFFFF,     0xFFFFFFFF},
 	{ 0xA013C, 0x99,       0xFFFFFFFF},
 };
 
