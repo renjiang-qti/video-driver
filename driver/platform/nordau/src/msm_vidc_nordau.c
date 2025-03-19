@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef MSM_VIDC_HW_VIRT
 #include <dt-bindings/clock/qcom,gcc-nordau.h>
@@ -326,6 +326,7 @@ static struct msm_platform_core_capability core_data_nordau[] = {
 	{SUPPORTS_REQUESTS, 1},
 	{SUPPORTS_FREEZE, 0},
 	{NUM_VPU, 1},
+	{SKIP_DELAYED_UNMAP, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
@@ -2621,6 +2622,8 @@ int msm_vidc_init_platform_nordau(struct msm_vidc_core *core)
 	if (core->full_virtualization_data.virtualization_en) {
 		nord_res_ops.init = core->res_ops->init;
 		core->res_ops = &nord_res_ops;
+		/* skip ddr check for full virtualization */
+		return rc;
 	}
 
 	rc = msm_vidc_nordau_check_ddr_type();

@@ -426,4 +426,7 @@ enum v4l2_mpeg_vidc_apv_level {
 #define V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO \
 							     (VIDC_BASE + 0x66)
 
+/* Control to enable/disable lookahead encoding */
+#define V4L2_CID_MPEG_VIDC_LOOKAHEAD_ENCODE_ENABLE           (VIDC_BASE + 0x67)
+
 #endif

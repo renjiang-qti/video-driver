@@ -40,7 +40,6 @@
 
 extern struct msm_vidc_core *g_core;
 
-static int __resume(struct msm_vidc_core *core);
 static int __suspend(struct msm_vidc_core *core);
 
 static void __fatal_error(bool fatal)
@@ -538,7 +537,7 @@ err_tzbsp_suspend:
 	return rc;
 }
 
-static int __resume(struct msm_vidc_core *core)
+int __resume(struct msm_vidc_core *core)
 {
 	int rc = 0;
 
@@ -563,9 +562,11 @@ static int __resume(struct msm_vidc_core *core)
 	if (core->full_virtualization_data.virtualization_en) {
 		rc = virtio_video_msm_cmd_resume_gvm_session(
 			core->capabilities[NUM_VPU].value, 0);
-		if (!rc)
+		if (!rc) {
 			msm_vidc_change_core_sub_state(core, 0,
 				CORE_SUBSTATE_POWER_ENABLE, __func__);
+			call_venus_op(core, enable_intr, core);
+		}
 
 		return rc;
 	}
@@ -929,6 +930,38 @@ static int __sys_image_version(struct msm_vidc_core *core)
 	return 0;
 }
 
+static int __core_init_full_virtualization(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	if (core->full_virtualization_data.is_gvm_open)
+		return rc;
+
+	d_vpr_h("%s: Hardware virtualization enabled. Calling open_gvm\n",
+		__func__);
+	rc = virtio_video_msm_cmd_open_gvm(
+		core->full_virtualization_data.vmid,
+		core->capabilities[NUM_VPU].value,
+		&core->full_virtualization_data.device_core_mask);
+	if (rc) {
+		d_vpr_e("%s: open_gvm failed\n", __func__);
+		return rc;
+	}
+	core->full_virtualization_data.is_gvm_open = 1;
+
+	/* set up core state and substate */
+	msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
+		__func__);
+	msm_vidc_change_core_sub_state(core, 0,
+		CORE_SUBSTATE_POWER_ENABLE, __func__);
+	call_venus_op(core, enable_intr, core);
+	/*
+	 * skip core init in hw virtualization case, as pvm will do
+	 * core_init on behalf of gvm
+	 */
+	return 0;
+}
+
 int venus_hfi_core_init(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -948,32 +981,8 @@ int venus_hfi_core_init(struct msm_vidc_core *core)
 	 * code is skipped using the conditional block below. please do not
 	 * add any new initialization code above this.
 	 */
-	if (core->full_virtualization_data.virtualization_en) {
-		if (!core->full_virtualization_data.is_gvm_open) {
-			d_vpr_h("%s: Hardware virtualization enabled.\n"
-				"Calling open_gvm\n", __func__);
-			rc = virtio_video_msm_cmd_open_gvm(
-				core->full_virtualization_data.vmid,
-				core->capabilities[NUM_VPU].value,
-				&core->full_virtualization_data.device_core_mask);
-			if (rc) {
-				d_vpr_e("%s: open_gvm failed\n", __func__);
-				goto error;
-			}
-			core->full_virtualization_data.is_gvm_open = 1;
-
-			/* set up core state and substate */
-			msm_vidc_change_core_state(core, MSM_VIDC_CORE_INIT,
-				__func__);
-			msm_vidc_change_core_sub_state(core, 0,
-				CORE_SUBSTATE_POWER_ENABLE, __func__);
-		}
-		/*
-		 * skip core init in hw virtualization case, as pvm will do
-		 * core_init on behalf of gvm
-		 */
-		return 0;
-	}
+	if (core->full_virtualization_data.virtualization_en)
+		return __core_init_full_virtualization(core);
 
 	rc = __load_fw(core);
 	if (rc)
@@ -1342,8 +1351,14 @@ int venus_hfi_session_open_locked(struct msm_vidc_inst *inst)
 	struct msm_vidc_core *core = inst->core;
 
 	if (core->full_virtualization_data.virtualization_en) {
-		return virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
+		rc = virtio_video_msm_cmd_open_gvm_session(&inst->device_id,
 			&inst->session_id);
+		if (!rc) {
+			__resume(core);
+			call_venus_op(core, enable_intr, core);
+		}
+
+		return rc;
 	}
 
 	__sys_set_debug(inst->core,
@@ -1368,21 +1383,60 @@ error:
 
 int venus_hfi_session_set_codec(struct msm_vidc_inst *inst)
 {
+	struct msm_vidc_core *core = inst->core;
 	u32 codec;
 	int rc = 0;
 
+	core_lock(core, __func__);
+	if (!inst->packet) {
+		i_vpr_e(inst, "%s: invalid session\n", __func__);
+		rc = -EINVAL;
+		goto unlock;
+	}
+	if (!__validate_instance(core, inst, __func__)) {
+		rc = -EINVAL;
+		goto unlock;
+	}
+
+	rc = hfi_create_header(inst->packet, inst->packet_size,
+			       inst->session_id,
+			       core->header_id++);
+	if (rc)
+		goto unlock;
+
 	codec = get_hfi_codec(inst);
-	rc = venus_hfi_session_command(inst,
+	rc = hfi_create_packet(inst->packet,
+				inst->packet_size,
 				HFI_PROP_CODEC,
 				HFI_HOST_FLAGS_NONE,
-				HFI_PORT_NONE,
-				inst->session_id,
 				HFI_PAYLOAD_U32_ENUM,
+				HFI_PORT_NONE,
+				core->packet_id++,
 				&codec,
-				sizeof(u32),
-				__func__);
+				sizeof(u32));
 	if (rc)
-		return rc;
+		goto unlock;
+
+	if (inst->capabilities[CODEC_MODE].value) {
+		rc = hfi_create_packet(inst->packet,
+					inst->packet_size,
+					HFI_PROP_CODEC_MODE,
+					HFI_HOST_FLAGS_NONE,
+					HFI_PAYLOAD_U32_ENUM,
+					HFI_PORT_NONE,
+					core->packet_id++,
+					&inst->capabilities[CODEC_MODE].value,
+					sizeof(u32));
+		if (rc)
+			goto unlock;
+	}
+
+	rc = __cmdq_write(core, inst->packet);
+	if (rc)
+		goto unlock;
+
+unlock:
+	core_unlock(core, __func__);
 
 	return rc;
 }

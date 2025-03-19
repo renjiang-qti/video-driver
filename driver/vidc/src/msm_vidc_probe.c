@@ -16,7 +16,6 @@
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
 #include <media/v4l2-mem2mem.h>
-#include <soc/qcom/minidump.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
@@ -26,9 +25,9 @@
 #include "msm_vidc_core.h"
 #include "msm_vidc_memory.h"
 #include "msm_vidc_fence.h"
+#include "msm_vidc_md.h"
 #include "venus_hfi.h"
 #include "resources.h"
-#include "firmware.h"
 #include "msm_vidc_hw_virt.h"
 #include <linux/reboot.h>
 
@@ -54,6 +53,7 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2") ||
 		of_device_is_compatible(dev->of_node, "qcom,seraph-vidc") ||
+		of_device_is_compatible(dev->of_node, "qcom,sa8797-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc"));
 }
 
@@ -144,6 +144,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,canoe-vidc"},
 	{.compatible = "qcom,canoe-vidc-v2"},
 	{.compatible = "qcom,seraph-vidc"},
+	{.compatible = "qcom,sa8797-vidc"},
 	{.compatible = "qcom,cliffs-vidc"},
 	{.compatible = "qcom,volcano-vidc"},
 	{.compatible = "qcom,niobe-vidc"},
@@ -353,51 +354,6 @@ static int msm_vidc_check_mmrm_support(struct msm_vidc_core *core)
 	return 0;
 }
 #endif
-
-/* This is the call back function invoked from mini dump driver
- * During kernel panic
- */
-static int msm_vidc_va_md_callback(struct notifier_block *nb,
-		unsigned long event, void *ptr)
-{
-	struct msm_vidc_core *core = g_core;
-
-	if (!core)
-		return -ENODEV;
-
-	msm_vidc_md_video_queues_dump(core);
-
-	return 0;
-}
-
-static struct notifier_block msm_vidc_va_minidump_nb = {
-	.priority = INT_MAX,
-	.notifier_call = msm_vidc_va_md_callback,
-};
-
-void msm_vidc_qcom_va_md_register(struct msm_vidc_core *core)
-{
-	int ret;
-
-	if (!core->capabilities[SUPPORTS_MINIDUMP].value || !qcom_va_md_enabled())
-		return;
-
-	ret = qcom_va_md_register("msm_vidc", &msm_vidc_va_minidump_nb);
-	if (ret)
-		d_vpr_e("Failed to register notifier with va_minidump: %d\n", ret);
-}
-
-void msm_vidc_qcom_va_md_unregister(struct msm_vidc_core *core)
-{
-	int ret;
-
-	if (!core->capabilities[SUPPORTS_MINIDUMP].value || !qcom_va_md_enabled())
-		return;
-
-	ret = qcom_va_md_unregister("msm_vidc", &msm_vidc_va_minidump_nb);
-	if (ret)
-		d_vpr_e("Failed to unregister notifier with va_minidump: %d\n", ret);
-}
 
 static int msm_vidc_deinitialize_core(struct msm_vidc_core *core)
 {
@@ -774,7 +730,7 @@ static int msm_vidc_remove_video_device(struct platform_device *pdev)
 
 	sysfs_remove_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 	call_fence_op(core, fence_deregister, core);
-	msm_vidc_qcom_va_md_unregister(core);
+	call_md_op(core, md_unregister, core);
 
 	dev_set_drvdata(&pdev->dev, NULL);
 	g_core = NULL;
@@ -909,7 +865,7 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 		goto fence_reg_fail;
 	}
 
-	msm_vidc_qcom_va_md_register(core);
+	call_md_op(core, md_register, core);
 
 	rc = sysfs_create_group(&pdev->dev.kobj, &msm_vidc_core_attr_group);
 	if (rc) {

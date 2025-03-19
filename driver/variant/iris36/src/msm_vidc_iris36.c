@@ -1385,6 +1385,14 @@ adjust:
 	return 0;
 }
 
+static int __enable_intr_iris36(struct msm_vidc_core *vidc_core)
+{
+	/* Enable interrupt */
+	d_vpr_h("%s(): enable intr\n", __func__);
+	return __write_register(vidc_core, CPU_CS_H2XSOFTINTEN_IRIS36, 0x1);
+}
+
+
 static struct msm_vidc_venus_ops iris36_ops = {
 	.boot_firmware = __boot_firmware_iris36,
 	.raise_interrupt = __raise_interrupt_iris36,
@@ -1397,6 +1405,7 @@ static struct msm_vidc_venus_ops iris36_ops = {
 	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris36,
 	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris36,
 	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,
+	.enable_intr = __enable_intr_iris36,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
@@ -1416,6 +1425,7 @@ int msm_vidc_init_iris36(struct msm_vidc_core *core)
 
 	core->venus_ops = &iris36_ops;
 	core->session_ops = &msm_session_ops;
+	core->res_ops = get_resources_ops();
 
 	/*
 	 * If hw virtualization enabled, disable all venus ops except
@@ -1425,6 +1435,7 @@ int msm_vidc_init_iris36(struct msm_vidc_core *core)
 		nord_venus_ops.raise_interrupt = core->venus_ops->raise_interrupt;
 		nord_venus_ops.clear_interrupt = core->venus_ops->clear_interrupt;
 		nord_venus_ops.prepare_pc = core->venus_ops->prepare_pc;
+		nord_venus_ops.enable_intr = core->venus_ops->enable_intr;
 		core->venus_ops = &nord_venus_ops;
 	}
 
