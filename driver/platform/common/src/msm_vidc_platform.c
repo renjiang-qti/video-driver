@@ -17,6 +17,7 @@
 #include "msm_vidc_control.h"
 #include "msm_vidc_driver.h"
 #include "msm_vidc_fence.h"
+#include "msm_vidc_md.h"
 #include "hfi_packet.h"
 #include "hfi_property.h"
 #include "hfi_command.h"
@@ -309,6 +310,7 @@ static int msm_vidc_init_ops(struct msm_vidc_core *core)
 	core->vb2_mem_ops = &msm_vb2_mem_ops;
 	core->media_device_ops = &msm_v4l2_media_ops;
 	core->v4l2_m2m_ops = &msm_v4l2_m2m_ops;
+	core->md_ops = get_md_ops();
 	core->mem_ops = get_mem_ops();
 	if (!core->mem_ops) {
 		d_vpr_e("%s: invalid memory ops\n", __func__);

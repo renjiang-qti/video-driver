@@ -69,6 +69,7 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/socinfo".format(kernel_build),
         ],
         "//build/kernel/kleaf:socrepo_false": [
             "//msm-kernel:all_headers",
@@ -136,6 +137,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "//soc-repo:{}/drivers/soc/qcom/mem_buf/mem_buf_dev".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/qcom_va_minidump".format(kernel_build),
             "//soc-repo:{}/drivers/soc/qcom/minidump".format(kernel_build),
+            "//soc-repo:{}/drivers/soc/qcom/socinfo".format(kernel_build),
         ],
         "//build/kernel/kleaf:socrepo_false": [
             "//msm-kernel:all_headers",
@@ -152,6 +154,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_{}".format(lunch_target.upper()),
         ]
     else:
@@ -159,6 +162,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
         print("dist_target_name: " + dist_target_name)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_{}".format(target.upper()),
         ]
 

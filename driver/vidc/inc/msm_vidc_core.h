@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_CORE_H_
@@ -20,6 +20,10 @@
 	(((d) && (d)->venus_ops && (d)->venus_ops->op) ? \
 	((d)->venus_ops->op(__VA_ARGS__)) : 0)
 
+#define call_md_op(d, op, ...)			\
+	(((d) && (d)->md_ops && (d)->md_ops->op) ? \
+	((d)->md_ops->op(__VA_ARGS__)) : 0)
+
 struct msm_vidc_venus_ops {
 	int (*boot_firmware)(struct msm_vidc_core *core);
 	int (*raise_interrupt)(struct msm_vidc_core *core);
@@ -33,6 +37,14 @@ struct msm_vidc_venus_ops {
 	int (*hw_ctrl_gdsc)(struct msm_vidc_core *core);
 	int (*sw_ctrl_gdsc)(struct msm_vidc_core *core);
 	int (*scm_mem_protect)(struct msm_vidc_core *core);
+};
+
+struct msm_vidc_md_ops {
+	int (*md_register)(struct msm_vidc_core *core);
+	int (*md_unregister)(struct msm_vidc_core *core);
+	int (*md_dump_fw_region)(struct msm_vidc_core *core,
+			const char *name, void *virt, u64 phys, u64 size);
+	int (*md_dump_hfi_queues)(struct msm_vidc_core *core);
 };
 
 struct msm_vidc_synx_fence_data {
@@ -129,6 +141,7 @@ struct msm_vidc_core {
 	const struct msm_vidc_memory_ops      *mem_ops;
 	struct media_device_ops               *media_device_ops;
 	const struct msm_vidc_fence_ops       *fence_ops;
+	const struct msm_vidc_md_ops          *md_ops;
 	u32                                    header_id;
 	u32                                    packet_id;
 	u32                                    sys_init_id;
