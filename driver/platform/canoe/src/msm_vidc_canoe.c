@@ -11488,6 +11488,20 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 					core->platform->data.pd_tbl[i].hw_enable = 0;
 					break;
 				}
+			} else if (part_info == 0x11) {
+				core->platform->data = canoe_data_sku_v3;
+				core->platform->data.sku_version = SKU_VERSION_3;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp0"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+			} else if (part_info == 0x12) {
+				core->platform->data = canoe_data_sku_v3;
+				core->platform->data.sku_version = SKU_VERSION_3;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp1"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv"))
+					core->platform->data.pd_tbl[i].hw_enable = 0;
 			}
 		}
 	}
