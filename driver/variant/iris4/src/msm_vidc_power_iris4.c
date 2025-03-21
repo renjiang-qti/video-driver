@@ -557,7 +557,7 @@ static int get_clock_corner_index(struct msm_vidc_core *core, u64 vpp_freq, u64 
 	return min(idx, tns_idx);
 }
 
-int msm_vidc_get_freq_corner(struct msm_vidc_inst *inst)
+static int msm_vidc_get_freq_corner(struct msm_vidc_inst *inst)
 {
 	u64 vpp_freq = 0, apv_freq = 0, bse_freq = 0, tensilica_freq = 0;
 	bool increment = false, decrement = true;

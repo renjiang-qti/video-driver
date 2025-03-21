@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <media/v4l2-event.h>
@@ -2293,7 +2293,7 @@ int msm_vdec_try_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 			f->fmt.pix_mp.width = inst->fmts[OUTPUT_PORT].fmt.pix_mp.width;
 			f->fmt.pix_mp.height = inst->fmts[OUTPUT_PORT].fmt.pix_mp.height;
 		}
-		if (inst->bufq[INPUT_PORT].vb2q->streaming) {
+		if (inst->bufq[INPUT_PORT].vb2q->streaming && !is_image_decode_session(inst)) {
 			f->fmt.pix_mp.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
 			f->fmt.pix_mp.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
 		}
@@ -2438,7 +2438,7 @@ int msm_vdec_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 	} else if (f->type == OUTPUT_MPLANE) {
 		fmt = &inst->fmts[OUTPUT_PORT];
 		fmt->type = OUTPUT_MPLANE;
-		if (inst->bufq[INPUT_PORT].vb2q->streaming) {
+		if (inst->bufq[INPUT_PORT].vb2q->streaming && !is_image_decode_session(inst)) {
 			if (inst->capabilities[SCALE_ENABLE].value) {
 				f->fmt.pix_mp.width = inst->compose.width;
 				f->fmt.pix_mp.height = inst->compose.height;
