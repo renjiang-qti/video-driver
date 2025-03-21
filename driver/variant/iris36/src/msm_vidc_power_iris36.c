@@ -54,6 +54,7 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 	enum msm_vidc_port_type port = PORT_NONE;
 	u32 color_fmt = 0, tile_rows_columns = 0;
 	struct msm_vidc_core *core = NULL;
+	u32 max_rate, frame_rate;
 
 	if (is_encode_session(inst)) {
 		codec_input->decoder_or_encoder = CODEC_ENCODER;
@@ -126,12 +127,25 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 
 	codec_input->linear_opb = is_linear_colorformat(color_fmt);
 
-	if (is_decode_session(inst))
+	if (is_decode_session(inst)) {
 		codec_input->bitrate_mbps =
 			(codec_input->frame_rate * data_size * 8) / 1000000;
-	else
+	} else {
+		frame_rate = msm_vidc_get_frame_rate(inst);
+		max_rate = inst->max_rate;
 		codec_input->bitrate_mbps =
 			inst->capabilities[BIT_RATE].value / 1000000;
+
+		/*
+		 * In encoding cases, the bitrate should scale with the frame
+		 * rate, especially for HFR cases.
+		 * Otherwise, a lower bitrate may lead to a lower vsp frequency,
+		 * resulting in insufficient performance.
+		 */
+		if (frame_rate && max_rate > frame_rate)
+			codec_input->bitrate_mbps =
+				codec_input->bitrate_mbps * max_rate / frame_rate;
+	}
 
 	/* av1d commercial tile */
 	if (inst->codec == MSM_VIDC_AV1 && codec_input->lcu_size == 128) {
