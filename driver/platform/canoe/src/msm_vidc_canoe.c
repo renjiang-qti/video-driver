@@ -9,6 +9,7 @@
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
+#include <soc/qcom/socinfo.h>
 
 #include <media/v4l2_vidc_extensions.h>
 #include "msm_vidc_canoe.h"
@@ -10867,13 +10868,13 @@ static const struct bw_table canoe_bw_table[] = {
 	{ "venus-llcc",  1000, 15000000 },
 };
 
-/* name, hw_trigger */
-static const struct pd_table canoe_pd_table[] = {
-	{ "iris-ctl", 0 },
-	{ "vcodec",   1 },
-	{ "vpp0",     1 },
-	{ "vpp1",     1 },
-	{ "apv",      1 },
+/* name, hw_trigger, hw_enable */
+static struct pd_table canoe_pd_table[] = {
+	{ "iris-ctl", 0, 1 },
+	{ "vcodec",   1, 1 },
+	{ "vpp0",     1, 1 },
+	{ "vpp1",     1, 1 },
+	{ "apv",      1, 1 },
 };
 
 /* name, clock id, scaling */
@@ -11176,8 +11177,19 @@ static const struct msm_vidc_platform_data canoe_data = {
 
 	.msm_vidc_ssr_type = canoe_msm_vidc_ssr_type,
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(canoe_msm_vidc_ssr_type),
+
+	/* Fuse specific resources */
+	.efuse_data = efuse_data_canoe,
+	.efuse_data_size = ARRAY_SIZE(efuse_data_canoe),
+	.sku_version = SKU_VERSION_0,
 };
 
+/*
+ * SKU Version: 2
+ * IRIS4-2P
+ * No APV
+ * Same Decoder and Encoder specs as Knp v1.
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v2 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11251,6 +11263,13 @@ static const struct msm_vidc_platform_data canoe_data_sku_v2 = {
 	.sku_version = SKU_VERSION_2,
 };
 
+/*
+ * SKU Version: 1
+ * IRIS4-1P + APV
+ * Dec: 8k30 10-bit
+ * Enc: 4k60 10-bit
+ * No inline DS support
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v1 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11330,6 +11349,14 @@ static const struct msm_vidc_platform_data canoe_data_sku_v1 = {
 	.sku_version = SKU_VERSION_1,
 };
 
+/*
+ * SKU Version: 3
+ * KaM
+ * IRIS4-1P no APV
+ * Dec: 8k30 10-bit
+ * Enc: 4k60 10-bit
+ * No inline DS support
+ */
 static const struct msm_vidc_platform_data canoe_data_sku_v3 = {
 	/* resources dependent on other module */
 	.bw_tbl = canoe_bw_table,
@@ -11423,6 +11450,7 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 	struct msm_platform_inst_capability *platform_cap_data = NULL;
 	struct device *dev = &core->pdev->dev;
 	int i, rc = 0;
+	u32 part_count = 0, part_info = 0;
 
 	d_vpr_h("%s: initialize canoe data\n", __func__);
 	core->platform->data = canoe_data;
@@ -11434,14 +11462,38 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		return rc;
 	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_2)
-		core->platform->data = canoe_data_sku_v2;
+	part_count = socinfo_get_part_count(PART_VIDEO);
 
-	if (core->platform->data.sku_version == SKU_VERSION_1)
-		core->platform->data = canoe_data_sku_v1;
+	rc = socinfo_get_subpart_info(PART_VIDEO, &part_info, part_count);
+	if (!rc) {
+		for (i = 0 ; i < core->platform->data.pd_tbl_size; i++) {
+			if (part_info == 0x2) {
+				core->platform->data = canoe_data_sku_v1;
+				core->platform->data.sku_version = SKU_VERSION_1;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp1")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			} else if (part_info == 0x1) {
+				core->platform->data = canoe_data_sku_v1;
+				core->platform->data.sku_version = SKU_VERSION_1;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "vpp0")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			} else if (part_info == 0x10) {
+				core->platform->data = canoe_data_sku_v2;
+				core->platform->data.sku_version = SKU_VERSION_2;
+				if (!strcmp(core->platform->data.pd_tbl[i].name, "apv")) {
+					core->platform->data.pd_tbl[i].hw_enable = 0;
+					break;
+				}
+			}
+		}
+	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_3)
-		core->platform->data = canoe_data_sku_v3;
+	d_vpr_h("sku platform version 0x%x part_info: %d\n",
+			core->platform->data.sku_version, part_info);
 
 	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")) {
 		d_vpr_h("%s: update context bank table for canoe v2\n", __func__);
