@@ -417,11 +417,29 @@ static bool is_iris4_hw_power_collapsed(struct msm_vidc_core *core)
 	return pwr_status ? false : true;
 }
 
+static bool is_hw_enabled(struct msm_vidc_core *core, const char *name)
+{
+	int i = 0;
+
+	for (i = 0 ; i < core->platform->data.pd_tbl_size; i++) {
+		if (!strcmp(core->platform->data.pd_tbl[i].name, name))
+			if (!core->platform->data.pd_tbl[i].hw_enable) {
+				d_vpr_h("%s: hw %s not enabled\n", __func__,
+						core->platform->data.pd_tbl[i].name);
+				return false;
+			}
+	}
+	return true;
+}
+
 static int __power_off_iris4_apv(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	u32 value = 0;
 	u32 count = 0;
+
+	if (!is_hw_enabled(core, "apv"))
+		return 0;
 
 	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
 	if (rc)
@@ -703,7 +721,7 @@ disable_power:
 		return rc;
 
 	/* VCODEC_VIDEO_CC_MVS0_VPP1_GDSCR --> "vpp1" - To be named as per dtsi*/
-	if (!(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
 		rc = call_res_op(core, gdsc_off, core, "vpp1");
 		if (rc) {
 			d_vpr_e("%s: disable vpp1 regulator failed\n", __func__);
@@ -719,7 +737,7 @@ disable_power:
 	}
 
 	/* VCODEC_VIDEO_CC_MVS0_VPP0_GDSCR --> "vpp0" - To be named as per dtsi*/
-	if (!(value & BIT(29))) {
+	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29))) {
 		rc = call_res_op(core, gdsc_off, core, "vpp0");
 		if (rc) {
 			d_vpr_e("%s: disable vpp0 regulator failed\n", __func__);
@@ -1036,14 +1054,14 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 		goto fail_read_efuse;
 
 	/* VIDEO_CC_MVS0_VPP0_GDSCR --> vpp0 */
-	if (!(value & BIT(29))) {
+	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29))) {
 		rc = call_res_op(core, gdsc_on, core, "vpp0");
 		if (rc)
 			goto fail_regulator_vpp0;
 	}
 
 	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
-	if (!(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
 		rc = call_res_op(core, gdsc_on, core, "vpp1");
 		if (rc)
 			goto fail_regulator_vpp1;
@@ -1070,7 +1088,7 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 		goto fail_clk_bse_controller;
 
 	/* VIDEO_CC_MVS0_VPP0_GDSCR --> vpp0 */
-	if (!(value & BIT(29))) {
+	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29))) {
 		/*VIDEO_CC_MVS0_VPP0_CBCR --> video_cc_mvs0_vpp0_clk */
 		rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_vpp0_clk");
 		if (rc)
@@ -1078,7 +1096,7 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	}
 
 	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
-	if (!(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
 		/* VIDEO_CC_MVS0_VPP1_CBCR --> video_cc_mvs0_vpp1_clk */
 		rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_vpp1_clk");
 		if (rc)
@@ -1088,7 +1106,7 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	return 0;
 
 fail_clk_vpp1:
-	if (!(value & BIT(29)))
+	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29)))
 		call_res_op(core, clk_disable, core, "video_cc_mvs0_vpp0_clk");
 fail_clk_vpp0:
 	call_res_op(core, clk_disable, core, "video_cc_mvs0b_clk");
@@ -1100,10 +1118,10 @@ fail_clk_freerun:
 	call_res_op(core, clk_disable, core, "gcc_video_axi0_clk");
 fail_clk_axi:
 fail_sw_ctrl:
-	if (!(value & BIT(28)))
+	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28)))
 		call_res_op(core, gdsc_off, core, "vpp1");
 fail_regulator_vpp1:
-	if (!(value & BIT(29)))
+	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29)))
 		call_res_op(core, gdsc_off, core, "vpp0");
 fail_regulator_vpp0:
 fail_read_efuse:
@@ -1117,6 +1135,9 @@ static int __power_on_iris4_apv(struct msm_vidc_core *core)
 {
 	int rc = 0;
 	int value = 0;
+
+	if (!is_hw_enabled(core, "apv"))
+		return 0;
 
 	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
 	if (rc)
