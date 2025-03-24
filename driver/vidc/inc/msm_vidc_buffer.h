@@ -21,7 +21,6 @@ enum msm_vidc_buffer_type;
 
 u32 msm_vidc_input_min_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_output_min_count(struct msm_vidc_inst *inst);
-u32 msm_vidc_output_min_count_iris4(struct msm_vidc_inst *inst);
 u32 msm_vidc_input_extra_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_output_extra_count(struct msm_vidc_inst *inst);
 u32 msm_vidc_internal_buffer_count(struct msm_vidc_inst *inst,
