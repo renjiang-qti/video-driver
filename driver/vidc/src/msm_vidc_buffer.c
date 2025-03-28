@@ -98,69 +98,6 @@ u32 msm_vidc_output_min_count(struct msm_vidc_inst *inst)
 	return output_min_count;
 }
 
-/*
- * for all iris versions >= 4, driver shall use
- * msm_vidc_output_min_count_iris4()
- */
-u32 msm_vidc_output_min_count_iris4(struct msm_vidc_inst *inst)
-{
-	u32 output_min_count;
-
-	if (!is_decode_session(inst) && !is_encode_session(inst))
-		return 0;
-
-	if (is_thumbnail_session(inst))
-		return 1;
-
-	if (is_encode_session(inst))
-		return MIN_ENC_OUTPUT_BUFFERS;
-
-	/* decoder handling below */
-	/* fw_min_count > 0 indicates reconfig event has already arrived */
-	if (inst->fw_min_count) {
-		/* TODO: need to update condition to include AVC/HEVC as well */
-		if (is_split_mode_enabled(inst) &&
-			inst->codec == MSM_VIDC_VP9) {
-			/*
-			 * return opb min buffer count as min(4, fw_min_count)
-			 * fw min count is used for dpb min count
-			 */
-			output_min_count = min_t(u32, 4, inst->fw_min_count);
-		} else {
-			/*
-			 * for AV1, always use firmware min count (around 11)
-			 * to avoid double decoding for SEF frames
-			 */
-			output_min_count = inst->fw_min_count;
-		}
-
-		return output_min_count;
-	}
-
-	/* initial handling before reconfig event arrived */
-	switch (inst->codec) {
-	case MSM_VIDC_H264:
-	case MSM_VIDC_HEVC:
-	case MSM_VIDC_APV:
-		output_min_count = 4;
-		break;
-	case MSM_VIDC_VP9:
-		output_min_count = 9;
-		break;
-	case MSM_VIDC_AV1:
-		output_min_count = 11;
-		break;
-	case MSM_VIDC_HEIC:
-		output_min_count = 3;
-		break;
-	default:
-		output_min_count = 4;
-		break;
-	}
-
-	return output_min_count;
-}
-
 u32 msm_vidc_input_extra_count(struct msm_vidc_inst *inst)
 {
 	u32 count = 0;
