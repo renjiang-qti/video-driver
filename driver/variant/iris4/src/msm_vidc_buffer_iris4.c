@@ -542,7 +542,7 @@ static u32 msm_vidc_encoder_output_size_iris4(struct msm_vidc_inst *inst)
 
 	if (codec == MSM_VIDC_APV) {
 		HFI_BUFFER_BITSTREAM_ENC_APVE(frame_size, f->fmt.pix_mp.width,
-			f->fmt.pix_mp.height);
+			f->fmt.pix_mp.height, hfi_rc_type);
 		return frame_size;
 	}
 
