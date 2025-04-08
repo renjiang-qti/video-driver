@@ -11132,7 +11132,7 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v",
+	.fwname = "vpu40_2v_v1",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 
@@ -11217,7 +11217,7 @@ static const struct msm_vidc_platform_data canoe_data_sku_v2 = {
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v",
+	.fwname = "vpu40_2v_v1",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
@@ -11297,7 +11297,7 @@ static const struct msm_vidc_platform_data canoe_data_sku_v1 = {
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v",
+	.fwname = "vpu40_2v_v1",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
@@ -11384,7 +11384,7 @@ static const struct msm_vidc_platform_data canoe_data_sku_v3 = {
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v",
+	.fwname = "vpu40_2v_v1",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
@@ -11520,6 +11520,7 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
 		core->platform->data.context_bank_tbl_size =
 			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.fwname = "vpu40_2v";
 
 		platform_cap_data = core->platform->data.inst_cap_data;
 		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
