@@ -662,6 +662,14 @@ enum hfi_view_id {
 
 #define HFI_PROP_EVA_SV_STAT_INFO                               0x030001AD
 
+#define HFI_PROP_LOOKAHEAD_SIZE                                 0x030001B1
+
+enum hfi_codec_mode_type {
+	HFI_CODEC_MODE_NONE = 0x0,
+	HFI_CODEC_MODE_LOOKAHEAD = 0x1,
+};
+#define HFI_PROP_CODEC_MODE                                     0x030001B2
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000

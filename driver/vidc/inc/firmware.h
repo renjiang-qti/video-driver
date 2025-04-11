@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_FIRMWARE_H_
@@ -14,6 +14,5 @@ int fw_unload(struct msm_vidc_core *core);
 int fw_suspend(struct msm_vidc_core *core);
 int fw_resume(struct msm_vidc_core *core);
 void fw_coredump(struct msm_vidc_core *core);
-void msm_vidc_md_video_queues_dump(struct msm_vidc_core *core);
 
 #endif

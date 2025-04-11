@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -873,6 +873,10 @@ static int __boot_firmware_iris3(struct msm_vidc_core *core)
 		if (rc)
 			return rc;
 
+		rc = __read_register(core, CTRL_INIT_IRIS3, &ctrl_init_val);
+		if (rc)
+			return rc;
+
 		if ((ctrl_status & HFI_CTRL_ERROR_FATAL) ||
 			(ctrl_status & HFI_CTRL_ERROR_UC_REGION_NOT_SET) ||
 			(ctrl_status & HFI_CTRL_ERROR_HW_FENCE_QUEUE)) {
@@ -891,6 +895,7 @@ static int __boot_firmware_iris3(struct msm_vidc_core *core)
 
 	if (count >= max_tries) {
 		d_vpr_e("Error booting up vidc firmware\n");
+		d_vpr_e("ctrl status %#x, ctrl init %#x\n", ctrl_status, ctrl_init_val);
 		return -ETIME;
 	}
 
@@ -945,6 +950,11 @@ int msm_vidc_decide_work_mode_iris3(struct msm_vidc_inst *inst)
 			V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_BYTES) {
 			work_mode = MSM_VIDC_STAGE_1;
 		}
+
+		if (inst->hfi_rc_type == HFI_RC_CBR_CFR ||
+		    inst->hfi_rc_type == HFI_RC_CBR_VFR)
+			work_mode = MSM_VIDC_STAGE_1;
+
 		if (inst->capabilities[LOSSLESS].value)
 			work_mode = MSM_VIDC_STAGE_2;
 

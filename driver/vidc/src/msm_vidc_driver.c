@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -1553,17 +1553,29 @@ int msm_vidc_process_streamon_output(struct msm_vidc_inst *inst)
 	enum msm_vidc_sub_state clear_sub_state = MSM_VIDC_SUB_STATE_NONE;
 	enum msm_vidc_sub_state set_sub_state = MSM_VIDC_SUB_STATE_NONE;
 	bool drain_pending = false;
+	bool drc_pending = false;
 
 	msm_vidc_scale_power(inst, true);
 
 	/*
-	 * client completed drc sequence, reset DRC and
-	 * MSM_VIDC_DRC_LAST_BUFFER substates
+	 * client completed drc/drain sequence, reset DRC/drain and
+	 * MSM_VIDC_DRC/DRAIN_LAST_BUFFER substates.
+	 * Note: both drc pending and drain pending is not possible
+	 * at any given time.
+	 * If drc pending is true then drain pending will be false,
+	 * if drc pending is false then drain pending may be true.
 	 */
-	if (is_sub_state(inst, MSM_VIDC_DRC) &&
-		is_sub_state(inst, MSM_VIDC_DRC_LAST_BUFFER)) {
+	drc_pending = is_sub_state(inst, MSM_VIDC_DRC) &&
+		is_sub_state(inst, MSM_VIDC_DRC_LAST_BUFFER);
+
+	drain_pending = is_sub_state(inst, MSM_VIDC_DRAIN) &&
+		is_sub_state(inst, MSM_VIDC_DRAIN_LAST_BUFFER);
+
+	if (drc_pending)
 		clear_sub_state = MSM_VIDC_DRC | MSM_VIDC_DRC_LAST_BUFFER;
-	}
+	else if (drain_pending)
+		clear_sub_state = MSM_VIDC_DRAIN | MSM_VIDC_DRAIN_LAST_BUFFER;
+
 	/*
 	 * Client is completing port reconfiguration, hence reallocate
 	 * input internal buffers before input port is resumed.
@@ -1598,20 +1610,22 @@ int msm_vidc_process_streamon_output(struct msm_vidc_inst *inst)
 
 	/*
 	 * fw input port is paused due to ipsc. now that client
-	 * completed drc sequence, resume fw input port provided
-	 * drain is not pending and input port is streaming.
+	 * completed drc/drain sequence, resume fw input port provided
+	 * input port is streaming state already (input already started).
 	 */
-	drain_pending = is_sub_state(inst, MSM_VIDC_DRAIN) &&
-		is_sub_state(inst, MSM_VIDC_DRAIN_LAST_BUFFER);
-	if (!drain_pending && is_state(inst, MSM_VIDC_INPUT_STREAMING)) {
-		if (is_sub_state(inst, MSM_VIDC_INPUT_PAUSE)) {
-			i_vpr_h(inst, "%s: resume input port\n", __func__);
+	if (is_sub_state(inst, MSM_VIDC_INPUT_PAUSE) &&
+	    is_state(inst, MSM_VIDC_INPUT_STREAMING)) {
+		i_vpr_h(inst, "%s: resume input port, drc %d, drain %d\n",
+			__func__, drc_pending, drain_pending);
+		if (drc_pending)
 			rc = venus_hfi_session_resume(inst, INPUT_PORT,
 					HFI_CMD_SETTINGS_CHANGE);
-			if (rc)
-				return rc;
-			clear_sub_state |= MSM_VIDC_INPUT_PAUSE;
-		}
+		else
+			rc = venus_hfi_session_resume(inst, INPUT_PORT,
+						      HFI_CMD_DRAIN);
+		if (rc)
+			return rc;
+		clear_sub_state |= MSM_VIDC_INPUT_PAUSE;
 	}
 
 	if (is_sub_state(inst, MSM_VIDC_FIRST_IPSC))

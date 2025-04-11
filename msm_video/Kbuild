@@ -2,6 +2,11 @@
 ifneq ($(CONFIG_ARCH_LEMANS), y)
 KBUILD_CPPFLAGS += -DCONFIG_MSM_MMRM=1
 endif
+
+ifeq ($(CONFIG_QCOM_MINIDUMP), y)
+KBUILD_CPPFLAGS += -DCONFIG_MSM_VIDC_MINIDUMP=1
+endif
+
 VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/msm_video/driver
 VIDEO_DRIVER_REL_PATH := ../msm_video/driver
 
@@ -158,4 +163,8 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform
 
 ifneq ($(CONFIG_MSM_VIDC_NORDAU), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_synx.o
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_MINIDUMP), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_md.o
 endif

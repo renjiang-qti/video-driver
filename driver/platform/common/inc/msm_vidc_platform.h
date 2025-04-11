@@ -417,5 +417,7 @@ int msm_vidc_set_vui_timing_info(void *instance, enum msm_vidc_inst_capability_t
 int msm_vidc_adjust_histogram_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_hdr10_max_rgb_info(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_set_conceal_color(void *instance, enum msm_vidc_inst_capability_type cap_id);
+int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl);
 
 #endif // _MSM_VIDC_PLATFORM_H_
