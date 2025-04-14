@@ -13,6 +13,7 @@
 #include "msm_venc.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_control.h"
 
 extern struct msm_vidc_core *g_core;
 
