@@ -241,12 +241,13 @@ void print_vidc_buffer(u32 tag, const char *tag_str, const char *str, struct msm
 	}
 
 	dprintk_inst(tag, tag_str, inst,
-		"%s: %s: idx %2d fd %3d off %d daddr %#llx inode %8lu ref %2ld size %8d filled %8d flags %#x ts %8lld attr %#x dbuf_get %d attach %d map %d counts(etb ebd ftb fbd) %4llu %4llu %4llu %4llu\n",
+		"%s: %s: idx %2d fd %3d off %d daddr %#llx inode %8lu ref %2ld size %8d filled %8d flags %#x ts %8lld attr %#x region %s dbuf_get %d attach %d map %d counts(etb ebd ftb fbd) %4llu %4llu %4llu %4llu\n",
 		str, buf_name(vbuf->type),
 		vbuf->index, vbuf->fd, vbuf->data_offset,
 		vbuf->device_addr, inode_num, ref_count, vbuf->buffer_size,
 		vbuf->data_size, vbuf->flags, vbuf->timestamp, vbuf->attr,
-		vbuf->dbuf_get, vbuf->attach ? 1 : 0, vbuf->sg_table ? 1 : 0,
+		buf_region_name(vbuf->region), vbuf->dbuf_get,
+		vbuf->attach ? 1 : 0, vbuf->sg_table ? 1 : 0,
 		inst->debug_count.etb, inst->debug_count.ebd,
 		inst->debug_count.ftb, inst->debug_count.fbd);
 
@@ -1802,6 +1803,9 @@ struct msm_vidc_fence *msm_vidc_get_fence_from_id(
 {
 	struct msm_vidc_fence *fence, *dummy_fence;
 	bool found = false;
+
+	if (!fence_list)
+		return NULL;
 
 	list_for_each_entry_safe(fence, dummy_fence, fence_list, list) {
 		if (fence->fence_id == fence_id) {
@@ -4322,6 +4326,9 @@ int msm_vidc_core_deinit(struct msm_vidc_core *core, bool force)
 {
 	int rc = 0;
 
+	if (!core)
+		return -EINVAL;
+
 	core_lock(core, __func__);
 	rc = msm_vidc_core_deinit_locked(core, force);
 	core_unlock(core, __func__);
@@ -4603,7 +4610,8 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 				}
 			}
 			/* capture total mappings of each cb */
-			if (buf->region < MSM_VIDC_REGION_MAX) {
+			if (buf->region >= MSM_VIDC_REGION_NONE &&
+				buf->region < MSM_VIDC_REGION_MAX) {
 				if ((buf->attach && buf->sg_table) || is_internal_buffer(buf->type))
 					size_kb_arr[ilog2(buf->region)] += buf->buffer_size;
 			}
