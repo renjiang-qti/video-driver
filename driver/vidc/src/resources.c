@@ -130,6 +130,7 @@ static struct device *devm_pd_get(struct device *dev, const char *name)
 	return pd;
 }
 
+#if (KERNEL_VERSION(6, 13, 0) > LINUX_VERSION_CODE)
 static void devm_opp_dl_release(void *res)
 {
 	struct device_link *link = (struct device_link *)res;
@@ -158,6 +159,7 @@ static int devm_opp_dl_get(struct device *dev, struct device *supplier)
 
 	return rc;
 }
+#endif
 
 static int __opp_set_rate(struct msm_vidc_core *core, u64 freq)
 {
@@ -321,7 +323,9 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	struct power_domain_info *pdinfo = NULL;
 	const struct pd_table *pd_tbl;
 	struct power_domain_set *pds;
+#if (KERNEL_VERSION(6, 13, 0) > LINUX_VERSION_CODE)
 	struct device **opp_vdevs = NULL;
+#endif
 	const char * const *opp_tbl;
 	u32 pd_count = 0, opp_count = 0, cnt = 0;
 	int rc = 0;
@@ -399,6 +403,17 @@ static int __init_power_domains(struct msm_vidc_core *core)
 	for (cnt = 0; cnt < opp_count; cnt++)
 		d_vpr_h("%s: opp name %s\n", __func__, opp_tbl[cnt]);
 
+#if (KERNEL_VERSION(6, 13, 0) <= LINUX_VERSION_CODE)
+	struct dev_pm_domain_attach_data opp_pd_data = {
+		.pd_names = opp_tbl,
+		.num_pd_names = opp_count,
+		.pd_flags = PD_FLAG_DEV_LINK_ON,
+	};
+	rc =  devm_pm_domain_attach_list(&core->pdev->dev, &opp_pd_data,
+				&core->platform->data.opp_pmdomain_tbl);
+	if (rc < 0)
+		return rc;
+#else
 	/* populate opp power domains(for rails) */
 	rc = devm_pm_opp_attach_genpd(&core->pdev->dev, opp_tbl, &opp_vdevs);
 	rc = -EINVAL;
@@ -414,6 +429,7 @@ static int __init_power_domains(struct msm_vidc_core *core)
 			return rc;
 		}
 	}
+#endif
 
 	/* initialize opp table from device tree */
 	rc = devm_pm_opp_of_add_table(&core->pdev->dev);
