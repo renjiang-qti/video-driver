@@ -364,13 +364,13 @@ int msm_vidc_querybuf(struct msm_vidc_inst *inst, void *data)
 			b->m.planes[0].m.mem_offset += 0;
 			break;
 		case INPUT_META_PORT:
-			b->m.planes[0].m.mem_offset += SRC_META_QUEUE_OFF_BASE;
+			b->m.offset += SRC_META_QUEUE_OFF_BASE;
 			break;
 		case OUTPUT_PORT:
 			b->m.planes[0].m.mem_offset += DST_QUEUE_OFF_BASE;
 			break;
 		case OUTPUT_META_PORT:
-			b->m.planes[0].m.mem_offset += DST_META_QUEUE_OFF_BASE;
+			b->m.offset += DST_META_QUEUE_OFF_BASE;
 			break;
 		default:
 			break;
