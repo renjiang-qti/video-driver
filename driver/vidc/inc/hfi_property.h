@@ -670,6 +670,8 @@ enum hfi_codec_mode_type {
 };
 #define HFI_PROP_CODEC_MODE                                     0x030001B2
 
+#define HFI_PROP_HEIF_TILES                                     0x030001B3
+
 #define HFI_PROP_END                                            0x03FFFFFF
 
 #define HFI_SESSION_ERROR_BEGIN                                 0x04000000
