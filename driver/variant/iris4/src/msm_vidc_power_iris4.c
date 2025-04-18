@@ -208,6 +208,15 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	codec_input->opb_frame_width = d->input_width;
 	codec_input->opb_frame_height = d->input_height;
 
+	/*
+	 * update opb_frame_width and opb_frame_height with downscale resolution
+	 * when downscale is enabled.
+	 */
+	if (inst->capabilities[SCALE_ENABLE].value) {
+		codec_input->opb_frame_width = inst->compose.width;
+		codec_input->opb_frame_height = inst->compose.height;
+	}
+
 	if (d->work_mode == MSM_VIDC_STAGE_1) {
 		codec_input->vsp_vpp_mode = CODEC_VSPVPP_MODE_1S;
 	} else if (d->work_mode == MSM_VIDC_STAGE_2) {
@@ -338,6 +347,8 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 		{"frame_rate", "%d", codec_input->frame_rate},
 		{"frame_width", "%d", codec_input->frame_width},
 		{"frame_height", "%d", codec_input->frame_height},
+		{"opb_frame_width", "%d", codec_input->opb_frame_width},
+		{"opb_frame_height", "%d", codec_input->opb_frame_height},
 		{"work_mode", "%d", d->work_mode},
 		{"encoder_or_decode", "%d", inst->domain},
 		{"chipset_gen", "%d", codec_input->chipset_gen},
