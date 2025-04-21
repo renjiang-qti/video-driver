@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020-2022, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
@@ -12,6 +12,7 @@
 #include <soc/qcom/socinfo.h>
 
 #include <media/v4l2_vidc_extensions.h>
+#include <media/videobuf2-core.h>
 #include "msm_vidc_canoe.h"
 #include "msm_vidc_inst.h"
 #include "msm_vidc_platform.h"
@@ -37,6 +38,7 @@
 #define APV_MAX_BITRATE         2000000000 /* 2 Gpbs */
 #define DEFAULT_BITRATE         20000000
 #define APV_DEFAULT_BITRATE     1000000000
+#define APV_MIN_BITRATE         (16 * 480) /* 480fps (max framerate) */
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
 #define MAXIMUM_DEC_FPS         480
@@ -569,6 +571,36 @@ static int msm_vidc_set_ring_buffer_count_canoe(void *instance,
 	return rc;
 }
 
+static int msm_vidc_adjust_bitrate_apv(void *instance,
+			struct v4l2_ctrl *ctrl)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+
+	u32 adjusted_value = 0, resolution = 0;
+	struct v4l2_format *output_fmt;
+
+	adjusted_value =  ctrl ? ctrl->val : inst->capabilities[BIT_RATE].value;
+	output_fmt = &inst->fmts[OUTPUT_PORT];
+	resolution = output_fmt->fmt.pix_mp.width * output_fmt->fmt.pix_mp.height;
+
+	/* Set user input bitrate for 8k session if input bitrate >= 2gpbs */
+	if (resolution >= 7680 * 4320 && msm_vidc_apv_bitrate >= 2000000000) {
+		/* Max bitrate allowed is 3.3gbps */
+		if (msm_vidc_apv_bitrate > 3.3 * 1000 * 1000 * 1000) {
+			i_vpr_h(inst, "%s:  limit APV bitrate to 3.3Gbps\n", __func__);
+			msm_vidc_apv_bitrate = 3.3 * 1000 * 1000 * 1000;
+		}
+		i_vpr_h(inst, "%s: update bitrate to %u for 8k resolution\n",
+			__func__, msm_vidc_apv_bitrate);
+		adjusted_value = msm_vidc_apv_bitrate;
+	}
+
+	msm_vidc_update_cap_value(inst, BIT_RATE, adjusted_value, __func__);
+
+	return rc;
+}
+
 static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 	/* {cap, domain, codec,
 	 *      min, max, step_or_mask, value,
@@ -1031,7 +1063,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{BIT_RATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
+		APV_MIN_BITRATE, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -2535,6 +2567,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -4322,6 +4360,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -4787,7 +4831,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{BIT_RATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
+		APV_MIN_BITRATE, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -6231,6 +6275,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -8002,6 +8052,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v3[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
@@ -8177,7 +8233,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 
 	{BIT_RATE, ENC, APV,
 		{PEAK_BITRATE},
-		NULL,
+		msm_vidc_adjust_bitrate_apv,
 		msm_vidc_set_bitrate},
 
 	{BITRATE_MODE, ENC, H264,
@@ -8749,6 +8805,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -9439,6 +9500,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		msm_vidc_adjust_hdr10_max_rgb_info,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -9619,7 +9685,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 
 	{BIT_RATE, ENC, APV,
 		{PEAK_BITRATE},
-		NULL,
+		msm_vidc_adjust_bitrate_apv,
 		msm_vidc_set_bitrate},
 
 	{BITRATE_MODE, ENC, H264,
@@ -10181,6 +10247,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -10874,6 +10945,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		msm_vidc_adjust_hdr10_max_rgb_info,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /* Default UBWC config for LPDDR5 */

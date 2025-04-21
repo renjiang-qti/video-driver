@@ -1724,19 +1724,26 @@ _yuv_bufcount_min, is_opb, num_vpp_pipes)           \
 #define	FW_APVE_FRAME_HEADER (4 + 26 + 192)
 #define	FW_APVE_TILE_HEADER (24 * 400)
 #define FW_APVE_HDR10P_AUX_SIZE	(4096 + 256)
-#define HFI_BUFFER_BITSTREAM_ENC_APVE(size, frame_width, frame_height) \
+#define HFI_BUFFER_BITSTREAM_ENC_APVE(size, frame_width, frame_height, \
+				rc_type) \
 		do { \
-			HFI_U32 aligned_width, aligned_height, bitstream_size; \
+			HFI_U32 aligned_width, aligned_height, bitstream_size, yuv_size; \
+			HFI_U32 bits_per_pixel_numerator, bits_per_pixel_denominator; \
 			aligned_width = HFI_ALIGN(frame_width, 32); \
 			aligned_height = HFI_ALIGN(frame_height, 32); \
-			bitstream_size = FW_APVE_FRAME_HEADER \
-				+ FW_APVE_TILE_HEADER \
-				+ (aligned_width * aligned_height \
-				* FW_APVE_BIN_DEP_SIZE * 2) \
-				+ FW_APVE_TOTAL_TILE_INFO_SIZE \
-				+ FW_APVE_TOTAL_STATS_INFO_SIZE \
-				+ FW_APVE_HDR10P_AUX_SIZE; \
-			size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
+			yuv_size = aligned_width * aligned_height * 2 * 2; \
+			yuv_size = HFI_ALIGN(yuv_size, HFI_ALIGNMENT_4096); \
+			bitstream_size = aligned_width * aligned_height; \
+			bits_per_pixel_numerator = 29; \
+			bits_per_pixel_denominator = 6; \
+			bitstream_size *= bits_per_pixel_numerator; \
+			bitstream_size = bitstream_size >> bits_per_pixel_denominator; \
+			bitstream_size += bitstream_size / 2; \
+			bitstream_size *= 3; \
+			if (rc_type == HFI_RC_OFF) \
+				bitstream_size = (bitstream_size << 1); \
+			bitstream_size = HFI_ALIGN(bitstream_size, HFI_ALIGNMENT_4096); \
+			size = (yuv_size < bitstream_size) ? yuv_size : bitstream_size; \
 		} while (0)
 
 #define HFI_IRIS3_ENC_TILE_SIZE_INFO(tile_size, tile_count, last_tile_size, \

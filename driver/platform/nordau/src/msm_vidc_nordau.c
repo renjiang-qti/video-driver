@@ -326,6 +326,7 @@ static struct msm_platform_core_capability core_data_nordau[] = {
 	{SUPPORTS_REQUESTS, 1},
 	{SUPPORTS_FREEZE, 0},
 	{NUM_VPU, 1},
+	{SKIP_DELAYED_UNMAP, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_nordau[] = {

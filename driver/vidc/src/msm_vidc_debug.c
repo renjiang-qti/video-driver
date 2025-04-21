@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define CREATE_TRACE_POINTS
@@ -192,6 +192,7 @@ int msm_vidc_bse_clock_voting = !1;
 int msm_vidc_tensilica_clock_voting = !1;
 int msm_vidc_ddr_bw = !1;
 int msm_vidc_llc_bw = !1;
+unsigned int msm_vidc_apv_bitrate = !1;
 
 bool msm_vidc_fw_dump = !true;
 EXPORT_SYMBOL(msm_vidc_fw_dump);
@@ -531,7 +532,8 @@ struct dentry *msm_vidc_debugfs_init_drv(void)
 			&msm_vidc_lossless_encode);
 	debugfs_create_u32("enable_bugon", 0644, dir,
 			&msm_vidc_enable_bugon);
-
+	debugfs_create_u32("apv_bitrate", 0644, dir,
+			&msm_vidc_apv_bitrate);
 	return dir;
 
 failed_create_dir:
