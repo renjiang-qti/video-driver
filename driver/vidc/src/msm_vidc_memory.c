@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/dma-buf.h>
@@ -544,7 +544,44 @@ exit:
 static u32 msm_vidc_buffer_region(struct msm_vidc_inst *inst,
 	enum msm_vidc_buffer_type buffer_type)
 {
-	return MSM_VIDC_NON_SECURE;
+	u32 region = MSM_VIDC_NON_SECURE;
+
+	switch (buffer_type) {
+	case MSM_VIDC_BUF_ARP:
+		region = MSM_VIDC_NON_SECURE;
+		break;
+	case MSM_VIDC_BUF_INPUT:
+		if (is_encode_session(inst))
+			region = MSM_VIDC_NON_SECURE_PIXEL;
+		else
+			region = MSM_VIDC_NON_SECURE_BITSTREAM;
+		break;
+	case MSM_VIDC_BUF_OUTPUT:
+		if (is_encode_session(inst))
+			region = MSM_VIDC_NON_SECURE_BITSTREAM;
+		else
+			region = MSM_VIDC_NON_SECURE_PIXEL;
+		break;
+	case MSM_VIDC_BUF_DPB:
+	case MSM_VIDC_BUF_VPSS:
+	case MSM_VIDC_BUF_PARTIAL_DATA:
+		region = MSM_VIDC_NON_SECURE_PIXEL;
+		break;
+	case MSM_VIDC_BUF_INPUT_META:
+	case MSM_VIDC_BUF_OUTPUT_META:
+	case MSM_VIDC_BUF_BIN:
+	case MSM_VIDC_BUF_COMV:
+	case MSM_VIDC_BUF_NON_COMV:
+	case MSM_VIDC_BUF_LINE:
+	case MSM_VIDC_BUF_PERSIST:
+		region = MSM_VIDC_NON_SECURE;
+		break;
+	default:
+		i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
+			__func__, buffer_type);
+	}
+
+	return region;
 }
 
 static int msm_vidc_iommu_map(struct msm_vidc_core *core, struct msm_vidc_mem *mem)

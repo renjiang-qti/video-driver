@@ -37,6 +37,7 @@
 #define APV_MAX_BITRATE         2000000000 /* 2 Gpbs */
 #define DEFAULT_BITRATE         20000000
 #define APV_DEFAULT_BITRATE     1000000000
+#define APV_MIN_BITRATE         (16 * 480) /* 480fps (max framerate) */
 #define MINIMUM_FPS             1
 #define MAXIMUM_FPS             480
 #define MAXIMUM_DEC_FPS         480
@@ -1031,7 +1032,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{BIT_RATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
+		APV_MIN_BITRATE, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -2535,6 +2536,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -4322,6 +4329,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -4787,7 +4800,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 			CAP_FLAG_DYNAMIC_ALLOWED},
 
 	{BIT_RATE, ENC, APV,
-		1, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
+		APV_MIN_BITRATE, APV_MAX_BITRATE, 1, APV_DEFAULT_BITRATE,
 		V4L2_CID_MPEG_VIDEO_BITRATE,
 		HFI_PROP_TOTAL_BITRATE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
@@ -6231,6 +6244,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 /*
@@ -8002,6 +8021,12 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v3[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{HEIF_TILES, DEC, HEIC,
+		0, INT_MAX, 1, 0,
+		V4L2_CID_MPEG_VIDC_HEIF_TILES,
+		HFI_PROP_HEIF_TILES,
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
@@ -8749,6 +8774,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -9439,6 +9469,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		msm_vidc_adjust_hdr10_max_rgb_info,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -10181,6 +10216,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /*
@@ -10874,6 +10914,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		msm_vidc_adjust_hdr10_max_rgb_info,
 		NULL},
+
+	{HEIF_TILES, DEC, HEIC,
+		{0},
+		NULL,
+		msm_vidc_set_u32},
 };
 
 /* Default UBWC config for LPDDR5 */
