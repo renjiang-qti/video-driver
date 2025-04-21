@@ -154,6 +154,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_ANDROID",
             "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_{}".format(lunch_target.upper()),
         ]
@@ -162,6 +163,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
         print("dist_target_name: " + dist_target_name)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_ANDROID",
             "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_{}".format(target.upper()),
         ]
