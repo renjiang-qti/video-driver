@@ -478,7 +478,7 @@ int get_min_clock_index(struct msm_vidc_core *core)
 
 	/* min clock rate will always be last entry in freq table */
 	venus_hfi_for_each_clock(core, cl) {
-		if (cl->has_scaling)
+		if (!cl->has_scaling)
 			continue;
 
 		min_clk_idx = cl->freq_count - 1;

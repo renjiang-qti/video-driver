@@ -1042,6 +1042,9 @@ static int msm_vdec_subscribe_property(struct msm_vidc_inst *inst,
 		} else if (inst->codec == MSM_VIDC_APV) {
 			subscribe_prop_size = core->platform->data.dec_input_prop_size_apv;
 			subcribe_prop = core->platform->data.dec_input_prop_apv;
+		} else if (inst->codec == MSM_VIDC_MPEG2) {
+			subscribe_prop_size = core->platform->data.dec_input_prop_size_mpeg2;
+			subcribe_prop = core->platform->data.dec_input_prop_mpeg2;
 		} else {
 			i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 			subcribe_prop = NULL;
@@ -1077,6 +1080,9 @@ static int msm_vdec_subscribe_property(struct msm_vidc_inst *inst,
 		} else if (inst->codec == MSM_VIDC_APV) {
 			subscribe_prop_size = core->platform->data.dec_output_prop_size_apv;
 			subcribe_prop = core->platform->data.dec_output_prop_apv;
+		} else if (inst->codec == MSM_VIDC_MPEG2) {
+			subscribe_prop_size = core->platform->data.dec_output_prop_size_mpeg2;
+			subcribe_prop = core->platform->data.dec_output_prop_mpeg2;
 		} else {
 			i_vpr_e(inst, "%s: unsupported codec: %d\n", __func__, inst->codec);
 			subcribe_prop = NULL;
