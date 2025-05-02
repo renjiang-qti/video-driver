@@ -8718,7 +8718,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{LOOKAHEAD_ENCODE_SIZE, ENC, H264 | HEVC,
 		{0},
 		msm_vidc_adjust_lookahead_encode_size,
-		msm_vidc_set_u32},
+		msm_vidc_set_lookahead_encode_size},
 
 	{META_SEI_MASTERING_DISP, ENC, HEVC | HEIC,
 		{0},
