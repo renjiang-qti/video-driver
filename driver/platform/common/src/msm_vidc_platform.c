@@ -838,6 +838,43 @@ int msm_vidc_adjust_entropy_mode(void *instance, struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
+int msm_vidc_adjust_session_core_id(void *instance, struct v4l2_ctrl *ctrl)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *) instance;
+	u32 device_core_mask = HFI_CORE_ID_0;
+	struct msm_vidc_core *core = inst->core;
+
+	/*
+	 * encoder supports multiple cores for a single session on specific
+	 * scenarios. certain gop structures can utilize both the cores
+	 * independently.
+	 * 1. Hierarchical-P
+	 * 2. All Intra
+	 * 3. Lossless Encoding
+	 * if in one of these scenarios, set device_core_mask to the available
+	 * cores mask.
+	 */
+	if ((is_encode_session(inst)) && (inst->codec != MSM_VIDC_HEIC) &&
+		((inst->capabilities[LAYER_TYPE].value ==
+		V4L2_MPEG_VIDEO_HEVC_HIERARCHICAL_CODING_P) ||
+		(inst->capabilities[ALL_INTRA].value == 1) ||
+		(inst->capabilities[LOSSLESS].value == 1))) {
+		device_core_mask = (HFI_CORE_ID_0 | HFI_CORE_ID_1) &
+			core->full_virtualization_data.device_core_mask;
+	} else {
+		if (core->full_virtualization_data.device_core_mask &
+			HFI_CORE_ID_0)
+			device_core_mask = HFI_CORE_ID_0;
+		else
+			device_core_mask = HFI_CORE_ID_1;
+	}
+
+	msm_vidc_update_cap_value(inst, CORE_ID_MASK, device_core_mask, __func__);
+
+	return rc;
+}
+
 int msm_vidc_adjust_bitrate_mode(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
@@ -2963,7 +3000,7 @@ int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ct
 	s32 value;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	struct v4l2_format *f;
-	u32 width, height, frame_rate;
+	u32 width = 0, height = 0, frame_rate = 0;
 	s64 hfi_rc_type = -1;
 
 	value = ctrl ? ctrl->val : inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value;

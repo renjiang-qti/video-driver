@@ -654,6 +654,13 @@ enum hfi_view_id {
 
 #define HFI_PROP_OPEN_GOP                                       0x030001A6
 
+enum hfi_core_id {
+	HFI_CORE_ID_0 = 0x1,
+	HFI_CORE_ID_1 = 0x2,
+};
+
+#define HFI_PROP_CORE_ID                                        0x030001A9
+
 #define HFI_PROP_PAIRED_YUV                                     0x030001AA
 
 #define HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO      0x030001AB
