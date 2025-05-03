@@ -6,6 +6,7 @@
 
 #include "perf_static_model.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_platform.h"
 
 #define ENABLE_FINEBITRATE_SUBUHD60 0
 
@@ -53,6 +54,15 @@ static u32 encoder_vpp_cycles_2pipe_iris4[3][8] = {
 	{ 156, 156, 156, 156, 156, 156, 156, 156},
 };
 
+static u32 encoder_vpp_cycles_1pipe_iris4[3][8] = {
+	//h264e LCU16: 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 141, 141, 141, 141, 141, 143, 145, 145},
+	//h265e LCU32: 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 141, 141, 141, 142, 143, 145, 146, 146},
+	//vpss_m2m   : 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 156, 156, 156, 156, 156, 156, 156, 156},
+};
+
 static u32 decoder_vpp_cycles_2pipe_iris4[4][8] = {
 	//h265/h264 LCU16/32: 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
 	{ 204, 204, 204, 204, 203, 210, 217, 219},
@@ -62,6 +72,17 @@ static u32 decoder_vpp_cycles_2pipe_iris4[4][8] = {
 	{ 205, 217, 217, 230, 242, 240, 238, 241},
 	//vvc/200cycle LCU128  : 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
 	{ 205, 217, 217, 230, 242, 240, 238, 241},
+};
+
+static u32 decoder_vpp_cycles_1pipe_iris4[4][8] = {
+	//h265/h264 LCU16/32: 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 202, 202, 202, 202, 202, 202, 202, 202},
+	//h265/vp9/av1 LCU64: 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 203, 203, 203, 203, 202, 209, 215, 215},
+	//av1          LCU128  : 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 203, 203, 203, 209, 214, 216, 218, 218},
+	//vvc/200cycle LCU128  : 8KUHD, middle, UHD, middle, 1080p, middle, 720p, end
+	{ 203, 203, 203, 209, 214, 216, 218, 218},
 };
 
 //Video IP Core Technology: bitrate constraint
@@ -396,10 +417,19 @@ u32 get_vpp_cycles(struct api_calculation_input codec_input)
 		j = 7;
 	}
 
-	if (codec_input.decoder_or_encoder == CODEC_DECODER)
-		ret = decoder_vpp_cycles_2pipe_iris4[i][j];
-	else
-		ret = encoder_vpp_cycles_2pipe_iris4[i][j];
+	if (codec_input.decoder_or_encoder == CODEC_DECODER) {
+		if (codec_input.vpu_ver == VPU_VERSION_IRIS4_1P) {
+			ret = decoder_vpp_cycles_1pipe_iris4[i][j];
+		} else {
+			ret = decoder_vpp_cycles_2pipe_iris4[i][j];
+		}
+	} else {
+		if (codec_input.vpu_ver == VPU_VERSION_IRIS4_1P) {
+			ret = encoder_vpp_cycles_1pipe_iris4[i][j];
+		} else {
+			ret = encoder_vpp_cycles_2pipe_iris4[i][j];
+		}
+	}
 	return ret;
 }
 
