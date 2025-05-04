@@ -42,6 +42,7 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_CANOE)
 #include "msm_vidc_canoe.h"
+#include "msm_vidc_alor.h"
 #include "msm_vidc_iris4.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_SERAPH)
@@ -279,6 +280,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,canoe-vidc-v2",
 		.get_platform_data          = msm_vidc_get_platform_data_canoe,
 		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
+	{
+		.compat                     = "qcom,alor-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_alor,
+		.init_platform              = msm_vidc_init_platform_alor,
 		.init_iris                  = msm_vidc_init_iris4,
 	},
 #endif
