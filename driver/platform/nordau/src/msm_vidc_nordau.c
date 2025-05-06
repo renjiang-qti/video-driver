@@ -2009,6 +2009,12 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 		V4L2_CID_MPEG_VIDC_CAPTURE_DATA_OFFSET,
 		0,
 		CAP_FLAG_NONE},
+
+	{CORE_ID_MASK, ENC | DEC, CODECS_ALL,
+		0, 3, 1, 0,
+		0,
+		HFI_PROP_CORE_ID,
+		CAP_FLAG_NONE},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nordau[] = {
@@ -2304,10 +2310,10 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nord
 		NULL,
 		msm_vidc_set_frame_qp},
 	{LAYER_TYPE, ENC, H264,
-		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, LEVEL}},
+		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, LEVEL, CORE_ID_MASK}},
 
 	{LAYER_TYPE, ENC, HEVC,
-		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, OPEN_GOP}},
+		{CONTENT_ADAPTIVE_CODING, LTR_COUNT, OPEN_GOP, CORE_ID_MASK}},
 
 	{LAYER_ENABLE, ENC, H264 | HEVC,
 		{CONTENT_ADAPTIVE_CODING, LEVEL}},
@@ -2539,9 +2545,19 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nord
 		msm_vidc_set_u32},
 
 	{ALL_INTRA, ENC, H264 | HEVC,
-		{LTR_COUNT, IR_PERIOD, SLICE_MODE, BIT_RATE},
+		{LTR_COUNT, IR_PERIOD, SLICE_MODE, BIT_RATE, CORE_ID_MASK},
 		msm_vidc_adjust_all_intra,
 		NULL},
+
+	{LOSSLESS, ENC, HEVC,
+		{CORE_ID_MASK},
+		NULL,
+		NULL},
+
+	{CORE_ID_MASK, ENC | DEC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_session_core_id,
+		msm_vidc_set_u32},
 
 	{META_EVA_STATS, ENC, HEVC,
 		{0},
