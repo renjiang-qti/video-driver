@@ -4106,4 +4106,22 @@ int msm_vidc_set_conceal_color(void *instance,
 	return rc;
 }
 
+int msm_vidc_set_lookahead_encode_size(void *instance,
+	enum msm_vidc_inst_capability_type cap_id)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	u32 hfi_value;
+
+	/* skip setting lookahead size if lookahead not enabled */
+	if (!inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
+		return 0;
+
+	hfi_value = inst->capabilities[LOOKAHEAD_ENCODE_SIZE].value;
+	rc = msm_vidc_packetize_control(inst, cap_id, HFI_PAYLOAD_U32,
+			&hfi_value, sizeof(u32), __func__);
+
+	return rc;
+}
+
 /********************* End of Control Set functions **************************/

@@ -241,12 +241,13 @@ void print_vidc_buffer(u32 tag, const char *tag_str, const char *str, struct msm
 	}
 
 	dprintk_inst(tag, tag_str, inst,
-		"%s: %s: idx %2d fd %3d off %d daddr %#llx inode %8lu ref %2ld size %8d filled %8d flags %#x ts %8lld attr %#x dbuf_get %d attach %d map %d counts(etb ebd ftb fbd) %4llu %4llu %4llu %4llu\n",
+		"%s: %s: idx %2d fd %3d off %d daddr %#llx inode %8lu ref %2ld size %8d filled %8d flags %#x ts %8lld attr %#x region %s dbuf_get %d attach %d map %d counts(etb ebd ftb fbd) %4llu %4llu %4llu %4llu\n",
 		str, buf_name(vbuf->type),
 		vbuf->index, vbuf->fd, vbuf->data_offset,
 		vbuf->device_addr, inode_num, ref_count, vbuf->buffer_size,
 		vbuf->data_size, vbuf->flags, vbuf->timestamp, vbuf->attr,
-		vbuf->dbuf_get, vbuf->attach ? 1 : 0, vbuf->sg_table ? 1 : 0,
+		buf_region_name(vbuf->region), vbuf->dbuf_get,
+		vbuf->attach ? 1 : 0, vbuf->sg_table ? 1 : 0,
 		inst->debug_count.etb, inst->debug_count.ebd,
 		inst->debug_count.ftb, inst->debug_count.fbd);
 
