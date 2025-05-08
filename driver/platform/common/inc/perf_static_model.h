@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _PERF_STATIC_MODEL_H_
@@ -111,6 +111,15 @@ enum refframe_complexity {
 	REFFRAME_COMPLEXITY_PWR = 1,
 };
 
+enum video_adv_feature {
+	VIDEO_ADV_FEATURE_NONE = 0,
+	FEATURE_APV_ROTATION = 1,
+	FEATURE_MVP_E_SEARCHRANGE_TILE = 2,
+	FEATURE_L1_CACHE_MISS = 3,
+	FEATURE_DUAL_BSE = 4,
+	FEATURE_LOOKAHEAD_ENCODE = 5,
+};
+
 struct api_calculation_input {
 	/*2: decoder; 1: encoder */
 	u32 decoder_or_encoder;
@@ -160,6 +169,8 @@ struct api_calculation_input {
 	u32 format_10bpp;
 	/* used in freq and bitrate table selection*/
 	u32 vpu_ver;
+	/* one of enum video_adv_feature { .. } */
+	u32 video_adv_feature;
 };
 
 struct corner_voting {

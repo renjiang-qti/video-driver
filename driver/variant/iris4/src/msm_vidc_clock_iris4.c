@@ -617,6 +617,12 @@ static int calculate_vpp_min_freq(struct api_calculation_input codec_input,
 		vpp_hw_min_frequency =
 			(vpp_target_clk_per_mb * codec_mbspersession +
 			 codec_input.pipe_num - 1) / (codec_input.pipe_num);
+		if (codec_input.video_adv_feature == FEATURE_LOOKAHEAD_ENCODE) {
+			if (codec_input.hierachical_layer == CODEC_GOP_IPP)
+				vpp_hw_min_frequency = vpp_hw_min_frequency << 1;
+			else /* for IBP, IBBP, IBBBP, IBBBBP etc cases */
+				vpp_hw_min_frequency = (vpp_hw_min_frequency * 3) >> 1;
+		}
 	}
 
 	if (codec_input.vsp_vpp_mode == CODEC_VSPVPP_MODE_2S) {
