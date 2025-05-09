@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -1067,12 +1067,17 @@ void msm_v4l2_m2m_device_run(void *priv)
 
 void msm_v4l2_m2m_job_abort(void *priv)
 {
+	struct v4l2_m2m_dev *m2m_dev = NULL;
+	struct v4l2_m2m_ctx *m2m_ctx = NULL;
 	struct msm_vidc_inst *inst = priv;
 
-	if (!inst) {
+	if (!inst || !inst->fh.m2m_ctx) {
 		d_vpr_e("%s: invalid params\n", __func__);
 		return;
 	}
+	m2m_ctx = inst->fh.m2m_ctx;
+	m2m_dev = m2m_ctx->m2m_dev;
+
 	i_vpr_h(inst, "%s: m2m job aborted\n", __func__);
-	v4l2_m2m_job_finish(inst->m2m_dev, inst->m2m_ctx);
+	v4l2_m2m_job_finish(m2m_dev, m2m_ctx);
 }

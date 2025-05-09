@@ -8559,7 +8559,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{LEVEL, ENC | DEC, APV,
 		{0},
 		NULL,
-		msm_vidc_set_level},
+		msm_vidc_set_apv_level_band},
 
 	{AV1_TIER, DEC, AV1,
 		{0},
@@ -10011,7 +10011,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{LEVEL, ENC | DEC, APV,
 		{0},
 		NULL,
-		msm_vidc_set_level},
+		msm_vidc_set_apv_level_band},
 
 	{AV1_TIER, DEC, AV1,
 		{0},
