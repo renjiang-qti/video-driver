@@ -1898,8 +1898,9 @@ exit:
 	return rc;
 }
 
-int msm_vidc_get_control(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
+int msm_vidc_get_control(struct msm_vidc_inst *inst, void *data)
 {
+	struct v4l2_ctrl *ctrl = data;
 	int rc = 0;
 	enum msm_vidc_inst_capability_type cap_id;
 

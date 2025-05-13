@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MSM_VIDC_V4L2_H_
@@ -27,7 +27,9 @@ struct poll_table_struct;
 struct media_request;
 struct file;
 enum v4l2_buf_type;
+struct msm_vidc_inst;
 
+struct video_device *get_video_device(struct msm_vidc_inst *inst);
 int msm_v4l2_open(struct file *filp);
 int msm_v4l2_close(struct file *filp);
 int msm_v4l2_querycap(struct file *filp, void *fh,
