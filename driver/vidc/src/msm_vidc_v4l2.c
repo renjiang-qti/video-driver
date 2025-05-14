@@ -4,6 +4,8 @@
  * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <media/v4l2-event.h>
+#include <media/v4l2-ioctl.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/videobuf2-v4l2.h>
 
@@ -54,6 +56,11 @@ static int __msm_v4l2_reqbufs(struct msm_vidc_inst *inst, void *data)
 	return inst->event_handle(inst, MSM_VIDC_REQBUFS, data);
 }
 
+static int __msm_v4l2_op_s_ctrl(struct msm_vidc_inst *inst, void *data)
+{
+	return inst->event_handle(inst, MSM_VIDC_S_CTRL, data);
+}
+
 static int __msm_v4l2_decoder_cmd(struct msm_vidc_inst *inst, void *data)
 {
 	struct v4l2_decoder_cmd *dec = data;
@@ -82,7 +89,7 @@ static int __msm_v4l2_encoder_cmd(struct msm_vidc_inst *inst, void *data)
 	return inst->event_handle(inst, event, NULL);
 }
 
-unsigned int msm_v4l2_poll(struct file *filp, struct poll_table_struct *pt)
+static unsigned int msm_v4l2_poll(struct file *filp, struct poll_table_struct *pt)
 {
 	int poll = 0;
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, NULL);
@@ -106,7 +113,7 @@ exit:
 	return poll;
 }
 
-int msm_v4l2_open(struct file *filp)
+static int msm_v4l2_open(struct file *filp)
 {
 	struct video_device *vdev = video_devdata(filp);
 	struct msm_video_device *vid_dev =
@@ -127,7 +134,7 @@ int msm_v4l2_open(struct file *filp)
 	return 0;
 }
 
-int msm_v4l2_close(struct file *filp)
+static int msm_v4l2_close(struct file *filp)
 {
 	struct msm_vidc_inst *inst;
 	int rc = 0;
@@ -146,7 +153,7 @@ int msm_v4l2_close(struct file *filp)
 	return rc;
 }
 
-int msm_v4l2_querycap(struct file *filp, void *fh,
+static int msm_v4l2_querycap(struct file *filp, void *fh,
 			struct v4l2_capability *cap)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -154,7 +161,7 @@ int msm_v4l2_querycap(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_querycap, cap, false, __func__);
 }
 
-int msm_v4l2_enum_fmt(struct file *filp, void *fh,
+static int msm_v4l2_enum_fmt(struct file *filp, void *fh,
 					struct v4l2_fmtdesc *fmtdesc)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -162,21 +169,21 @@ int msm_v4l2_enum_fmt(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_enum_fmt, fmtdesc, false, __func__);
 }
 
-int msm_v4l2_try_fmt(struct file *filp, void *fh, struct v4l2_format *data)
+static int msm_v4l2_try_fmt(struct file *filp, void *fh, struct v4l2_format *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
 
 	return msm_vidc_session(instance, __msm_v4l2_try_fmt, data, false, __func__);
 }
 
-int msm_v4l2_s_fmt(struct file *filp, void *fh, struct v4l2_format *fmt)
+static int msm_v4l2_s_fmt(struct file *filp, void *fh, struct v4l2_format *fmt)
 {
 	void *instance = get_vidc_inst(filp, fh);
 
 	return msm_vidc_session(instance, __msm_v4l2_s_fmt, fmt, false, __func__);
 }
 
-int msm_v4l2_g_fmt(struct file *filp, void *fh,
+static int msm_v4l2_g_fmt(struct file *filp, void *fh,
 					struct v4l2_format *f)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -184,7 +191,7 @@ int msm_v4l2_g_fmt(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_g_fmt, f, false, __func__);
 }
 
-int msm_v4l2_s_selection(struct file *filp, void *fh,
+static int msm_v4l2_s_selection(struct file *filp, void *fh,
 					struct v4l2_selection *sel)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -192,7 +199,7 @@ int msm_v4l2_s_selection(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_s_selection, sel, false, __func__);
 }
 
-int msm_v4l2_g_selection(struct file *filp, void *fh,
+static int msm_v4l2_g_selection(struct file *filp, void *fh,
 					struct v4l2_selection *sel)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -200,7 +207,7 @@ int msm_v4l2_g_selection(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_g_selection, sel, false, __func__);
 }
 
-int msm_v4l2_s_parm(struct file *filp, void *fh,
+static int msm_v4l2_s_parm(struct file *filp, void *fh,
 					struct v4l2_streamparm *p)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -208,7 +215,7 @@ int msm_v4l2_s_parm(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_s_param, p, false, __func__);
 }
 
-int msm_v4l2_g_parm(struct file *filp, void *fh,
+static int msm_v4l2_g_parm(struct file *filp, void *fh,
 					struct v4l2_streamparm *p)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -216,7 +223,7 @@ int msm_v4l2_g_parm(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_g_param, p, false, __func__);
 }
 
-int msm_v4l2_reqbufs(struct file *filp, void *fh,
+static int msm_v4l2_reqbufs(struct file *filp, void *fh,
 				struct v4l2_requestbuffers *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -224,7 +231,7 @@ int msm_v4l2_reqbufs(struct file *filp, void *fh,
 	return msm_vidc_session(instance, __msm_v4l2_reqbufs, data, false, __func__);
 }
 
-int msm_v4l2_querybuf(struct file *filp, void *fh,
+static int msm_v4l2_querybuf(struct file *filp, void *fh,
 				struct v4l2_buffer *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -232,7 +239,7 @@ int msm_v4l2_querybuf(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_querybuf, data, false, __func__);
 }
 
-int msm_v4l2_create_bufs(struct file *filp, void *fh,
+static int msm_v4l2_create_bufs(struct file *filp, void *fh,
 				struct v4l2_create_buffers *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -240,7 +247,7 @@ int msm_v4l2_create_bufs(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_create_bufs, data, false, __func__);
 }
 
-int msm_v4l2_prepare_buf(struct file *filp, void *fh,
+static int msm_v4l2_prepare_buf(struct file *filp, void *fh,
 				struct v4l2_buffer *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -248,7 +255,7 @@ int msm_v4l2_prepare_buf(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_prepare_buf, data, false, __func__);
 }
 
-int msm_v4l2_qbuf(struct file *filp, void *fh,
+static int msm_v4l2_qbuf(struct file *filp, void *fh,
 				struct v4l2_buffer *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -270,7 +277,7 @@ int msm_v4l2_qbuf(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_qbuf, data, false, __func__);
 }
 
-int msm_v4l2_dqbuf(struct file *filp, void *fh,
+static int msm_v4l2_dqbuf(struct file *filp, void *fh,
 				struct v4l2_buffer *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -278,7 +285,7 @@ int msm_v4l2_dqbuf(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_dqbuf, data, true, __func__);
 }
 
-int msm_v4l2_streamon(struct file *filp, void *fh,
+static int msm_v4l2_streamon(struct file *filp, void *fh,
 				enum v4l2_buf_type data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -286,7 +293,7 @@ int msm_v4l2_streamon(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_streamon, &data, false, __func__);
 }
 
-int msm_v4l2_streamoff(struct file *filp, void *fh,
+static int msm_v4l2_streamoff(struct file *filp, void *fh,
 				enum v4l2_buf_type data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -294,7 +301,7 @@ int msm_v4l2_streamoff(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_streamoff, &data, true, __func__);
 }
 
-int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
+static int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
 	void *instance = container_of(fh, struct msm_vidc_inst, fh);
@@ -303,7 +310,7 @@ int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 			(void *)data, false, __func__);
 }
 
-int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
+static int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
 	void *instance = container_of(fh, struct msm_vidc_inst, fh);
@@ -312,7 +319,7 @@ int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
 			(void *)data, true, __func__);
 }
 
-int msm_v4l2_try_decoder_cmd(struct file *filp, void *fh,
+static int msm_v4l2_try_decoder_cmd(struct file *filp, void *fh,
 			     struct v4l2_decoder_cmd *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -321,7 +328,7 @@ int msm_v4l2_try_decoder_cmd(struct file *filp, void *fh,
 			(union msm_v4l2_cmd *)data, false, __func__);
 }
 
-int msm_v4l2_decoder_cmd(struct file *filp, void *fh,
+static int msm_v4l2_decoder_cmd(struct file *filp, void *fh,
 				struct v4l2_decoder_cmd *dec)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -329,7 +336,7 @@ int msm_v4l2_decoder_cmd(struct file *filp, void *fh,
 	return msm_vidc_session(instance, __msm_v4l2_decoder_cmd, dec, false, __func__);
 }
 
-int msm_v4l2_try_encoder_cmd(struct file *filp, void *fh,
+static int msm_v4l2_try_encoder_cmd(struct file *filp, void *fh,
 			     struct v4l2_encoder_cmd *enc)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -338,7 +345,7 @@ int msm_v4l2_try_encoder_cmd(struct file *filp, void *fh,
 			(union msm_v4l2_cmd *)enc, false, __func__);
 }
 
-int msm_v4l2_encoder_cmd(struct file *filp, void *fh,
+static int msm_v4l2_encoder_cmd(struct file *filp, void *fh,
 	struct v4l2_encoder_cmd *enc)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -346,7 +353,7 @@ int msm_v4l2_encoder_cmd(struct file *filp, void *fh,
 	return msm_vidc_session(instance, __msm_v4l2_encoder_cmd, enc, false, __func__);
 }
 
-int msm_v4l2_enum_framesizes(struct file *filp, void *fh,
+static int msm_v4l2_enum_framesizes(struct file *filp, void *fh,
 				struct v4l2_frmsizeenum *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -354,7 +361,7 @@ int msm_v4l2_enum_framesizes(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_enum_framesizes, data, false, __func__);
 }
 
-int msm_v4l2_enum_frameintervals(struct file *filp, void *fh,
+static int msm_v4l2_enum_frameintervals(struct file *filp, void *fh,
 				struct v4l2_frmivalenum *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -362,7 +369,7 @@ int msm_v4l2_enum_frameintervals(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_enum_frameintervals, data, false, __func__);
 }
 
-int msm_v4l2_queryctrl(struct file *filp, void *fh,
+static int msm_v4l2_queryctrl(struct file *filp, void *fh,
 	struct v4l2_queryctrl *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -370,7 +377,7 @@ int msm_v4l2_queryctrl(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_query_ctrl, data, false, __func__);
 }
 
-int msm_v4l2_querymenu(struct file *filp, void *fh,
+static int msm_v4l2_querymenu(struct file *filp, void *fh,
 	struct v4l2_querymenu *data)
 {
 	void *instance = get_vidc_inst(filp, fh);
@@ -378,24 +385,50 @@ int msm_v4l2_querymenu(struct file *filp, void *fh,
 	return msm_vidc_session(instance, msm_vidc_query_menu, data, false, __func__);
 }
 
-int msm_v4l2_request_validate(struct media_request *req)
+static int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
+{
+	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+	struct msm_vidc_ctrl_data *priv_ctrl_data;
+
+	/*
+	 * v4l2_ctrl_modify_range may internally call s_ctrl
+	 * which will again try to acquire lock leading to deadlock,
+	 * Add check to avoid such scenario.
+	 */
+	priv_ctrl_data = ctrl && ctrl->priv ? ctrl->priv : NULL;
+	if (priv_ctrl_data && priv_ctrl_data->skip_s_ctrl) {
+		d_vpr_l("%s: skip s_ctrl (%s)\n", __func__, ctrl->name);
+		return 0;
+	}
+
+	return msm_vidc_session(instance, __msm_v4l2_op_s_ctrl, ctrl, true, __func__);
+}
+
+static int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+{
+	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+
+	return msm_vidc_session(instance, msm_vidc_get_control, ctrl, true, __func__);
+}
+
+static int msm_v4l2_request_validate(struct media_request *req)
 {
 	d_vpr_l("%s()\n", __func__);
 	return vb2_request_validate(req);
 }
 
-void msm_v4l2_request_queue(struct media_request *req)
+static void msm_v4l2_request_queue(struct media_request *req)
 {
 	d_vpr_l("%s()\n", __func__);
 	v4l2_m2m_request_queue(req);
 }
 
-void msm_v4l2_m2m_device_run(void *priv)
+static void msm_v4l2_m2m_device_run(void *priv)
 {
 	d_vpr_l("%s()\n", __func__);
 }
 
-void msm_v4l2_m2m_job_abort(void *priv)
+static void msm_v4l2_m2m_job_abort(void *priv)
 {
 	struct v4l2_m2m_dev *m2m_dev = NULL;
 	struct v4l2_m2m_ctx *m2m_ctx = NULL;
@@ -410,4 +443,125 @@ void msm_v4l2_m2m_job_abort(void *priv)
 
 	i_vpr_h(inst, "%s: m2m job aborted\n", __func__);
 	v4l2_m2m_job_finish(m2m_dev, m2m_ctx);
+}
+
+static const struct v4l2_file_operations msm_v4l2_file_operations = {
+	.owner                          = THIS_MODULE,
+	.open                           = msm_v4l2_open,
+	.release                        = msm_v4l2_close,
+	.unlocked_ioctl                 = video_ioctl2,
+	.poll                           = msm_v4l2_poll,
+};
+
+static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_enc = {
+	.vidioc_querycap                = msm_v4l2_querycap,
+	.vidioc_enum_fmt_vid_cap        = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_vid_out        = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_meta_cap       = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_meta_out       = msm_v4l2_enum_fmt,
+	.vidioc_enum_framesizes         = msm_v4l2_enum_framesizes,
+	.vidioc_enum_frameintervals     = msm_v4l2_enum_frameintervals,
+	.vidioc_try_fmt_vid_cap_mplane  = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_vid_out_mplane  = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_meta_cap        = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_meta_out        = msm_v4l2_try_fmt,
+	.vidioc_s_fmt_vid_cap           = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_out           = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_cap_mplane    = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_out_mplane    = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_meta_out          = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_meta_cap          = msm_v4l2_s_fmt,
+	.vidioc_g_fmt_vid_cap           = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_out           = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_cap_mplane    = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_out_mplane    = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_meta_out          = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_meta_cap          = msm_v4l2_g_fmt,
+	.vidioc_g_selection             = msm_v4l2_g_selection,
+	.vidioc_s_selection             = msm_v4l2_s_selection,
+	.vidioc_s_parm                  = msm_v4l2_s_parm,
+	.vidioc_g_parm                  = msm_v4l2_g_parm,
+	.vidioc_reqbufs                 = msm_v4l2_reqbufs,
+	.vidioc_querybuf                = msm_v4l2_querybuf,
+	.vidioc_create_bufs             = msm_v4l2_create_bufs,
+	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
+	.vidioc_qbuf                    = msm_v4l2_qbuf,
+	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
+	.vidioc_streamon                = msm_v4l2_streamon,
+	.vidioc_streamoff               = msm_v4l2_streamoff,
+	.vidioc_queryctrl               = msm_v4l2_queryctrl,
+	.vidioc_querymenu               = msm_v4l2_querymenu,
+	.vidioc_subscribe_event         = msm_v4l2_subscribe_event,
+	.vidioc_unsubscribe_event       = msm_v4l2_unsubscribe_event,
+	.vidioc_try_encoder_cmd         = msm_v4l2_try_encoder_cmd,
+	.vidioc_encoder_cmd             = msm_v4l2_encoder_cmd,
+};
+
+static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops_dec = {
+	.vidioc_querycap                = msm_v4l2_querycap,
+	.vidioc_enum_fmt_vid_cap        = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_vid_out        = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_meta_cap       = msm_v4l2_enum_fmt,
+	.vidioc_enum_fmt_meta_out       = msm_v4l2_enum_fmt,
+	.vidioc_enum_framesizes         = msm_v4l2_enum_framesizes,
+	.vidioc_enum_frameintervals     = msm_v4l2_enum_frameintervals,
+	.vidioc_try_fmt_vid_cap_mplane  = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_vid_out_mplane  = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_meta_cap        = msm_v4l2_try_fmt,
+	.vidioc_try_fmt_meta_out        = msm_v4l2_try_fmt,
+	.vidioc_s_fmt_vid_cap           = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_out           = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_cap_mplane    = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_vid_out_mplane    = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_meta_out          = msm_v4l2_s_fmt,
+	.vidioc_s_fmt_meta_cap          = msm_v4l2_s_fmt,
+	.vidioc_g_fmt_vid_cap           = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_out           = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_cap_mplane    = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_vid_out_mplane    = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_meta_out          = msm_v4l2_g_fmt,
+	.vidioc_g_fmt_meta_cap          = msm_v4l2_g_fmt,
+	.vidioc_g_selection             = msm_v4l2_g_selection,
+	.vidioc_s_selection             = msm_v4l2_s_selection,
+	.vidioc_reqbufs                 = msm_v4l2_reqbufs,
+	.vidioc_querybuf                = msm_v4l2_querybuf,
+	.vidioc_create_bufs             = msm_v4l2_create_bufs,
+	.vidioc_prepare_buf             = msm_v4l2_prepare_buf,
+	.vidioc_qbuf                    = msm_v4l2_qbuf,
+	.vidioc_dqbuf                   = msm_v4l2_dqbuf,
+	.vidioc_streamon                = msm_v4l2_streamon,
+	.vidioc_streamoff               = msm_v4l2_streamoff,
+	.vidioc_queryctrl               = msm_v4l2_queryctrl,
+	.vidioc_querymenu               = msm_v4l2_querymenu,
+	.vidioc_subscribe_event         = msm_v4l2_subscribe_event,
+	.vidioc_unsubscribe_event       = msm_v4l2_unsubscribe_event,
+	.vidioc_try_decoder_cmd         = msm_v4l2_try_decoder_cmd,
+	.vidioc_decoder_cmd             = msm_v4l2_decoder_cmd,
+};
+
+static const struct v4l2_ctrl_ops msm_v4l2_ctrl_ops = {
+	.s_ctrl                         = msm_v4l2_op_s_ctrl,
+	.g_volatile_ctrl                = msm_v4l2_op_g_volatile_ctrl,
+};
+
+static const struct media_device_ops msm_v4l2_media_ops = {
+	.req_validate                   = msm_v4l2_request_validate,
+	.req_queue                      = msm_v4l2_request_queue,
+};
+
+static const struct v4l2_m2m_ops msm_v4l2_m2m_ops = {
+	.device_run                     = msm_v4l2_m2m_device_run,
+	.job_abort                      = msm_v4l2_m2m_job_abort,
+};
+
+int msm_vidc_core_init_v4l2_ops(struct msm_vidc_core *core)
+{
+	core->v4l2_file_ops             = &msm_v4l2_file_operations;
+	core->v4l2_ioctl_ops_enc        = &msm_v4l2_ioctl_ops_enc;
+	core->v4l2_ioctl_ops_dec        = &msm_v4l2_ioctl_ops_dec;
+	core->v4l2_ctrl_ops             = &msm_v4l2_ctrl_ops;
+	core->media_device_ops          = &msm_v4l2_media_ops;
+	core->v4l2_m2m_ops              = &msm_v4l2_m2m_ops;
+
+	return 0;
 }

@@ -857,13 +857,6 @@ static int msm_vidc_allow_secure_session(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
-{
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
-
-	return msm_vidc_session(instance, msm_vidc_get_control, ctrl, true, __func__);
-}
-
 static int msm_vidc_update_static_property(struct msm_vidc_inst *inst,
 	enum msm_vidc_inst_capability_type cap_id, struct v4l2_ctrl *ctrl)
 {
@@ -1005,30 +998,6 @@ int msm_vidc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 	}
 
 	return rc;
-}
-
-static int __msm_v4l2_op_s_ctrl(struct msm_vidc_inst *inst, void *data)
-{
-	return inst->event_handle(inst, MSM_VIDC_S_CTRL, data);
-}
-
-int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
-{
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
-	struct msm_vidc_ctrl_data *priv_ctrl_data;
-
-	/*
-	 * v4l2_ctrl_modify_range may internally call s_ctrl
-	 * which will again try to acquire lock leading to deadlock,
-	 * Add check to avoid such scenario.
-	 */
-	priv_ctrl_data = ctrl && ctrl->priv ? ctrl->priv : NULL;
-	if (priv_ctrl_data && priv_ctrl_data->skip_s_ctrl) {
-		d_vpr_l("%s: skip s_ctrl (%s)\n", __func__, ctrl->name);
-		return 0;
-	}
-
-	return msm_vidc_session(instance, __msm_v4l2_op_s_ctrl, ctrl, true, __func__);
 }
 
 int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)

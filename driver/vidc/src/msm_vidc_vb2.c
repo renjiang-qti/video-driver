@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/version.h>
@@ -44,27 +44,27 @@ struct vb2_queue *msm_vidc_get_vb2q(struct msm_vidc_inst *inst,
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-void *msm_vb2_alloc(struct device *dev, unsigned long attrs,
+static void *msm_vb2_alloc(struct device *dev, unsigned long attrs,
 	unsigned long size, enum dma_data_direction dma_dir,
 	gfp_t gfp_flags)
 {
 	return (void *)0xdeadbeef;
 }
 
-void *msm_vb2_attach_dmabuf(struct device *dev, struct dma_buf *dbuf,
+static void *msm_vb2_attach_dmabuf(struct device *dev, struct dma_buf *dbuf,
 	unsigned long size, enum dma_data_direction dma_dir)
 {
 	return (void *)0xdeadbeef;
 }
 
 #else
-void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
+static void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
 	unsigned long size)
 {
 	return (void *)0xdeadbeef;
 }
 
-void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
+static void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
 	struct dma_buf *dbuf, unsigned long size)
 {
 	struct msm_vidc_inst *inst;
@@ -123,16 +123,16 @@ exit:
 }
 #endif
 
-void msm_vb2_put(void *buf_priv)
+static void msm_vb2_put(void *buf_priv)
 {
 }
 
-int msm_vb2_mmap(void *buf_priv, struct vm_area_struct *vma)
+static int msm_vb2_mmap(void *buf_priv, struct vm_area_struct *vma)
 {
 	return 0;
 }
 
-void msm_vb2_detach_dmabuf(void *buf_priv)
+static void msm_vb2_detach_dmabuf(void *buf_priv)
 {
 	struct msm_vidc_buffer *vbuf = buf_priv;
 	struct msm_vidc_buffer *ro_buf, *dummy;
@@ -173,7 +173,7 @@ exit:
 	return;
 }
 
-int msm_vb2_map_dmabuf(void *buf_priv)
+static int msm_vb2_map_dmabuf(void *buf_priv)
 {
 	int rc = 0;
 	struct msm_vidc_buffer *buf = buf_priv;
@@ -236,7 +236,7 @@ exit:
 	return rc;
 }
 
-void msm_vb2_unmap_dmabuf(void *buf_priv)
+static void msm_vb2_unmap_dmabuf(void *buf_priv)
 {
 	struct msm_vidc_buffer *vbuf = buf_priv;
 	struct msm_vidc_buffer *ro_buf, *dummy;
@@ -277,7 +277,7 @@ exit:
 	return;
 }
 
-int msm_vb2_queue_setup(struct vb2_queue *q,
+static int msm_vb2_queue_setup(struct vb2_queue *q,
 		unsigned int *num_buffers, unsigned int *num_planes,
 		unsigned int sizes[], struct device *alloc_devs[])
 {
@@ -405,7 +405,7 @@ int msm_vb2_queue_setup(struct vb2_queue *q,
 	return rc;
 }
 
-int msm_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
+static int msm_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	int rc = 0;
 	struct msm_vidc_inst *inst;
@@ -582,7 +582,7 @@ int msm_vidc_stop_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q)
 	return rc;
 }
 
-void msm_vb2_stop_streaming(struct vb2_queue *q)
+static void msm_vb2_stop_streaming(struct vb2_queue *q)
 {
 	struct msm_vidc_inst *inst;
 	int rc = 0;
@@ -606,7 +606,7 @@ void msm_vb2_stop_streaming(struct vb2_queue *q)
 	return;
 }
 
-void msm_vb2_buf_queue(struct vb2_buffer *vb2)
+static void msm_vb2_buf_queue(struct vb2_buffer *vb2)
 {
 	int rc = 0;
 	struct msm_vidc_inst *inst;
@@ -703,7 +703,7 @@ exit:
 	}
 }
 
-int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
+static int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
 {
 	struct vb2_v4l2_buffer *vbuf;
 
@@ -717,7 +717,7 @@ int msm_vb2_buf_out_validate(struct vb2_buffer *vb)
 	return 0;
 }
 
-void msm_vb2_request_complete(struct vb2_buffer *vb)
+static void msm_vb2_request_complete(struct vb2_buffer *vb)
 {
 	struct msm_vidc_inst *inst;
 
@@ -734,4 +734,31 @@ void msm_vb2_request_complete(struct vb2_buffer *vb)
 	i_vpr_l(inst, "%s: vb type %d, index %d\n",
 		__func__, vb->type, vb->index);
 	v4l2_ctrl_request_complete(vb->req_obj.req, &inst->ctrl_handler);
+}
+
+static const struct vb2_ops msm_vb2_ops = {
+	.queue_setup                    = msm_vb2_queue_setup,
+	.start_streaming                = msm_vb2_start_streaming,
+	.buf_queue                      = msm_vb2_buf_queue,
+	.stop_streaming                 = msm_vb2_stop_streaming,
+	.buf_out_validate               = msm_vb2_buf_out_validate,
+	.buf_request_complete           = msm_vb2_request_complete,
+};
+
+static const struct vb2_mem_ops msm_vb2_mem_ops = {
+	.alloc                          = msm_vb2_alloc,
+	.put                            = msm_vb2_put,
+	.mmap                           = msm_vb2_mmap,
+	.attach_dmabuf                  = msm_vb2_attach_dmabuf,
+	.detach_dmabuf                  = msm_vb2_detach_dmabuf,
+	.map_dmabuf                     = msm_vb2_map_dmabuf,
+	.unmap_dmabuf                   = msm_vb2_unmap_dmabuf,
+};
+
+int msm_vidc_core_init_vb2_ops(struct msm_vidc_core *core)
+{
+	core->vb2_ops                   = &msm_vb2_ops;
+	core->vb2_mem_ops               = &msm_vb2_mem_ops;
+
+	return 0;
 }
