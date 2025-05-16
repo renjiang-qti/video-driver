@@ -1804,6 +1804,9 @@ struct msm_vidc_fence *msm_vidc_get_fence_from_id(
 	struct msm_vidc_fence *fence, *dummy_fence;
 	bool found = false;
 
+	if (!fence_list)
+		return NULL;
+
 	list_for_each_entry_safe(fence, dummy_fence, fence_list, list) {
 		if (fence->fence_id == fence_id) {
 			found = true;
@@ -4323,6 +4326,9 @@ int msm_vidc_core_deinit(struct msm_vidc_core *core, bool force)
 {
 	int rc = 0;
 
+	if (!core)
+		return -EINVAL;
+
 	core_lock(core, __func__);
 	rc = msm_vidc_core_deinit_locked(core, force);
 	core_unlock(core, __func__);
@@ -4604,7 +4610,8 @@ int msm_vidc_print_inst_info(struct msm_vidc_inst *inst)
 				}
 			}
 			/* capture total mappings of each cb */
-			if (buf->region < MSM_VIDC_REGION_MAX) {
+			if (buf->region >= MSM_VIDC_REGION_NONE &&
+				buf->region < MSM_VIDC_REGION_MAX) {
 				if ((buf->attach && buf->sg_table) || is_internal_buffer(buf->type))
 					size_kb_arr[ilog2(buf->region)] += buf->buffer_size;
 			}

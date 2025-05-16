@@ -7,6 +7,7 @@
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/videobuf2-core.h>
+#include <media/v4l2_vidc_extensions.h>
 
 #include "msm_vidc_platform.h"
 #include "msm_vidc_v4l2.h"
@@ -1058,6 +1059,129 @@ static s64 msm_vidc_adjust_h265_level_tier(struct msm_vidc_inst *inst, u64 frame
 	msm_vidc_update_cap_value(inst, HEVC_TIER, tier_value, __func__);
 
 	return level_table[cnt].level;
+}
+
+static u32 msm_vidc_apv_level_band_v4l2_to_hfi(s64 v4l2_level)
+{
+
+	switch (v4l2_level) {
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_0:
+		return HFI_APV_LEVEL_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_0:
+		return HFI_APV_LEVEL_2_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_0:
+		return HFI_APV_LEVEL_3_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_0:
+		return HFI_APV_LEVEL_4_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_0:
+		return HFI_APV_LEVEL_5_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_0:
+		return HFI_APV_LEVEL_6_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_0:
+		return HFI_APV_LEVEL_7_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_0;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_0:
+		return HFI_APV_LEVEL_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_0:
+		return HFI_APV_LEVEL_2_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_0:
+		return HFI_APV_LEVEL_3_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_0:
+		return HFI_APV_LEVEL_4_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_0:
+		return HFI_APV_LEVEL_5_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_0:
+		return HFI_APV_LEVEL_6_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_0:
+		return HFI_APV_LEVEL_7_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_1;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_0:
+		return HFI_APV_LEVEL_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_0:
+		return HFI_APV_LEVEL_2_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_0:
+		return HFI_APV_LEVEL_3_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_0:
+		return HFI_APV_LEVEL_4_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_0:
+		return HFI_APV_LEVEL_5_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_0:
+		return HFI_APV_LEVEL_6_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_0:
+		return HFI_APV_LEVEL_7_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_2;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_0:
+		return HFI_APV_LEVEL_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_1:
+		return HFI_APV_LEVEL_1_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_0:
+		return HFI_APV_LEVEL_2_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_1:
+		return HFI_APV_LEVEL_2_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_0:
+		return HFI_APV_LEVEL_3_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_1:
+		return HFI_APV_LEVEL_3_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_0:
+		return HFI_APV_LEVEL_4_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_1:
+		return HFI_APV_LEVEL_4_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_0:
+		return HFI_APV_LEVEL_5_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_1:
+		return HFI_APV_LEVEL_5_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_0:
+		return HFI_APV_LEVEL_6_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_1:
+		return HFI_APV_LEVEL_6_1_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_0:
+		return HFI_APV_LEVEL_7_BAND_3;
+	case V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_1:
+		return HFI_APV_LEVEL_7_1_BAND_3;
+	default:
+		return HFI_LEVEL_NONE;
+	}
+
+	return HFI_LEVEL_NONE;
 }
 
 int msm_vidc_adjust_level_tier(void *instance, struct v4l2_ctrl *ctrl)
@@ -3917,6 +4041,23 @@ int msm_vidc_set_level(void *instance,
 	hfi_value = inst->capabilities[cap_id].value;
 
 	rc = msm_vidc_packetize_control(inst, cap_id, HFI_PAYLOAD_U32_ENUM,
+					&hfi_value, sizeof(u32), __func__);
+
+	return rc;
+}
+
+int msm_vidc_set_apv_level_band(void *instance,
+		       enum msm_vidc_inst_capability_type cap_id)
+{
+	int rc = 0;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	u32 hfi_value = HFI_LEVEL_NONE;
+
+	if (inst->capabilities[LEVEL].flags & CAP_FLAG_CLIENT_SET)
+		hfi_value = msm_vidc_apv_level_band_v4l2_to_hfi(
+					inst->capabilities[LEVEL].value);
+
+	rc = msm_vidc_packetize_control(inst, LEVEL, HFI_PAYLOAD_U32_ENUM,
 					&hfi_value, sizeof(u32), __func__);
 
 	return rc;
