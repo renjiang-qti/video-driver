@@ -411,6 +411,8 @@ static int calculate_vsp_min_freq(struct api_calculation_input codec_input,
 	 * different methodology from Lahaina
 	 */
 	u32 vsp_hw_min_frequency = 0;
+	u32 allintra_bitrate_533 = 343; //@533MHz  max UHD30 or UHD60 HDR10; HEVC ONLY
+	u32 lossless_bitrate_533 = 720; //@533MHz  max 720p30 HDR10; HEVC only
 
 	if (codec_input.codec == CODEC_APV) {
 		codec_output->vsp_min_freq = 0;
@@ -451,9 +453,11 @@ static int calculate_vsp_min_freq(struct api_calculation_input codec_input,
 			if (codec_input.hierachical_layer == CODEC_GOP_LOSSLESS) {
 				vsp_hw_min_frequency = frequency_table_iris4[0][2] *
 					input_bitrate_fp * 1000;
-				corner_bitrate = frequency_table_iris4[0][2];
+				corner_bitrate = lossless_bitrate_533;
 			} else if (codec_input.hierachical_layer == CODEC_GOP_IONLY) {
-				corner_bitrate = freq_4bitrate;
+				vsp_hw_min_frequency = frequency_table_iris4[0][2] *
+					input_bitrate_fp * 1000;
+				corner_bitrate = allintra_bitrate_533;
 			}
 		}
 		vsp_hw_min_frequency = vsp_hw_min_frequency +
