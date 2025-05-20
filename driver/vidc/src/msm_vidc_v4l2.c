@@ -20,25 +20,28 @@
 
 extern struct msm_vidc_core *g_core;
 
-struct video_device *get_video_device(struct msm_vidc_inst *inst)
+static inline void *to_msm_vidc_inst_from_fh(struct v4l2_fh *fh)
 {
-	struct msm_vidc_core *core = inst->core;
-	struct video_device *vdev = NULL;
+	if (!fh)
+		return NULL;
 
-	if (is_decode_session(inst))
-		vdev = &core->vdev[0].vdev;
-	else if (is_encode_session(inst))
-		vdev = &core->vdev[1].vdev;
+	return container_of(fh, struct msm_vidc_inst, fh);
+}
 
-	return vdev;
+static inline void *to_msm_vidc_inst_from_ctrl(struct v4l2_ctrl *ctrl)
+{
+	if (!ctrl || !ctrl->handler)
+		return NULL;
+
+	return container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
 }
 
 static struct msm_vidc_inst *get_vidc_inst(struct file *filp, void *fh)
 {
 	if (!filp || !filp->private_data)
 		return NULL;
-	return container_of(filp->private_data,
-					struct msm_vidc_inst, fh);
+
+	return container_of(filp->private_data, struct msm_vidc_inst, fh);
 }
 
 static int __msm_v4l2_try_fmt(struct msm_vidc_inst *inst, void *data)
@@ -359,7 +362,7 @@ static int msm_v4l2_streamoff(struct file *filp, void *fh,
 static int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
-	void *instance = container_of(fh, struct msm_vidc_inst, fh);
+	void *instance = to_msm_vidc_inst_from_fh(fh);
 
 	return msm_vidc_session(instance, msm_vidc_subscribe_event,
 			(void *)data, false, __func__);
@@ -368,7 +371,7 @@ static int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
 static int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
 				const struct v4l2_event_subscription *data)
 {
-	void *instance = container_of(fh, struct msm_vidc_inst, fh);
+	void *instance = to_msm_vidc_inst_from_fh(fh);
 
 	return msm_vidc_session(instance, msm_vidc_unsubscribe_event,
 			(void *)data, true, __func__);
@@ -442,7 +445,7 @@ static int msm_v4l2_querymenu(struct file *filp, void *fh,
 
 static int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+	void *instance = to_msm_vidc_inst_from_ctrl(ctrl);
 	struct msm_vidc_ctrl_data *priv_ctrl_data;
 
 	/*
@@ -461,7 +464,7 @@ static int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
 
 static int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
-	void *instance = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
+	void *instance = to_msm_vidc_inst_from_ctrl(ctrl);
 
 	return msm_vidc_session(instance, msm_vidc_get_control, ctrl, true, __func__);
 }

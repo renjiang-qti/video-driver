@@ -7,11 +7,8 @@
 #ifndef _MSM_VIDC_V4L2_H_
 #define _MSM_VIDC_V4L2_H_
 
-struct video_device;
-struct msm_vidc_inst;
 struct msm_vidc_core;
 
-struct video_device *get_video_device(struct msm_vidc_inst *inst);
 int msm_vidc_core_init_v4l2_ops(struct msm_vidc_core *core);
 
 #endif // _MSM_VIDC_V4L2_H_
