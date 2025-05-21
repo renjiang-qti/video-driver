@@ -4183,8 +4183,10 @@ int msm_vidc_get_inst_capability(struct msm_vidc_inst *inst)
 int msm_vidc_init_core_caps(struct msm_vidc_core *core)
 {
 	int rc = 0;
-	int i, num_platform_caps;
+	int i, num_platform_caps, num_sku_platform_cap;
 	const struct msm_platform_core_capability *platform_data = core->platform->data.core_data;
+	const struct msm_platform_core_capability *sku_platform_data =
+		core->platform->data.sku_core_data;
 
 	if (!platform_data) {
 		d_vpr_e("%s: platform core data is NULL\n",
@@ -4194,11 +4196,17 @@ int msm_vidc_init_core_caps(struct msm_vidc_core *core)
 	}
 
 	num_platform_caps = core->platform->data.core_data_size;
-
+	num_sku_platform_cap = core->platform->data.sku_core_data_size;
 	/* loop over platform caps */
 	for (i = 0; i < num_platform_caps && i < CORE_CAP_MAX; i++) {
 		core->capabilities[platform_data[i].type].type = platform_data[i].type;
 		core->capabilities[platform_data[i].type].value = platform_data[i].value;
+	}
+
+	if (sku_platform_data) {
+		for (i = 0; i < num_sku_platform_cap && i < CORE_CAP_MAX; i++)
+			core->capabilities[sku_platform_data[i].type].value =
+				sku_platform_data[i].value;
 	}
 
 exit:
@@ -4265,7 +4273,9 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 	u8 enc_codecs_count = 0, dec_codecs_count = 0;
 	int i, j, check_bit;
 	int num_platform_cap_data, num_platform_cap_dependency_data;
+	int num_sku_platform_cap_data = 0;
 	struct msm_platform_inst_capability *platform_cap_data = NULL;
+	struct msm_platform_inst_capability *sku_platform_cap_data = NULL;
 	struct msm_platform_inst_cap_dependency *platform_cap_dependency_data = NULL;
 
 	platform_cap_data = core->platform->data.inst_cap_data;
@@ -4275,6 +4285,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 		rc = -EINVAL;
 		goto error;
 	}
+	sku_platform_cap_data = core->platform->data.sku_inst_cap_data;
 
 	platform_cap_dependency_data = core->platform->data.inst_cap_dependency_data;
 	if (!platform_cap_dependency_data) {
@@ -4335,6 +4346,7 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 	}
 
 	num_platform_cap_data = core->platform->data.inst_cap_data_size;
+	num_sku_platform_cap_data = core->platform->data.sku_inst_cap_data_size;
 	num_platform_cap_dependency_data = core->platform->data.inst_cap_dependency_data_size;
 	d_vpr_h("%s: num caps %d, dependency %d\n", __func__,
 		num_platform_cap_data, num_platform_cap_dependency_data);
@@ -4352,6 +4364,25 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 					&core->inst_caps[j]);
 				if (rc)
 					goto error;
+			}
+		}
+	}
+
+	if (sku_platform_cap_data) {
+		/* loop over each sku platform capability */
+		for (i = 0; i < num_sku_platform_cap_data; i++) {
+			/* select matching core codec and update it */
+			for (j = 0; j < codecs_count; j++) {
+				if ((sku_platform_cap_data[i].domain &
+					core->inst_caps[j].domain) &&
+					(sku_platform_cap_data[i].codec &
+					core->inst_caps[j].codec)) {
+					/* update core capability */
+					rc = update_inst_capability(&sku_platform_cap_data[i],
+						&core->inst_caps[j]);
+					if (rc)
+						goto error;
+				}
 			}
 		}
 	}
