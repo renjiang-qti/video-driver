@@ -432,6 +432,11 @@ static bool is_hw_enabled(struct msm_vidc_core *core, const char *name)
 	return true;
 }
 
+static bool is_vpu_iris4_1p(struct msm_vidc_core *core)
+{
+	return !!(core->platform->data.vpu_ver == VPU_VERSION_IRIS4_1P);
+}
+
 static int __power_off_iris4_apv(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -445,7 +450,7 @@ static int __power_off_iris4_apv(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_read_efuse;
 
-	if (value & BIT(27))
+	if (is_vpu_iris4_1p(core) || (value & BIT(27)))
 		return 0;
 
 	/*
@@ -721,7 +726,7 @@ disable_power:
 		return rc;
 
 	/* VCODEC_VIDEO_CC_MVS0_VPP1_GDSCR --> "vpp1" - To be named as per dtsi*/
-	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && (!is_vpu_iris4_1p(core) || !(value & BIT(28)))) {
 		rc = call_res_op(core, gdsc_off, core, "vpp1");
 		if (rc) {
 			d_vpr_e("%s: disable vpp1 regulator failed\n", __func__);
@@ -1061,7 +1066,7 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	}
 
 	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
-	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && (!is_vpu_iris4_1p(core) || !(value & BIT(28)))) {
 		rc = call_res_op(core, gdsc_on, core, "vpp1");
 		if (rc)
 			goto fail_regulator_vpp1;
@@ -1096,7 +1101,7 @@ static int __power_on_iris4_hardware(struct msm_vidc_core *core)
 	}
 
 	/* VIDEO_CC_MVS0_VPP1_GDSCR --> vpp1 */
-	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28))) {
+	if (is_hw_enabled(core, "vpp1") && (!is_vpu_iris4_1p(core) || !(value & BIT(28)))) {
 		/* VIDEO_CC_MVS0_VPP1_CBCR --> video_cc_mvs0_vpp1_clk */
 		rc = call_res_op(core, clk_enable, core, "video_cc_mvs0_vpp1_clk");
 		if (rc)
@@ -1118,7 +1123,7 @@ fail_clk_freerun:
 	call_res_op(core, clk_disable, core, "gcc_video_axi0_clk");
 fail_clk_axi:
 fail_sw_ctrl:
-	if (is_hw_enabled(core, "vpp1") && !(value & BIT(28)))
+	if (is_hw_enabled(core, "vpp1") && (!is_vpu_iris4_1p(core) || !(value & BIT(28))))
 		call_res_op(core, gdsc_off, core, "vpp1");
 fail_regulator_vpp1:
 	if (is_hw_enabled(core, "vpp0") && !(value & BIT(29)))
@@ -1143,7 +1148,7 @@ static int __power_on_iris4_apv(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_read_efuse;
 
-	if (value & BIT(27))
+	if (is_vpu_iris4_1p(core) || (value & BIT(27)))
 		return 0;
 
 	/* VIDEO_CC_MVS0A_GDSCR --> apv*/
@@ -1578,7 +1583,7 @@ static int msm_vidc_update_scaling_iris4(struct msm_vidc_inst *inst,
 static int msm_vidc_decide_scaling_iris4(struct msm_vidc_inst *inst)
 {
 	u32 aspect_ratio_w = 0, aspect_ratio_h = 0;
-	u32 input_width, input_height;
+	u32 input_width = 0, input_height = 0;
 
 	/* check if scaling requested */
 	if (!inst->capabilities[SCALE_ENABLE].value)
