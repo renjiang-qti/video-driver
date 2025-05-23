@@ -397,7 +397,7 @@ static int msm_vidc_initialize_core(struct msm_vidc_core *core)
 	}
 
 	core->response_packet = devm_kzalloc(&core->pdev->dev, core->packet_size, GFP_KERNEL);
-	if (!core->packet) {
+	if (!core->response_packet) {
 		d_vpr_e("%s: failed to alloc core response packet\n", __func__);
 		rc = -ENOMEM;
 		goto exit;
