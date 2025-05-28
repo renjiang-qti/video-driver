@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -1057,6 +1057,88 @@ static u32 msm_vidc_apv_level_band_v4l2_to_hfi(s64 v4l2_level)
 	return HFI_LEVEL_NONE;
 }
 
+static s64 msm_vidc_adjust_apv_level(struct msm_vidc_inst *inst,
+					   u64 samples_per_sec, u64 target_bitrate)
+{
+	static struct apv_level_table level_table[] = {
+		/* level, Max luma sample rate, Max coded data rate (kbits/sec) */
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_0,    3041280,       7000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_1_1,    6082560,      14000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_0,    15667200,     36000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_2_1,    31334400,     71000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_0,    66846720,    101000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_3_1,   133693440,    201000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_0,   265420800,    401000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_4_1,   530841600,    780000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_0,  1061683200,   1560000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_5_1,  2123366400,   3324000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_0,  4777574400,   6648000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_6_1,  8493465600,  13296000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_0, 16986931200,  26592000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND0_7_1, 33973862400,  53184000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_0,     3041280,     11000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_1_1,     6082560,     21000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_0,    15667200,     53000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_2_1,    31334400,    106000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_0,    66846720,    151000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_3_1,   133693440,    301000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_0,   265420800,    602000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_4_1,   530841600,   1170000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_0,  1061683200,   2340000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_5_1,  2123366400,   4986000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_0,  4777574400,   9972000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_6_1,  8493465600,  19944000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_0, 16986931200,  39888000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND1_7_1, 33973862400,  79776000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_0,     3041280,     14000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_1_1,     6082560,     28000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_0,    15667200,     71000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_2_1,    31334400,    141000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_0,    66846720,    201000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_3_1,   133693440,    401000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_0,   265420800,    780000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_4_1,   530841600,   1560000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_0,  1061683200,   3324000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_5_1,  2123366400,   6648000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_0,  4777574400,  13296000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_6_1,  8493465600,  26592000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_0, 16986931200,  53184000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND2_7_1, 33973862400, 106368000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_0,     3041280,     21000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_1_1,     6082560,     42000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_0,    15667200,    106000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_2_1,    31334400,    212000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_0,    66846720,    301000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_3_1,   133693440,    602000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_0,   265420800,   1170000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_4_1,   530841600,   2340000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_0,  1061683200,   4986000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_5_1,  2123366400,   9972000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_0,  4777574400,  19944000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_6_1,  8493465600,  39888000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_0, 16986931200,  79776000, },
+		{ V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_1, 33973862400, 159552000, },
+	};
+	s64 level = inst->capabilities[LEVEL].value;
+	int cnt = 0;
+
+	for (cnt = 0; cnt < ARRAY_SIZE(level_table); cnt++) {
+		if (samples_per_sec <= level_table[cnt].max_luma_sample &&
+			target_bitrate <= level_table[cnt].max_coded_rate * 1000) {
+			break;
+		}
+	}
+
+	if (cnt == ARRAY_SIZE(level_table)) {
+		/* Return Max level if there is no match*/
+		i_vpr_h(inst, "%s: level: %llu target_bitrate: %llu\n", __func__,
+						level, target_bitrate);
+		return V4L2_MPEG_VIDC_APV_LEVEL_BAND3_7_1;
+	}
+
+	return level_table[cnt].level;
+}
+
 int msm_vidc_adjust_level_tier(void *instance, struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
@@ -1091,6 +1173,9 @@ int msm_vidc_adjust_level_tier(void *instance, struct v4l2_ctrl *ctrl)
 							  dpb_size, bitrate);
 	} else if (inst->codec == MSM_VIDC_HEVC) {
 		adjust_level = msm_vidc_adjust_h265_level_tier(inst, frame_size, samples_per_sec,
+							       bitrate);
+	} else if (inst->codec == MSM_VIDC_APV) {
+		adjust_level = msm_vidc_adjust_apv_level(inst, samples_per_sec,
 							       bitrate);
 	}
 

@@ -308,6 +308,12 @@ struct h265_level_table {
 	u64 max_br_high_tier;
 };
 
+struct apv_level_table {
+	u64 level;
+	u64 max_luma_sample;
+	u64 max_coded_rate;
+};
+
 static inline bool is_sys_cache_present(struct msm_vidc_core *core)
 {
 	return !!core->platform->data.subcache_tbl_size;
