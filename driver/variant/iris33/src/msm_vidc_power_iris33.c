@@ -12,6 +12,7 @@
 #include "msm_vidc_core.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
+#include "perf_static_model.h"
 #include "msm_vidc_power.h"
 #include "resources.h"
 
