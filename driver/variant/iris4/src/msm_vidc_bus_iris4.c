@@ -6,6 +6,7 @@
 
 #include "perf_static_model.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_platform.h"
 
 /* 100x */
 static u32 dpbopb_ubwc30_cr_table_cratio_iris4[7][18] = {
@@ -433,6 +434,11 @@ static int calculate_bandwidth_decoder_iris4(
 	/* H265D BSE tlb in LLC will be pored in Kailua */
 	u8 llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
 
+	if (codec_input.vpu_ver == VPU_VERSION_IRIS4_1P) {
+		llc_enabled_ref_y_rd = 0;
+		llc_enable_ref_crcb_rd = 0;
+	}
+
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;
 	if ((codec_input.codec == CODEC_H264) ||
@@ -847,6 +853,10 @@ static int calculate_bandwidth_encoder_iris4(
 	/*H265D BSE tlb in LLC will be pored in Kailua */
 	u8 llc_enabled_bse_tlb = (codec_input.status_llc_onoff) ? 1 : 0;
 	u8 en_llc_enable_ref_rd_crcb = (codec_input.status_llc_onoff) ? 1 : 0;
+
+	if (codec_input.vpu_ver == VPU_VERSION_IRIS4_1P) {
+		en_llc_enable_ref_rd_crcb = 0;
+	}
 
 	frame_width = codec_input.frame_width;
 	frame_height = codec_input.frame_height;

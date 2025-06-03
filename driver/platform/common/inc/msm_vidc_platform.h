@@ -201,6 +201,7 @@ enum vpu_version {
 	VPU_VERSION_IRIS33 = 1,
 	VPU_VERSION_IRIS33_2P, // IRIS3 2 PIPE
 	VPU_VERSION_IRIS2_2P, // IRIS2 2 PIPE
+	VPU_VERSION_IRIS4_1P, // IRIS4 1 PIPE
 };
 
 struct msm_vidc_platform_data {
@@ -413,6 +414,7 @@ int msm_vidc_set_stage(void *instance, enum msm_vidc_inst_capability_type cap_id
 int msm_vidc_set_pipe(void *instance, enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_set_csc_custom_matrix(void *instance, enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_set_level(void *instance, enum msm_vidc_inst_capability_type cap_id);
+int msm_vidc_set_apv_level_band(void *instance, enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_set_preprocess(void *instance, enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_set_reserve_duration(void *instance, enum msm_vidc_inst_capability_type cap_id);
 int msm_vidc_set_q16(void *instance, enum msm_vidc_inst_capability_type cap_id);
