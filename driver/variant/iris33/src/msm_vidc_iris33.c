@@ -721,7 +721,7 @@ skip_video_xo_reset:
 	 * power off and on for video hardware, it ends up in transient state and hungs eventually.
 	 * So Writing the register explicitly to avoid power off sequence when HW control is set.
 	 */
-	writel_relaxed(0x0, (u8 *)core->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
+	writel_relaxed(0x0, (u8 *)core->resource->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
 
 	rc = call_res_op(core, reset_control_acquire, core, "video_xo_reset");
 	if (rc) {
@@ -979,7 +979,7 @@ static int __power_on_iris33_hardware(struct msm_vidc_core *core)
 	 * power off and on for video hardware, it ends up in transient state and hungs eventually.
 	 * So Writing the register explicitly to avoid power off sequence when HW control is set.
 	 */
-	writel_relaxed(0x0, (u8 *)core->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
+	writel_relaxed(0x0, (u8 *)core->resource->register_base_addr + WRAPPER_CORE_POWER_CONTROL);
 
 	rc = call_res_op(core, gdsc_on, core, "vcodec");
 	if (rc)

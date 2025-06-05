@@ -720,7 +720,7 @@ int msm_vidc_calc_bw_iris4(struct msm_vidc_inst *inst,
 	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value) {
 		codec_input.frame_width /= 2;
 		codec_input.frame_height /= 2;
-		ret = msm_vidc_calculate_bandwidth(codec_input, &codec_output);
+		ret = msm_vidc_calculate_bandwidth_iris4(codec_input, &codec_output);
 		if (ret)
 			return ret;
 		vidc_data->calc_bw_ddr +=
