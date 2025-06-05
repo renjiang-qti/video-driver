@@ -10,9 +10,15 @@
 #include "msm_vidc_core.h"
 
 #if defined(CONFIG_MSM_VIDC_SUN)
+int msm_vidc_get_platform_data_tuna(struct msm_vidc_core *core);
 int msm_vidc_init_platform_tuna(struct msm_vidc_core *core);
 int msm_vidc_deinit_platform_tuna(struct msm_vidc_core *core);
 #else
+int msm_vidc_get_platform_data_tuna(struct msm_vidc_core *core)
+{
+	return -EINVAL;
+}
+
 int msm_vidc_init_platform_tuna(struct msm_vidc_core *core)
 {
 	return -EINVAL;

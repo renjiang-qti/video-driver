@@ -1670,26 +1670,20 @@ int msm_vidc_tuna_check_ddr_type(void)
 	return 0;
 }
 
-static int msm_vidc_init_data(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_tuna(struct msm_vidc_core *core)
 {
-	int rc = 0;
-
 	d_vpr_h("%s: initialize tuna data\n", __func__);
-
 	core->platform->data = tuna_data;
 
-	rc = msm_vidc_tuna_check_ddr_type();
-	if (rc)
-		return rc;
-
-	return rc;
+	return 0;
 }
 
 int msm_vidc_init_platform_tuna(struct msm_vidc_core *core)
 {
 	int rc = 0;
+	d_vpr_h("%s: initialize tuna ops\n", __func__);
 
-	rc = msm_vidc_init_data(core);
+	rc = msm_vidc_tuna_check_ddr_type();
 	if (rc)
 		return rc;
 
