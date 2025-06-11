@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/types.h>
@@ -713,7 +713,27 @@ int msm_vidc_calc_bw_iris4(struct msm_vidc_inst *inst,
 	vidc_data->calc_bw_ddr = kbps(codec_output.ddr_bw_rd + codec_output.ddr_bw_wr);
 	vidc_data->calc_bw_llcc = kbps(codec_output.noc_bw_rd + codec_output.noc_bw_wr);
 
-	i_vpr_l(inst, "%s: calc_bw_ddr %llu calc_bw_llcc %llu",
+	/*
+	 * if lookahead encoding enabled, then increase the bandwidth
+	 * based on downscaled reslution extra processing, downscaling
+	 * is equal to half the original resolution
+	 */
+	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value) {
+		codec_input.frame_width /= 2;
+		codec_input.frame_height /= 2;
+		ret = msm_vidc_calculate_bandwidth(codec_input, &codec_output);
+		if (ret)
+			return ret;
+		vidc_data->calc_bw_ddr +=
+			kbps(codec_output.ddr_bw_rd + codec_output.ddr_bw_wr);
+		vidc_data->calc_bw_llcc +=
+			kbps(codec_output.noc_bw_rd + codec_output.noc_bw_wr);
+		i_vpr_l(inst, "%s: lookahead extra bw %u, %u kbps\n", __func__,
+			kbps(codec_output.ddr_bw_rd + codec_output.ddr_bw_wr),
+			kbps(codec_output.noc_bw_rd + codec_output.noc_bw_wr));
+	}
+
+	i_vpr_l(inst, "%s: calc_bw_ddr %llu calc_bw_llcc %llu kbps\n",
 		__func__, vidc_data->calc_bw_ddr, vidc_data->calc_bw_llcc);
 
 	return ret;
