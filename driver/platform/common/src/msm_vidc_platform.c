@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -545,6 +545,7 @@ int msm_vidc_v4l2_to_hfi_enum(struct msm_vidc_inst *inst,
 	case HEVC_TIER:
 	case AV1_TIER:
 	case BLUR_TYPES:
+	case LOG_VIDEO_ENCODE:
 		*value = inst->capabilities[cap_id].value;
 		return 0;
 	case LAYER_TYPE:
@@ -3086,6 +3087,39 @@ int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl
 	}
 
 	msm_vidc_update_cap_value(inst, LOOKAHEAD_ENCODE_SIZE, lookahead_size, __func__);
+	return 0;
+}
+
+int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 pix_fmt = -1;
+	s64 hfi_rc_type = -1;
+
+	value = ctrl ? ctrl->val : inst->capabilities[LOG_VIDEO_ENCODE].value;
+	/*
+	 * IRIS4 encoder LOG mode supports for:
+	 *   HEVC/APV encoders 10bit only
+	 *   VBR rate control only
+	 */
+	if (msm_vidc_get_parent_value(inst, LOG_VIDEO_ENCODE, PIX_FMTS,
+		      &pix_fmt, __func__))
+		return -EINVAL;
+	if (!is_10bit_colorformat(pix_fmt))
+		goto disable;
+
+	if (msm_vidc_get_parent_value(inst, LOG_VIDEO_ENCODE, BITRATE_MODE,
+		      &hfi_rc_type, __func__))
+		return -EINVAL;
+	if (hfi_rc_type != HFI_RC_VBR_CFR)
+		goto disable;
+
+	msm_vidc_update_cap_value(inst, LOG_VIDEO_ENCODE, value, __func__);
+	return 0;
+
+disable:
+	msm_vidc_update_cap_value(inst, LOG_VIDEO_ENCODE, MSM_VIDC_LOG_VIDEO_TYPE_NONE, __func__);
 	return 0;
 }
 

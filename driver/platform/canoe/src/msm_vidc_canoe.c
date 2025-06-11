@@ -2498,6 +2498,14 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		V4L2_CID_MPEG_VIDC_HEIF_TILES,
 		HFI_PROP_HEIF_TILES,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT},
 };
 
 /*
@@ -2572,6 +2580,14 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 		V4L2_CID_MPEG_VIDC_METADATA_EVA_STATS,
 		HFI_PROP_EVA_STAT_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT},
 };
 
 /*
@@ -2796,6 +2812,14 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 		V4L2_CID_MPEG_VIDC_METADATA_EVA_STATS,
 		HFI_PROP_EVA_STAT_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT},
 };
 
 /*
@@ -3018,6 +3042,14 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v3[] = {
 		V4L2_CID_MPEG_VIDC_METADATA_EVA_STATS,
 		HFI_PROP_EVA_STAT_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
+		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
+		HFI_PROP_LOG_VIDEO_ENCODE,
+		CAP_FLAG_OUTPUT_PORT},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
@@ -3032,7 +3064,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC}},
+			LTR_COUNT, CSC, LOG_VIDEO_ENCODE}},
 
 	{PIX_FMTS, ENC, HEIC,
 		{PROFILE, CSC}},
@@ -3043,7 +3075,12 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{CODEC_MODE, ENC, CODECS_ALL,
 		{0}},
 
-	{PIX_FMTS, ENC | DEC, APV,
+	{PIX_FMTS, ENC, APV,
+		{LOG_VIDEO_ENCODE},
+		NULL,
+		NULL},
+
+	{PIX_FMTS, DEC, APV,
 		{0},
 		NULL,
 		NULL},
@@ -3212,12 +3249,14 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 			BIT_RATE, META_ROI_INFO, MIN_QUALITY, BITRATE_BOOST, VBV_DELAY,
 			PEAK_BITRATE, SLICE_MODE, CONTENT_ADAPTIVE_CODING,
 			BLUR_TYPES, LOWLATENCY_MODE, META_EVA_STATS,
-			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE},
+			META_TRANSCODING_STAT_INFO, OPEN_GOP, LOOKAHEAD_ENCODE_ENABLE,
+			LOG_VIDEO_ENCODE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
 	{BITRATE_MODE, ENC, APV,
-		{BIT_RATE, PEAK_BITRATE, META_EVA_STATS, TIME_DELTA_BASED_RC},
+		{BIT_RATE, PEAK_BITRATE, META_EVA_STATS, TIME_DELTA_BASED_RC,
+			LOG_VIDEO_ENCODE},
 		msm_vidc_adjust_bitrate_mode,
 		msm_vidc_set_u32_enum},
 
@@ -3770,6 +3809,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		{0},
 		NULL,
 		msm_vidc_set_u32},
+
+	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
+		{0},
+		msm_vidc_adjust_log_mode,
+		msm_vidc_set_u32_enum},
 };
 
 /* Default UBWC config for LPDDR5 */
@@ -3830,6 +3874,32 @@ static const struct clk_table canoe_clk_table[] = {
 	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
 	 (u64[]) {1260000000, 1104000000, 800000000, 666000000,
 		  630000000,  507000000,  360000000}, 7},
+};
+
+/* name, clock id, scaling */
+static const struct clk_table canoe_clk_table_v2[] = {
+	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0},
+	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0},
+	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0},
+	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0},
+	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0},
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0},
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0},
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0},
+	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0},
+	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0},
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {1000000000, 800000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
+	 (u64[]) {800000000, 630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
+	 (u64[]) {1260000000, 1260000000, 1104000000, 800000000, 666000000,
+		  630000000,  507000000,  360000000}, 8},
 };
 
 /* name, exclusive_release */
@@ -4247,6 +4317,8 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
 		core->platform->data.context_bank_tbl_size =
 			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.clk_tbl = canoe_clk_table_v2;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table_v2);
 		core->platform->data.fwname = "vpu40_2v";
 
 		platform_cap_data = core->platform->data.inst_cap_data;
