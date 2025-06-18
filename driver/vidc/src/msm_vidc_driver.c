@@ -1213,6 +1213,7 @@ int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
 			cache_type = MSM_MEM_CACHE_CLEAN_INVALIDATE;
 			break;
 		case MSM_VIDC_BUF_OUTPUT:
+		case MSM_VIDC_BUF_OUTPUT_META:
 			cache_type = MSM_MEM_CACHE_INVALIDATE;
 			break;
 		default:
@@ -1252,6 +1253,7 @@ int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
 			skip = true;
 			break;
 		case MSM_VIDC_BUF_OUTPUT:
+		case MSM_VIDC_BUF_OUTPUT_META:
 			cache_type = MSM_MEM_CACHE_INVALIDATE;
 			break;
 		default:
@@ -2223,6 +2225,12 @@ int msm_vidc_set_auto_framerate(struct msm_vidc_inst *inst, u64 timestamp)
 
 	if (counter < ENC_FPS_WINDOW)
 		goto exit;
+
+	if (curr_fr > inst->capabilities[FRAME_RATE].value) {
+		i_vpr_l(inst, "%s: fps: %u limited to client fps %lld.\n",
+			__func__, curr_fr >> 16, inst->capabilities[FRAME_RATE].value >> 16);
+		curr_fr = inst->capabilities[FRAME_RATE].value;
+	}
 
 	/* if framerate changed and stable for 2 frames, set to firmware */
 	if (curr_fr == prev_fr && curr_fr != inst->auto_framerate) {

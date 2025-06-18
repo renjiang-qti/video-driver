@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/delay.h>
@@ -1309,7 +1309,6 @@ static int __watchdog_iris4(struct msm_vidc_core *core, u32 intr_status)
 	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS4) {
 		d_vpr_e("%s: received watchdog interrupt\n", __func__);
 		rc = 1;
-		MSM_VIDC_FATAL(true);
 	}
 
 	return rc;
@@ -1366,7 +1365,6 @@ static int __noc_error_info_iris4(struct msm_vidc_core *core)
 		d_vpr_e("%s: NOC_ERL_ERRORLOGGER_MAIN_ERRORLOGGER_ERRLOG3_HIGH:  %#x\n",
 			__func__, value);
 
-	MSM_VIDC_FATAL(true);
 	return rc;
 }
 
@@ -1380,7 +1378,7 @@ static int __sw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
 	return call_res_op(core, gdsc_sw_ctrl, core);
 }
 
-int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
+static int msm_vidc_decide_work_mode_iris4(struct msm_vidc_inst *inst)
 {
 	u32 work_mode;
 	struct v4l2_format *inp_f;
@@ -1446,7 +1444,7 @@ exit:
 	return 0;
 }
 
-int msm_vidc_decide_work_route_iris4(struct msm_vidc_inst *inst)
+static int msm_vidc_decide_work_route_iris4(struct msm_vidc_inst *inst)
 {
 	u32 work_route;
 	struct msm_vidc_core *core;
@@ -1488,7 +1486,7 @@ exit:
 	return 0;
 }
 
-int msm_vidc_decide_quality_mode_iris4(struct msm_vidc_inst *inst)
+static int msm_vidc_decide_quality_mode_iris4(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_core *core;
 	u32 mbpf, mbps, max_hq_mbpf, max_hq_mbps;
