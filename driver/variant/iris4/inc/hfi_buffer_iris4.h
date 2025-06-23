@@ -2,7 +2,6 @@
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
- * All rights reserved.
  */
 
 #ifndef __HFI_BUFFER_IRIS4__

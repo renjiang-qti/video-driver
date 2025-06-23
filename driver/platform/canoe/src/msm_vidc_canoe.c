@@ -3832,6 +3832,32 @@ static const struct clk_table canoe_clk_table[] = {
 		  630000000,  507000000,  360000000}, 7},
 };
 
+/* name, clock id, scaling */
+static const struct clk_table canoe_clk_table_v2[] = {
+	{ "gcc_video_axi1_clk",         GCC_VIDEO_AXI1_CLK,         0},
+	{ "gcc_video_axi0_clk",         GCC_VIDEO_AXI0_CLK,         0},
+	{ "video_cc_mvs0c_freerun_clk", VIDEO_CC_MVS0C_FREERUN_CLK, 0},
+	{ "video_cc_mvs0_freerun_clk",  VIDEO_CC_MVS0_FREERUN_CLK,  0},
+	{ "video_cc_mvs0_clk",          VIDEO_CC_MVS0_CLK,          0},
+	{ "video_cc_mvs0a_clk",         VIDEO_CC_MVS0A_CLK,         0},
+	{ "video_cc_mvs0b_clk",         VIDEO_CC_MVS0B_CLK,         0},
+	{ "video_cc_mvs0c_clk",         VIDEO_CC_MVS0C_CLK,         0},
+	{ "video_cc_mvs0_vpp0_clk",     VIDEO_CC_MVS0_VPP0_CLK,     0},
+	{ "video_cc_mvs0_vpp1_clk",     VIDEO_CC_MVS0_VPP1_CLK,     0},
+	{ "video_cc_mvs0_clk_src",      VIDEO_CC_MVS0_CLK_SRC,      1,
+	 (u64[]) {1000000000, 800000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0a_clk_src",     VIDEO_CC_MVS0A_CLK_SRC,     1,
+	 (u64[]) {630000000, 630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
+	 (u64[]) {800000000, 630000000, 630000000, 533000000, 444000000,
+		  420000000, 338000000, 240000000}, 8},
+	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
+	 (u64[]) {1260000000, 1260000000, 1104000000, 800000000, 666000000,
+		  630000000,  507000000,  360000000}, 8},
+};
+
 /* name, exclusive_release */
 static const struct clk_rst_table canoe_clk_reset_table[] = {
 	{ "video_axi1_reset",                   0  },
@@ -4247,6 +4273,8 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
 		core->platform->data.context_bank_tbl_size =
 			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.clk_tbl = canoe_clk_table_v2;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table_v2);
 		core->platform->data.fwname = "vpu40_2v";
 
 		platform_cap_data = core->platform->data.inst_cap_data;
