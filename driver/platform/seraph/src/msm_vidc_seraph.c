@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <dt-bindings/clock/qcom,gcc-seraph.h>
@@ -67,16 +67,6 @@ static struct codec_info codec_data_seraph[] = {
 		.v4l2_codec  = V4L2_PIX_FMT_HEVC,
 		.vidc_codec  = MSM_VIDC_HEVC,
 		.pixfmt_name = "HEVC",
-	},
-	{
-		.v4l2_codec  = V4L2_PIX_FMT_VP9,
-		.vidc_codec  = MSM_VIDC_VP9,
-		.pixfmt_name = "VP9",
-	},
-	{
-		.v4l2_codec  = V4L2_PIX_FMT_AV1,
-		.vidc_codec  = MSM_VIDC_AV1,
-		.pixfmt_name = "AV1",
 	},
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_VIDC_HEIC,
@@ -301,7 +291,7 @@ static struct matrix_coeff_info matrix_coeff_data_seraph[] = {
 static const struct msm_platform_core_capability core_data_seraph[] = {
 	/* {type, value} */
 	{ENC_CODECS, H264 | HEVC | HEIC},
-	{DEC_CODECS, H264 | HEVC | VP9 | AV1 | HEIC},
+	{DEC_CODECS, H264 | HEVC | HEIC},
 	{MAX_SESSION_COUNT, 16},
 	{MAX_NUM_720P_SESSIONS, 16},
 	{MAX_NUM_1080P_SESSIONS, 16},
