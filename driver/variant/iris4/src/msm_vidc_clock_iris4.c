@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved
- * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include "perf_static_model.h"
@@ -21,6 +21,13 @@ static u32 frequency_table_iris4[2][7] = {
 	/* //make lowsvs_D1 as invalid; */
 	{ 800, 630, 533, 444, 420, 338, 240 }, //core clk
 	{ 1360, 1260, 800, 666, 630, 507, 360 }, //Tensilica clk
+};
+
+static u32 apv_encoder_ppc[2][4] = {
+	// ubwc  422, 422+rot (NA for K-T), 420, 420 + rot ; UBWC 420 includes both p010, tp10
+	{800, 800, 681, 648 },
+	// linear 422, 422+rot (NA for K-T), 420, 420 + rot ; linear 420 includes p010
+	{800, 800, 604, 341 },
 };
 
 static u32 sw_overhead_iris4[7] = {47200, 37170, 31447, 26196, 24780, 19942, 14160 };
@@ -335,7 +342,7 @@ static int initialize_encoder_complexity_table(void)
 	return 0;
 }
 
-u32 get_bitrate_entry(u32 pixle_count)
+static u32 get_bitrate_entry(u32 pixle_count)
 {
 	u32 bitrate_entry = 0;
 
@@ -363,7 +370,7 @@ u32 get_bitrate_entry(u32 pixle_count)
 	return bitrate_entry;
 }
 
-u32 get_vpp_cycles(struct api_calculation_input codec_input)
+static u32 get_vpp_cycles(struct api_calculation_input codec_input)
 {
 	u8 i = 0, j = 0;
 	u32 ret = 0;
@@ -515,6 +522,7 @@ static int calculate_apv_freq(struct api_calculation_input codec_input,
 	u32 tensilica_min_frequency = 0;
 	u32 fmin = 0, worker_Fmin = 0;
 	u32 index = 0, temp = 0, len = 0;
+	u32 ppc_index = 0;
 	u16 ppc = (codec_input.decoder_or_encoder == CODEC_DECODER) ? 6 : 8;
 
 	if (codec_input.decoder_or_encoder == CODEC_DECODER) {
@@ -524,6 +532,23 @@ static int calculate_apv_freq(struct api_calculation_input codec_input,
 			 codec_input.frame_rate + ppc - 1) / ppc;
 	} else {
 		ppc = 800;
+		ppc_index = codec_input.linear_ipb;
+
+		if (codec_input.video_adv_feature == 0) {
+			if (codec_input.format_10bpp == 3)
+				ppc = apv_encoder_ppc[ppc_index][0];
+			else if (codec_input.format_10bpp <= 1)
+				ppc = apv_encoder_ppc[ppc_index][2];
+			else
+				d_vpr_e("invalid format selected for APVe\n");
+		} else if (codec_input.video_adv_feature == 1) {
+			if (codec_input.format_10bpp == 3)
+				ppc = apv_encoder_ppc[ppc_index][1];
+			else if (codec_input.format_10bpp <= 1)
+				ppc = apv_encoder_ppc[ppc_index][3];
+			else
+				d_vpr_e("invalid format selected for APVe\n");
+		}
 		vpp_hw_min_frequency =
 			(codec_input.frame_width *
 			 codec_input.frame_height * 2 *
