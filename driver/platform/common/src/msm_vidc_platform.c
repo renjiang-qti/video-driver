@@ -127,6 +127,7 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 	},
 	{
 		.compat                     = "qcom,tuna-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_tuna,
 		.init_platform              = msm_vidc_init_platform_tuna,
 		.init_iris                  = msm_vidc_init_iris33,
 	},

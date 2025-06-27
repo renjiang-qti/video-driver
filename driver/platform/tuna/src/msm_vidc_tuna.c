@@ -4445,11 +4445,20 @@ static struct pd_table tuna_pd_table[] = {
 };
 
 /* name, clock id, scaling */
-static const struct clk_table tuna_clk_table[] = {
+static const struct clk_table tuna_clk_table_v0[] = {
 	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
 	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
 	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
-	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	(u64[]) {533333333, 444000000, 366000000, 338000000, 240000000, 192000000}, 6},
+};
+
+static const struct clk_table tuna_clk_table_v1[] = {
+	{ "gcc_video_axi0_clk",     GCC_VIDEO_AXI0_CLK,     0 },
+	{ "video_cc_mvs0c_clk",     VIDEO_CC_MVS0C_CLK,     0 },
+	{ "video_cc_mvs0_clk",      VIDEO_CC_MVS0_CLK,      0 },
+	{ "video_cc_mvs0_clk_src",  VIDEO_CC_MVS0_CLK_SRC,  1,
+	(u64[]) {366000000, 338000000, 240000000, 192000000}, 4},
 };
 
 /* name, exclusive_release */
@@ -4628,8 +4637,8 @@ static const struct msm_vidc_platform_data tuna_data_v0 = {
 	.bw_tbl_size = ARRAY_SIZE(tuna_bw_table),
 	.pd_tbl = tuna_pd_table,
 	.pd_tbl_size = ARRAY_SIZE(tuna_pd_table),
-	.clk_tbl = tuna_clk_table,
-	.clk_tbl_size = ARRAY_SIZE(tuna_clk_table),
+	.clk_tbl = tuna_clk_table_v0,
+	.clk_tbl_size = ARRAY_SIZE(tuna_clk_table_v0),
 	.clk_rst_tbl = tuna_clk_reset_table,
 	.clk_rst_tbl_size = ARRAY_SIZE(tuna_clk_reset_table),
 	.subcache_tbl = tuna_subcache_table,
@@ -4644,7 +4653,7 @@ static const struct msm_vidc_platform_data tuna_data_v0 = {
 	.reg_prst_tbl_size = ARRAY_SIZE(tuna_reg_preset_table),
 	.dev_reg_tbl = tuna_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(tuna_device_region_table),
-	.clock_source_scaling_ratio = 3,
+	.clock_source_scaling_ratio = 1,
 	.fwname = "vpu30_2v",
 	.pas_id = 9,
 	.supports_mmrm = 0,
@@ -4704,8 +4713,8 @@ static const struct msm_vidc_platform_data tuna_data_v1 = {
 	.bw_tbl_size = ARRAY_SIZE(tuna_bw_table),
 	.pd_tbl = tuna_pd_table,
 	.pd_tbl_size = ARRAY_SIZE(tuna_pd_table),
-	.clk_tbl = tuna_clk_table,
-	.clk_tbl_size = ARRAY_SIZE(tuna_clk_table),
+	.clk_tbl = tuna_clk_table_v1,
+	.clk_tbl_size = ARRAY_SIZE(tuna_clk_table_v1),
 	.clk_rst_tbl = tuna_clk_reset_table,
 	.clk_rst_tbl_size = ARRAY_SIZE(tuna_clk_reset_table),
 	.subcache_tbl = tuna_subcache_table,
