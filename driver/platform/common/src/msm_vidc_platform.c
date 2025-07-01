@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -1299,7 +1299,7 @@ int msm_vidc_adjust_input_buf_host_max_count(void *instance, struct v4l2_ctrl *c
 	adjusted_value = ctrl ? ctrl->val :
 		inst->capabilities[INPUT_BUF_HOST_MAX_COUNT].value;
 
-	if (msm_vidc_is_super_buffer(inst) || is_image_session(inst))
+	if (msm_vidc_is_super_buffer(inst))
 		adjusted_value = DEFAULT_MAX_HOST_BURST_BUF_COUNT;
 
 	msm_vidc_update_cap_value(inst, INPUT_BUF_HOST_MAX_COUNT, adjusted_value, __func__);
