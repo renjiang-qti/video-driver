@@ -41,6 +41,7 @@
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
 #include "msm_vidc_lemans.h"
+#include "msm_vidc_iris3.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_NIOBE)
 #include "msm_vidc_niobe.h"
@@ -148,6 +149,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_LEMANS)
 	{
 		.compat                     = "qcom,sa8255-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_lemans,
+		.init_platform              = msm_vidc_init_platform_lemans,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,sa8775p-iris",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
 		.init_iris                  = msm_vidc_init_iris3,
