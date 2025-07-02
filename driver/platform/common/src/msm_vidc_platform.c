@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-mem2mem.h>
@@ -1531,10 +1531,17 @@ int msm_vidc_adjust_slice_count(void *instance, struct v4l2_ctrl *ctrl)
 		goto exit;
 	}
 
-	mbpf = NUM_MBS_PER_FRAME(output_height, output_width);
-	mbps = NUM_MBS_PER_SEC(output_height, output_width, fps);
-	max_mbpf = NUM_MBS_PER_FRAME(max_height, max_width);
-	max_mbps = NUM_MBS_PER_SEC(max_height, max_width, MAX_SLICES_FRAME_RATE);
+	if (inst->codec == MSM_VIDC_HEVC) {
+		mbpf = NUM_MBS_PER_FRAME_HEVC(output_height, output_width);
+		mbps = NUM_MBS_PER_SEC_HEVC(output_height, output_width, fps);
+		max_mbpf = NUM_MBS_PER_FRAME_HEVC(max_height, max_width);
+		max_mbps = NUM_MBS_PER_SEC_HEVC(max_height, max_width, MAX_SLICES_FRAME_RATE);
+	} else {
+		mbpf = NUM_MBS_PER_FRAME(output_height, output_width);
+		mbps = NUM_MBS_PER_SEC(output_height, output_width, fps);
+		max_mbpf = NUM_MBS_PER_FRAME(max_height, max_width);
+		max_mbps = NUM_MBS_PER_SEC(max_height, max_width, MAX_SLICES_FRAME_RATE);
+	}
 
 	if (mbpf > max_mbpf || mbps > max_mbps) {
 		adjusted_value = V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_SINGLE;
@@ -3475,9 +3482,7 @@ int msm_vidc_set_slice_count(void *instance,
 		return 0;
 	}
 	if (slice_mode == V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_MB) {
-		hfi_value = (inst->codec == MSM_VIDC_HEVC) ?
-			((inst->capabilities[SLICE_MAX_MB].value + 3) / 4) :
-			inst->capabilities[SLICE_MAX_MB].value;
+		hfi_value = inst->capabilities[SLICE_MAX_MB].value;
 		set_cap_id = SLICE_MAX_MB;
 	} else if (slice_mode == V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_BYTES) {
 		hfi_value = inst->capabilities[SLICE_MAX_BYTES].value;
