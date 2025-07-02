@@ -2289,6 +2289,14 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
+	{META_THREE_DIMENSIONAL_REF_DISP_INFO, DEC, HEVC,
+		MSM_VIDC_META_DISABLE,
+		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
+		0, MSM_VIDC_META_DISABLE,
+		V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO,
+		HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO,
+		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
 	{META_PICTURE_TYPE, DEC, CODECS_ALL,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT |
@@ -3346,7 +3354,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 
 	{MIN_QUALITY, ENC, H264 | HEVC,
 		{BLUR_TYPES},
-		msm_vidc_adjust_min_quality,
+		msm_vidc_adjust_min_quality_iris4,
 		msm_vidc_set_u32},
 
 	{VBV_DELAY, ENC, H264 | HEVC,
@@ -3680,7 +3688,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 		NULL},
 
 	{META_ROI_INFO, ENC, H264 | HEVC,
-		{MIN_QUALITY, IR_PERIOD, BLUR_TYPES},
+		{IR_PERIOD, BLUR_TYPES},
 		msm_vidc_adjust_roi_info_iris4,
 		NULL},
 
@@ -3854,7 +3862,7 @@ static const struct clk_table canoe_clk_table_v2[] = {
 	 (u64[]) {630000000, 630000000, 630000000, 533000000, 444000000,
 		  420000000, 338000000, 240000000}, 8},
 	{ "video_cc_mvs0b_clk_src",     VIDEO_CC_MVS0B_CLK_SRC,     1,
-	 (u64[]) {800000000, 630000000, 630000000, 533000000, 444000000,
+	 (u64[]) {850000000, 630000000, 630000000, 533000000, 444000000,
 		  420000000, 338000000, 240000000}, 8},
 	{ "video_cc_mvs0c_clk_src",     VIDEO_CC_MVS0C_CLK_SRC,     1,
 	 (u64[]) {1260000000, 1260000000, 1104000000, 800000000, 666000000,
