@@ -167,6 +167,12 @@ enum msm_vidc_metadata_bits {
 #define NUM_MBS_PER_FRAME(__height, __width) \
 	((ALIGN(__height, 16) / 16) * (ALIGN(__width, 16) / 16))
 
+#define NUM_MBS_PER_FRAME_HEVC(__height, __width) \
+	((ALIGN(__height, 32) / 32) * (ALIGN(__width, 32) / 32))
+
+#define NUM_MBS_PER_SEC_HEVC(__height, __width, __fps) \
+	(NUM_MBS_PER_FRAME_HEVC(__height, __width) * __fps)
+
 #ifdef V4L2_CTRL_CLASS_CODEC
 #define IS_PRIV_CTRL(idx) ( \
 	(V4L2_CTRL_ID2WHICH(idx) == V4L2_CTRL_CLASS_CODEC) && \
