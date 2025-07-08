@@ -16,6 +16,7 @@
 #include <linux/soc/qcom/msm_mmrm.h>
 #endif
 #include <media/v4l2-mem2mem.h>
+#include <linux/msm_dma_iommu_mapping.h>
 
 #include "msm_vidc_internal.h"
 #include "msm_vidc_driver.h"
@@ -603,6 +604,9 @@ static void msm_vidc_component_unbind(struct device *dev,
 	struct device *parent, void *data)
 {
 	d_vpr_h("%s(): %s\n", __func__, dev_name(dev));
+
+	if (is_video_context_bank_device(dev))
+		msm_dma_unmap_all_for_dev(dev);
 }
 
 static int msm_vidc_component_master_bind(struct device *dev)

@@ -126,19 +126,23 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 	codec_input->hierachical_layer =
 		msm_vidc_get_hier_layer_val(inst);
 
-	if (is_decode_session(inst))
+	if (is_decode_session(inst)) {
 		color_fmt = v4l2_colorformat_to_driver(inst,
 			inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat, __func__);
-	else
-		color_fmt = v4l2_colorformat_to_driver(inst,
-			inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat, __func__);
 
-	codec_input->linear_opb = is_linear_colorformat(color_fmt);
+		codec_input->linear_opb = is_linear_colorformat(color_fmt);
 
-	if (is_decode_session(inst)) {
 		codec_input->bitrate_mbps =
 			(codec_input->frame_rate * data_size * 8) / 1000000;
 	} else {
+		color_fmt = v4l2_colorformat_to_driver(inst,
+			inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat, __func__);
+
+		codec_input->linear_ipb = is_linear_colorformat(color_fmt);
+
+		if (codec_input->bitdepth == CODEC_BITDEPTH_10)
+			codec_input->format_10bpp = __format_10bpp(color_fmt);
+
 		frame_rate = msm_vidc_get_frame_rate(inst);
 		max_rate = inst->max_rate;
 		codec_input->bitrate_mbps =
@@ -153,6 +157,7 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 		if (frame_rate && max_rate > frame_rate)
 			codec_input->bitrate_mbps =
 				codec_input->bitrate_mbps * max_rate / frame_rate;
+
 	}
 
 	/* av1d commercial tile */
@@ -186,6 +191,9 @@ static int msm_vidc_init_codec_input_freq(struct msm_vidc_inst *inst, u32 data_s
 	codec_input->video_adv_feature = VIDEO_ADV_FEATURE_NONE;
 	if (inst->capabilities[LOOKAHEAD_ENCODE_ENABLE].value)
 		codec_input->video_adv_feature = FEATURE_LOOKAHEAD_ENCODE;
+
+	if (inst->capabilities[ROTATION].value && codec_input->codec == CODEC_APV)
+		codec_input->video_adv_feature = FEATURE_APV_ROTATION;
 
 	core = inst->core;
 	codec_input->vpu_ver = core->platform->data.vpu_ver;
@@ -268,7 +276,7 @@ static int msm_vidc_init_codec_input_bus(struct msm_vidc_inst *inst, struct vidc
 	} else {
 		codec_input->bitdepth = CODEC_BITDEPTH_10;
 		codec_input->format_10bpp =
-			!__ubwc(d->color_formats[d->num_formats - 1]) ? 1 : 0;
+			__format_10bpp(d->color_formats[d->num_formats - 1]);
 	}
 
 	if (d->num_formats == 1) {
