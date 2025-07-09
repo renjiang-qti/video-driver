@@ -680,11 +680,6 @@ static struct msm_platform_inst_capability instance_cap_data_tuna_v0[] = {
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
-	{FENCE_ERROR_DATA_CORRUPT, DEC, H264 | HEVC | VP9 | AV1,
-		0, 1, 1, 0,
-		0,
-		HFI_PROP_FENCE_ERROR_DATA_CORRUPT},
-
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_TS_REORDER},
@@ -2182,11 +2177,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_tuna
 		msm_vidc_adjust_dec_output_rx_fence_type,
 		NULL},
 
-	{FENCE_ERROR_DATA_CORRUPT, DEC, H264 | HEVC | VP9 | AV1,
-		{0},
-		NULL,
-		msm_vidc_set_u32},
-
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
 		NULL,
@@ -3030,11 +3020,6 @@ static struct msm_platform_inst_capability instance_cap_data_tuna_v1[] = {
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
-
-	{FENCE_ERROR_DATA_CORRUPT, DEC, H264 | HEVC | VP9 | AV1,
-		0, 1, 1, 0,
-		0,
-		HFI_PROP_FENCE_ERROR_DATA_CORRUPT},
 
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,

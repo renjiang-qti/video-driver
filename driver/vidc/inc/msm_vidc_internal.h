@@ -352,7 +352,6 @@ enum msm_vidc_metadata_bits {
 	CAP(INPUT_RX_FENCE_FD)                    \
 	CAP(OUTPUT_TX_FENCE_FD)                   \
 	CAP(FENCE_INFO)                           \
-	CAP(FENCE_ERROR_DATA_CORRUPT)             \
 	CAP(TS_REORDER)                           \
 	CAP(HFLIP)                                \
 	CAP(VFLIP)                                \
