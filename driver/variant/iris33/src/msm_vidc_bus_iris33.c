@@ -116,7 +116,7 @@ struct compression_factors {
 	u32 ipb_cr;
 } compression_factor_iris33;
 
-u32 get_compression_factors_iris33(struct compression_factors *compression_factor,
+static u32 get_compression_factors(struct compression_factors *compression_factor,
 				   struct api_calculation_input codec_input)
 {
 	u8 cr_index_entry, cr_index_y, cr_index_c, cr_index_uni;
@@ -359,7 +359,7 @@ static int calculate_bandwidth_decoder_iris33(
 		codec_input.frame_rate * 2 + 999) / 1000 + 999) / 1000;
 
 	/* TODO Integrate Compression Ratio returned by FW */
-	get_compression_factors_iris33(&compression_factor_iris33, codec_input);
+	get_compression_factors(&compression_factor_iris33, codec_input);
 	dpb_compression_factor_y = compression_factor_iris33.dpb_cf_y;
 	dpb_compression_factor_cbcr = compression_factor_iris33.dpb_cf_cbcr;
 	opb_compression_factor_ycbcr = compression_factor_iris33.opb_cf_ycbcr;
@@ -751,7 +751,7 @@ static int calculate_bandwidth_encoder_iris33(
 		codec_input.frame_rate * 2 + 999) / 1000 + 999) / 1000;
 
 	/* TODO Integrate Compression Ratio returned by FW */
-	get_compression_factors_iris33(&compression_factor_iris33, codec_input);
+	get_compression_factors(&compression_factor_iris33, codec_input);
 	dpb_compression_factor_y = compression_factor_iris33.dpb_cf_y;
 	dpb_compression_factor_cbcr = compression_factor_iris33.dpb_cf_cbcr;
 	ipb_compression_factor_y = compression_factor_iris33.ipb_cr_y;

@@ -262,7 +262,7 @@ static int initialize_encoder_complexity_table(void)
 	return 0;
 }
 
-u32 get_bitrate_entry_iris3(u32 pixle_count)
+static u32 get_bitrate_entry(u32 pixle_count)
 {
 	u32 bitrate_entry = 0;
 
@@ -310,7 +310,7 @@ static int calculate_vsp_min_freq(struct api_calculation_input codec_input,
 	u32 pixle_count = codec_input.frame_width *
 		codec_input.frame_height * codec_input.frame_rate;
 
-	u8 bitrate_entry = get_bitrate_entry_iris3(pixle_count); /* TODO EXTRACT */
+	u8 bitrate_entry = get_bitrate_entry(pixle_count); /* TODO EXTRACT */
 
 	input_bitrate_fp = ((u32)(codec_input.bitrate_mbps * 100 + 99)) / 100;
 	vsp_hw_min_frequency = frequency_table_iris3[0][1] * input_bitrate_fp * 1000;
