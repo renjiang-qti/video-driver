@@ -4461,8 +4461,8 @@ static const struct subcache_table tuna_subcache_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table tuna_context_bank_table[] = {
-	{"qcom,vidc,cb-ns",
-		0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE,       0 },
+	{"qcom,vidc,cb-ns", 0x25800000, 0xba800000, 0, 1,
+		MSM_VIDC_NON_SECURE | MSM_VIDC_NON_SECURE_BITSTREAM,     0 },
 	{"qcom,vidc,cb-ns-pxl",
 		0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0 },
 	{"qcom,vidc,cb-sec-pxl",
