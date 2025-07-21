@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <soc/qcom/of_common.h>
 
@@ -1124,8 +1124,8 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 		HFI_PROP_8X8_TRANSFORM,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
-		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET_MASK,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC,
+		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET,
 		1, MAX_CHROMA_QP_OFFSET,
 		V4L2_CID_MPEG_VIDEO_H264_CHROMA_QP_INDEX_OFFSET,
 		HFI_PROP_CHROMA_QP_OFFSET,
@@ -1204,7 +1204,7 @@ static struct msm_platform_inst_capability instance_cap_data_nordau[] = {
 		0,
 		HFI_PROP_CODED_FRAMES},
 
-	{BIT_DEPTH, DEC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
+	{BIT_DEPTH, DEC | ENC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
 		0,
 		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
 
@@ -1260,12 +1260,19 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nord
 	 *      adjust, set}
 	 */
 
+	{PIX_FMTS, ENC, H264,
+		{BIT_DEPTH}},
+
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
-			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, LTR_COUNT}},
+			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, LTR_COUNT, BIT_DEPTH}},
 
 	{PIX_FMTS, DEC, HEVC,
 		{PROFILE}},
+
+	{BIT_DEPTH, ENC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_bitdepth},
 
 	{FRAME_RATE, ENC, CODECS_ALL,
 		{0},
@@ -1512,7 +1519,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nord
 		msm_vidc_set_u32},
 
 	{PROFILE, ENC, H264,
-		{ENTROPY_MODE, TRANSFORM_8X8, CHROMA_QP_INDEX_OFFSET},
+		{ENTROPY_MODE, TRANSFORM_8X8},
 		NULL,
 		msm_vidc_set_u32_enum},
 
@@ -1561,7 +1568,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_nord
 		msm_vidc_adjust_transform_8x8,
 		msm_vidc_set_u32},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC,
 		{0},
 		msm_vidc_adjust_chroma_qp_index_offset,
 		msm_vidc_set_chroma_qp_index_offset},

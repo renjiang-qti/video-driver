@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <dt-bindings/clock/qcom,gcc-niobe.h>
@@ -1696,7 +1696,7 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 		HFI_PROP_CODED_FRAMES,
 		CAP_FLAG_VOLATILE},
 
-	{BIT_DEPTH, DEC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
+	{BIT_DEPTH, DEC | ENC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
 		0,
 		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
 
@@ -1917,6 +1917,14 @@ static struct msm_platform_inst_capability instance_cap_data_niobe[] = {
 		HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
+	{META_THREE_DIMENSIONAL_REF_DISP_INFO, DEC, HEVC,
+		MSM_VIDC_META_DISABLE,
+		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
+		0, MSM_VIDC_META_DISABLE,
+		V4L2_CID_MPEG_VIDC_METADATA_THREE_DIMENSIONAL_REF_DISP_INFO,
+		HFI_PROP_THREE_DIMENSIONAL_REFERENCE_DISPLAYS_INFO,
+		CAP_FLAG_BITMASK | CAP_FLAG_META},
+
 	{META_PICTURE_TYPE, DEC, CODECS_ALL,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_TX_INPUT |
@@ -2127,18 +2135,22 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_niob
 	 */
 
 	{PIX_FMTS, ENC, H264,
-		{META_ROI_INFO, IR_PERIOD, CSC}},
+		{META_ROI_INFO, IR_PERIOD, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, META_ROI_INFO, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC}},
+			LTR_COUNT, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, ENC, HEIC,
-		{PROFILE, CSC}},
+		{PROFILE, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, DEC, HEVC | HEIC,
 		{PROFILE}},
+
+	{BIT_DEPTH, ENC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_bitdepth},
 
 	{FRAME_RATE, ENC, CODECS_ALL,
 		{LEVEL},
