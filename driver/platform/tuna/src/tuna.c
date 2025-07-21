@@ -5,13 +5,11 @@
 
 #include <soc/qcom/of_common.h>
 
-#include "msm_vidc_internal.h"
-#include "msm_vidc_inst.h"
 #include "msm_vidc_control.h"
-#include "msm_vidc_pineapple.h"
+#include "msm_vidc_tuna.h"
 #include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
-#include "msm_vidc_iris33.h"
+#include "msm_vidc_iris35.h"
 #include "hfi_property.h"
 #include "hfi_command.h"
 #include "venus_hfi.h"
@@ -48,7 +46,7 @@
 #define V4L2_PIX_FMT_QC10C    v4l2_fourcc('Q', '1', '0', 'C')
 #endif
 
-static struct codec_info codec_data_pineapple[] = {
+static struct codec_info codec_data_tuna[] = {
 	{
 		.v4l2_codec  = V4L2_PIX_FMT_H264,
 		.vidc_codec  = MSM_VIDC_H264,
@@ -66,7 +64,7 @@ static struct codec_info codec_data_pineapple[] = {
 	},
 };
 
-static struct color_format_info color_format_data_pineapple[] = {
+static struct color_format_info color_format_data_tuna[] = {
 	{
 		.v4l2_color_format = V4L2_PIX_FMT_NV12,
 		.vidc_color_format = MSM_VIDC_FMT_NV12,
@@ -94,7 +92,7 @@ static struct color_format_info color_format_data_pineapple[] = {
 	},
 };
 
-static struct color_primaries_info color_primaries_data_pineapple[] = {
+static struct color_primaries_info color_primaries_data_tuna[] = {
 	{
 		.v4l2_color_primaries  = V4L2_COLORSPACE_DEFAULT,
 		.vidc_color_primaries  = MSM_VIDC_PRIMARIES_RESERVED,
@@ -129,7 +127,7 @@ static struct color_primaries_info color_primaries_data_pineapple[] = {
 	},
 };
 
-static struct transfer_char_info transfer_char_data_pineapple[] = {
+static struct transfer_char_info transfer_char_data_tuna[] = {
 	{
 		.v4l2_transfer_char  = V4L2_XFER_FUNC_DEFAULT,
 		.vidc_transfer_char  = MSM_VIDC_TRANSFER_RESERVED,
@@ -152,7 +150,7 @@ static struct transfer_char_info transfer_char_data_pineapple[] = {
 	},
 };
 
-static struct matrix_coeff_info matrix_coeff_data_pineapple[] = {
+static struct matrix_coeff_info matrix_coeff_data_tuna[] = {
 	{
 		.v4l2_matrix_coeff  = V4L2_YCBCR_ENC_DEFAULT,
 		.vidc_matrix_coeff  = MSM_VIDC_MATRIX_COEFF_RESERVED,
@@ -187,7 +185,7 @@ static struct matrix_coeff_info matrix_coeff_data_pineapple[] = {
 	},
 };
 
-static struct msm_platform_core_capability core_data_pineapple[] = {
+static const struct msm_platform_core_capability core_data_tuna[] = {
 	/* {type, value} */
 	{ENC_CODECS, H264 | HEVC},
 	{DEC_CODECS, H264 | HEVC | VP9},
@@ -223,74 +221,12 @@ static struct msm_platform_core_capability core_data_pineapple[] = {
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_STREAMING},
+	// TODO gdoddabe Enable when Synx changes are available
+	// {SUPPORTS_SYNX_FENCE, 0},
 	{SUPPORTS_REQUESTS, 0},
 };
 
-static int msm_vidc_set_ring_buffer_count_pineapple(void *instance,
-	enum msm_vidc_inst_capability_type cap_id)
-{
-	int rc = 0;
-	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
-	struct v4l2_format *output_fmt, *input_fmt;
-	struct msm_vidc_core *core;
-	u32 count = 0, data_size = 0, pixel_count = 0, fps = 0;
-	u32 frame_rate = 0, operating_rate = 0;
-
-	core = inst->core;
-	output_fmt = &inst->fmts[OUTPUT_PORT];
-	input_fmt = &inst->fmts[INPUT_PORT];
-
-	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
-	operating_rate = inst->capabilities[OPERATING_RATE].value >> 16;
-	fps = max(frame_rate, operating_rate);
-	pixel_count = output_fmt->fmt.pix_mp.width *
-		output_fmt->fmt.pix_mp.height;
-
-	/*
-	 * try to enable ring buffer feature if
-	 * resolution >= 8k and fps >= 30fps and
-	 * resolution >= 4k and fps >= 120fps and
-	 * resolution >= 1080p and fps >= 480fps and
-	 * resolution >= 720p and fps >= 960fps
-	 */
-	if ((pixel_count >= 7680 * 4320 && fps >= 30) &&
-	    (pixel_count >= 3840 * 2160 && fps >= 120) &&
-	    (pixel_count >= 1920 * 1080 && fps >= 480) &&
-	    (pixel_count >= 1280 * 720 && fps >= 960)) {
-		data_size = input_fmt->fmt.pix_mp.plane_fmt[0].sizeimage;
-		i_vpr_h(inst, "%s: calculate ring buffer count\n", __func__);
-		rc = call_session_op(core, ring_buf_count, inst, data_size);
-		if (rc) {
-			i_vpr_e(inst, "%s: failed to calculate ring buf count\n",
-				__func__);
-			/* ignore error */
-			rc = 0;
-			inst->capabilities[cap_id].value = 0;
-		}
-	} else {
-		i_vpr_h(inst,
-			"%s: session %ux%u@%u fps does not support ring buffer\n",
-			__func__, output_fmt->fmt.pix_mp.width,
-			output_fmt->fmt.pix_mp.height, fps);
-		inst->capabilities[cap_id].value = 0;
-	}
-
-	count = inst->capabilities[cap_id].value;
-	i_vpr_h(inst, "%s: ring buffer count: %u\n", __func__, count);
-	rc = venus_hfi_session_property(inst,
-			HFI_PROP_ENC_RING_BIN_BUF,
-			HFI_HOST_FLAGS_NONE,
-			HFI_PORT_BITSTREAM,
-			HFI_PAYLOAD_U32,
-			&count,
-			sizeof(u32));
-	if (rc)
-		return rc;
-
-	return rc;
-}
-
-static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
+static struct msm_platform_inst_capability instance_cap_data_tuna[] = {
 	/* {cap, domain, codec,
 	 *      min, max, step_or_mask, value,
 	 *      v4l2_id,
@@ -339,7 +275,6 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		V4L2_CID_MIN_BUFFERS_FOR_OUTPUT,
 		0,
 		CAP_FLAG_VOLATILE},
-
 
 	{MIN_BUFFERS_OUTPUT, ENC | DEC, CODECS_ALL,
 		0, 64, 1, 4,
@@ -582,8 +517,7 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 	{CSC, ENC, CODECS_ALL,
 		0, 1, 1, 0,
 		0,
-		HFI_PROP_CSC,
-		CAP_FLAG_OUTPUT_PORT},
+		HFI_PROP_CSC},
 
 	{LOWLATENCY_MODE, ENC, H264 | HEVC,
 		0, 1, 1, 0,
@@ -1161,8 +1095,8 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		HFI_PROP_8X8_TRANSFORM,
 		CAP_FLAG_OUTPUT_PORT},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC,
-		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
+		MIN_CHROMA_QP_OFFSET, MAX_CHROMA_QP_OFFSET_MASK,
 		1, MAX_CHROMA_QP_OFFSET,
 		V4L2_CID_MPEG_VIDEO_H264_CHROMA_QP_INDEX_OFFSET,
 		HFI_PROP_CHROMA_QP_OFFSET,
@@ -1290,15 +1224,15 @@ static struct msm_platform_inst_capability instance_cap_data_pineapple[] = {
 		0},
 };
 
-static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pineapple[] = {
+static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_tuna[] = {
 	/* {cap, domain, codec,
 	 *      parents,
 	 *      children,
 	 *      adjust, set}
 	 */
+
 	{PIX_FMTS, ENC, H264,
 		{BIT_DEPTH}},
-
 
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
@@ -1315,11 +1249,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 		{0},
 		NULL,
 		msm_vidc_set_q16},
-
-	{ENC_RING_BUFFER_COUNT, ENC, H264,
-		{0},
-		NULL,
-		msm_vidc_set_ring_buffer_count_pineapple},
 
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
@@ -1561,7 +1490,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 		msm_vidc_set_u32},
 
 	{PROFILE, ENC, H264,
-		{ENTROPY_MODE, TRANSFORM_8X8},
+		{ENTROPY_MODE, TRANSFORM_8X8, CHROMA_QP_INDEX_OFFSET},
 		NULL,
 		msm_vidc_set_u32_enum},
 
@@ -1610,7 +1539,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 		msm_vidc_adjust_transform_8x8,
 		msm_vidc_set_u32},
 
-	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC,
+	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
 		{0},
 		msm_vidc_adjust_chroma_qp_index_offset,
 		msm_vidc_set_chroma_qp_index_offset},
@@ -1702,66 +1631,66 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_pine
 };
 
 /* Default UBWC config for LPDDR5 */
-static struct msm_vidc_ubwc_config_data ubwc_config_pineapple[] = {
+static struct msm_vidc_ubwc_config_data ubwc_config_tuna[] = {
 	UBWC_CONFIG(8, 32, 16, 0, 1, 1, 1),
 };
 
-static struct msm_vidc_format_capability format_data_pineapple = {
-	.codec_info = codec_data_pineapple,
-	.codec_info_size = ARRAY_SIZE(codec_data_pineapple),
-	.color_format_info = color_format_data_pineapple,
-	.color_format_info_size = ARRAY_SIZE(color_format_data_pineapple),
-	.color_prim_info = color_primaries_data_pineapple,
-	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_pineapple),
-	.transfer_char_info = transfer_char_data_pineapple,
-	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_pineapple),
-	.matrix_coeff_info = matrix_coeff_data_pineapple,
-	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_pineapple),
+static struct msm_vidc_format_capability format_data_tuna = {
+	.codec_info = codec_data_tuna,
+	.codec_info_size = ARRAY_SIZE(codec_data_tuna),
+	.color_format_info = color_format_data_tuna,
+	.color_format_info_size = ARRAY_SIZE(color_format_data_tuna),
+	.color_prim_info = color_primaries_data_tuna,
+	.color_prim_info_size = ARRAY_SIZE(color_primaries_data_tuna),
+	.transfer_char_info = transfer_char_data_tuna,
+	.transfer_char_info_size = ARRAY_SIZE(transfer_char_data_tuna),
+	.matrix_coeff_info = matrix_coeff_data_tuna,
+	.matrix_coeff_info_size = ARRAY_SIZE(matrix_coeff_data_tuna),
 };
 
-static const struct msm_vidc_platform_data pineapple_data = {
-	.core_data = core_data_pineapple,
-	.core_data_size = ARRAY_SIZE(core_data_pineapple),
-	.inst_cap_data = instance_cap_data_pineapple,
-	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_pineapple),
-	.inst_cap_dependency_data = instance_cap_dependency_data_pineapple,
-	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_pineapple),
+static const struct msm_vidc_platform_data tuna_data = {
+	.core_data = core_data_tuna,
+	.core_data_size = ARRAY_SIZE(core_data_tuna),
+	.inst_cap_data = instance_cap_data_tuna,
+	.inst_cap_data_size = ARRAY_SIZE(instance_cap_data_tuna),
+	.inst_cap_dependency_data = instance_cap_dependency_data_tuna,
+	.inst_cap_dependency_data_size = ARRAY_SIZE(instance_cap_dependency_data_tuna),
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_pineapple,
-	.format_data = &format_data_pineapple,
+	.ubwc_config = ubwc_config_tuna,
+	.format_data = &format_data_tuna,
 };
 
-static int msm_vidc_pineapple_check_ddr_type(void)
+int msm_vidc_tuna_check_ddr_type(void)
 {
 	u32 ddr_type;
 
 	ddr_type = of_fdt_get_ddrtype();
 	if (ddr_type != DDR_TYPE_LPDDR5 &&
-		ddr_type != DDR_TYPE_LPDDR5X) {
+	    ddr_type != DDR_TYPE_LPDDR5X) {
 		d_vpr_e("%s: wrong ddr type %d\n", __func__, ddr_type);
 		return -EINVAL;
-	} else {
-		d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	}
+
+	d_vpr_h("%s: ddr type %d\n", __func__, ddr_type);
 	return 0;
 }
 
-int msm_vidc_get_platform_data_pineapple(struct msm_vidc_core *core)
+int msm_vidc_get_platform_data_tuna(struct msm_vidc_core *core)
 {
-	d_vpr_h("%s: initialize pineapple data\n", __func__);
-	core->platform->data = pineapple_data;
+	d_vpr_h("%s: initialize tuna data\n", __func__);
+	core->platform->data = tuna_data;
 
 	return 0;
 }
 
-int msm_vidc_init_platform_pineapple(struct msm_vidc_core *core)
+int msm_vidc_init_platform_tuna(struct msm_vidc_core *core)
 {
 	int rc = 0;
+	d_vpr_h("%s: initialize tuna ops\n", __func__);
 
-	d_vpr_h("%s: initialize pineapple ops\n", __func__);
-	rc = msm_vidc_pineapple_check_ddr_type();
+	rc = msm_vidc_tuna_check_ddr_type();
 	if (rc)
 		return rc;
 

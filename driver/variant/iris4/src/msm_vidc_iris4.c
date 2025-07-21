@@ -1309,7 +1309,6 @@ static int __watchdog_iris4(struct msm_vidc_core *core, u32 intr_status)
 	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK_IRIS4) {
 		d_vpr_e("%s: received watchdog interrupt\n", __func__);
 		rc = 1;
-		MSM_VIDC_FATAL(true);
 	}
 
 	return rc;
@@ -1366,12 +1365,82 @@ static int __noc_error_info_iris4(struct msm_vidc_core *core)
 		d_vpr_e("%s: NOC_ERL_ERRORLOGGER_MAIN_ERRORLOGGER_ERRLOG3_HIGH:  %#x\n",
 			__func__, value);
 
-	MSM_VIDC_FATAL(true);
+	return rc;
+}
+
+static int __ahb_sync_reset_iris4_apv(struct msm_vidc_core *core)
+{
+	u32 value = 0;
+	int rc = 0;
+
+	if (!is_hw_enabled(core, "apv"))
+		return 0;
+
+	rc = __read_register(core, WRAPPER_EFUSE_MONITOR_IRIS4, &value);
+	if (rc)
+		return rc;
+
+	if (is_vpu_iris4_1p(core) || (value & BIT(27)))
+		return 0;
+
+	d_vpr_h("%s: ahb reset\n", __func__);
+
+	/*
+	 * Reset both sides of 2 ahb2ahb_bridges (TZ and non-TZ)
+	 * do we need to check status register here?
+	 */
+	rc = __write_register(core, VCODEC_VPU_CPU_CS_APV_BRIDGE_SYNC_RESET_IRIS4, 0x3);
+	if (rc)
+		return rc;
+	rc = __write_register(core, VCODEC_VPU_CPU_CS_APV_BRIDGE_SYNC_RESET_IRIS4, 0x2);
+	if (rc)
+		return rc;
+	rc = __write_register(core, VCODEC_VPU_CPU_CS_APV_BRIDGE_SYNC_RESET_IRIS4, 0x0);
+	if (rc)
+		return rc;
+
+	return rc;
+}
+
+static int __ahb_sync_reset_iris4_hardware(struct msm_vidc_core *core)
+{
+	int rc = 0;
+
+	d_vpr_h("%s: ahb reset\n", __func__);
+
+	/*
+	 * Reset both sides of 2 ahb2ahb_bridges (TSW and non-TSW)
+	 */
+	rc = __write_register(core, CPU_CS_AHB_BRIDGE_SYNC_RESET_IRIS4, 0x3);
+	if (rc)
+		return rc;
+	rc = __write_register(core, CPU_CS_AHB_BRIDGE_SYNC_RESET_IRIS4, 0x2);
+	if (rc)
+		return rc;
+	rc = __write_register(core, CPU_CS_AHB_BRIDGE_SYNC_RESET_IRIS4, 0x0);
+	if (rc)
+		return rc;
+
 	return rc;
 }
 
 static int __hw_ctrl_gdsc_iris4(struct msm_vidc_core *core)
 {
+	int rc = 0;
+
+	/**
+	 * switching hw_ctrl will turn off the core, so perform
+	 * ahb reset before hw_ctrl switch to avoid secure retention
+	 * register corruption issue.
+	 */
+	rc = __ahb_sync_reset_iris4_apv(core);
+	if (rc)
+		return rc;
+
+	rc = __ahb_sync_reset_iris4_hardware(core);
+	if (rc)
+		return rc;
+
 	return call_res_op(core, gdsc_hw_ctrl, core);
 }
 
@@ -1706,6 +1775,99 @@ exit:
 	return 0;
 }
 
+int msm_vidc_adjust_min_quality_iris4(void *instance, struct v4l2_ctrl *ctrl)
+{
+	s32 adjusted_value;
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	s64 rc_type = -1, enh_layer_count = -1, pix_fmts = -1;
+	u32 width, height, frame_rate;
+	struct v4l2_format *f;
+
+	adjusted_value = ctrl ? ctrl->val : inst->capabilities[MIN_QUALITY].value;
+
+	/*
+	 * Although MIN_QUALITY is static, one of its parents,
+	 * ENH_LAYER_COUNT is dynamic cap. Hence, dynamic call
+	 * may be made for MIN_QUALITY via ENH_LAYER_COUNT.
+	 * Therefore, below streaming check is required to avoid
+	 * runtime modification of MIN_QUALITY.
+	 */
+	if (inst->bufq[OUTPUT_PORT].vb2q->streaming)
+		return 0;
+
+	if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
+				      BITRATE_MODE, &rc_type, __func__) ||
+	    msm_vidc_get_parent_value(inst, MIN_QUALITY,
+				      ENH_LAYER_COUNT, &enh_layer_count, __func__))
+		return -EINVAL;
+
+	/*
+	 * Min Quality is supported only for VBR rc type.
+	 * Hence, do not adjust or set to firmware for non VBR rc's
+	 */
+	if (rc_type != HFI_RC_VBR_CFR) {
+		adjusted_value = 0;
+		goto update_and_exit;
+	}
+
+	frame_rate = inst->capabilities[FRAME_RATE].value >> 16;
+	f = &inst->fmts[OUTPUT_PORT];
+	width = f->fmt.pix_mp.width;
+	height = f->fmt.pix_mp.height;
+
+	/*
+	 * Min Quality not supported for:
+	 * - HEVC 10bit
+	 * - HP encoding
+	 * - External Blur
+	 * - Resolution beyond 1080P
+	 * (It will fall back to CQCAC 25% or 0% (CAC) or CQCAC-OFF)
+	 */
+	if (inst->codec == MSM_VIDC_HEVC) {
+		if (msm_vidc_get_parent_value(inst, MIN_QUALITY,
+					      PIX_FMTS, &pix_fmts, __func__))
+			return -EINVAL;
+
+		if (is_10bit_colorformat(pix_fmts)) {
+			i_vpr_h(inst,
+				"%s: min quality is supported only for 8 bit\n",
+				__func__);
+			adjusted_value = 0;
+			goto update_and_exit;
+		}
+	}
+
+	if (res_is_greater_than(width, height, 1920, 1080)) {
+		i_vpr_h(inst, "%s: unsupported res, wxh %ux%u\n",
+			__func__, width, height);
+		adjusted_value = 0;
+		goto update_and_exit;
+	}
+
+	if (frame_rate > 60) {
+		i_vpr_h(inst, "%s: unsupported fps %u\n",
+			__func__, frame_rate);
+		adjusted_value = 0;
+		goto update_and_exit;
+	}
+
+	if (enh_layer_count > 0 && inst->hfi_layer_type != HFI_HIER_B) {
+		i_vpr_h(inst,
+			"%s: min quality not supported for HP encoding\n",
+			__func__);
+		adjusted_value = 0;
+		goto update_and_exit;
+	}
+
+	/* Above conditions are met. Hence enable min quality */
+	adjusted_value = MAX_SUPPORTED_MIN_QUALITY;
+
+update_and_exit:
+	msm_vidc_update_cap_value(inst, MIN_QUALITY, adjusted_value, __func__);
+
+	return 0;
+}
+
 int msm_vidc_adjust_bitrate_boost_iris4(void *instance, struct v4l2_ctrl *ctrl)
 {
 	s32 adjusted_value;
@@ -1795,6 +1957,7 @@ static struct msm_vidc_session_ops msm_session_ops = {
 	.decide_work_mode = msm_vidc_decide_work_mode_iris4,
 	.decide_quality_mode = msm_vidc_decide_quality_mode_iris4,
 	.decide_scaling = msm_vidc_decide_scaling_iris4,
+	.decide_slice_max_mb = msm_vidc_encoder_decide_slice_max_mb_iris4,
 };
 
 int msm_vidc_init_iris4(struct msm_vidc_core *core)
