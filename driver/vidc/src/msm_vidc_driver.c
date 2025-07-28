@@ -5406,9 +5406,12 @@ static void msm_vidc_close_helper(struct kref *kref)
 	inst_unlock(inst, __func__);
 	destroy_workqueue(inst->workq);
 	msm_vidc_destroy_buffers(inst);
-	/* de-activate session subcache */
-	if (llcc_type != V4L2_MPEG_VIDSC_NONE)
+	if (llcc_type != V4L2_MPEG_VIDSC_NONE) {
+		/* de-activate session subcache */
 		call_res_op(core, session_subcache_disable, inst, llcc_type);
+		/* unmap session level llcc register */
+		call_mem_op(core, iommu_unmap, core, &inst->llcc_reg.mem);
+	}
 	msm_vidc_remove_session(inst);
 	msm_vidc_remove_dangling_session(inst);
 	mutex_destroy(&inst->client_lock);

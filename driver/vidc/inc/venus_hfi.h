@@ -89,8 +89,8 @@ struct device_region_info
 struct subcache_info *get_session_level_subcache(
 	struct msm_vidc_core *core, u32 llcc_type);
 int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_ucid, enum msm_vidc_port_type port);
+	u32 llcc_ucid, u32 dev_addr, enum msm_vidc_port_type port);
 int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_ucid, enum msm_vidc_port_type port);
+	u32 llcc_ucid, u32 dev_addr, enum msm_vidc_port_type port);
 
 #endif // _VENUS_HFI_H_

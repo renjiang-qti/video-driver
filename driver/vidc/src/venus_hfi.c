@@ -515,7 +515,7 @@ struct subcache_info *get_session_level_subcache(struct msm_vidc_core *core, u32
 }
 
 int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_type, enum msm_vidc_port_type port)
+	u32 llcc_type, u32 dev_addr, enum msm_vidc_port_type port)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct subcache_info *sinfo;
@@ -543,6 +543,7 @@ int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
 	buf.flags        = HFI_BUF_HOST_FLAG_RELEASE;
 	buf.index        = sinfo->subcache->slice_id;
 	buf.buffer_size  = sinfo->subcache->slice_size;
+	buf.base_address = dev_addr;
 	buf.u.subtype    = __get_hfi_session_subcache_type(sinfo->llcc_type);
 	rc = venus_hfi_session_command(inst,
 				HFI_CMD_BUFFER,
@@ -564,7 +565,7 @@ int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
 }
 
 int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_type, enum msm_vidc_port_type port)
+	u32 llcc_type, u32 dev_addr, enum msm_vidc_port_type port)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct subcache_info *sinfo;
@@ -592,6 +593,7 @@ int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
 	buf.flags        = HFI_BUF_HOST_FLAG_NONE;
 	buf.index        = sinfo->subcache->slice_id;
 	buf.buffer_size  = sinfo->subcache->slice_size;
+	buf.base_address = dev_addr;
 	buf.u.subtype    = __get_hfi_session_subcache_type(sinfo->llcc_type);
 	rc = venus_hfi_session_command(inst,
 				HFI_CMD_BUFFER,

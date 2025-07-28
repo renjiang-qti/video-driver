@@ -19,6 +19,7 @@
 #include "msm_vdec.h"
 #include "msm_venc.h"
 #include "venus_hfi.h"
+#include "venus_hfi_queue.h"
 #include "msm_vidc_control.h"
 #include "msm_vidc_platform.h"
 #include "resources.h"
@@ -882,6 +883,19 @@ exit:
 	return rc;
 }
 
+static enum msm_vidc_device_region get_reg_region(enum v4l2_mpeg_vidc_subcache_type type)
+{
+	switch (type) {
+	case V4L2_MPEG_VIDSC_LAYER0: return MSM_VIDC_DEV_REGION_LAYER0;
+	case V4L2_MPEG_VIDSC_LAYER1: return MSM_VIDC_DEV_REGION_LAYER1;
+	case V4L2_MPEG_VIDSC_LAYER2: return MSM_VIDC_DEV_REGION_LAYER2;
+	case V4L2_MPEG_VIDSC_LAYER3: return MSM_VIDC_DEV_REGION_LAYER3;
+	case V4L2_MPEG_VIDSC_DEPTH0: return MSM_VIDC_DEV_REGION_DEPTH0;
+	case V4L2_MPEG_VIDSC_DEPTH1: return MSM_VIDC_DEV_REGION_DEPTH1;
+	default: return MSM_VIDC_DEVICE_REGION_NONE;
+	}
+}
+
 int msm_vidc_start_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q)
 {
 	struct msm_vidc_core *core = inst->core;
@@ -916,13 +930,22 @@ int msm_vidc_start_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q)
 
 		llcc_type = inst->capabilities[OUTPUT_SCID].value;
 		if (llcc_type != V4L2_MPEG_VIDSC_NONE) {
+			u32 reg_region = get_reg_region(llcc_type);
+
+			/* map llcc register in to device region */
+			rc = venus_hfi_iommu_map_registers(core, reg_region,
+					MSM_VIDC_NON_SECURE, &inst->llcc_reg);
+			if (rc)
+				return rc;
+
 			/* activate session subcache */
 			rc = call_res_op(core, session_subcache_enable, inst, llcc_type);
 			if (rc)
 				return rc;
 
 			/* set session subcache */
-			rc = venus_hfi_set_session_subcache(inst, llcc_type, OUTPUT_PORT);
+			rc = venus_hfi_set_session_subcache(inst, llcc_type,
+					inst->llcc_reg.align_device_addr, OUTPUT_PORT);
 			if (rc)
 				return rc;
 		}

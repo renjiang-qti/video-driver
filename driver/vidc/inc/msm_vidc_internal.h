@@ -487,6 +487,12 @@ enum msm_vidc_log_encode_mode {
 	DEVICE_REGION(AON)                        \
 	DEVICE_REGION(PROTOCOL_FENCE_CLIENT_VPU)  \
 	DEVICE_REGION(QTIMER)                     \
+	DEVICE_REGION(DEV_REGION_LAYER0)          \
+	DEVICE_REGION(DEV_REGION_LAYER1)          \
+	DEVICE_REGION(DEV_REGION_LAYER2)          \
+	DEVICE_REGION(DEV_REGION_LAYER3)          \
+	DEVICE_REGION(DEV_REGION_DEPTH0)          \
+	DEVICE_REGION(DEV_REGION_DEPTH1)          \
 	DEVICE_REGION(DEVICE_REGION_MAX)          \
 }
 
@@ -1033,6 +1039,13 @@ struct msm_vidc_mem {
 	struct dma_buf_attachment  *attach;
 	phys_addr_t                 phys_addr;
 	enum dma_data_direction     direction;
+};
+
+struct msm_vidc_mem_addr {
+	u32                         align_device_addr;
+	u8                         *align_virtual_addr;
+	u32                         mem_size;
+	struct msm_vidc_mem         mem;
 };
 
 struct msm_vidc_mem_list {

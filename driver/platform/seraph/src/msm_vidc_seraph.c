@@ -2981,6 +2981,12 @@ static const struct device_region_table seraph_device_region_table[] = {
 		0x17421000, 0x1000, 0xFFADE000,
 		MSM_VIDC_QTIMER
 	},
+	{ "vidsc_layer0", 0x25821000, 0x1000, 0xFFADD000, MSM_VIDC_DEV_REGION_LAYER0 },
+	{ "vidsc_layer1", 0x25822000, 0x1000, 0xFFADC000, MSM_VIDC_DEV_REGION_LAYER1 },
+	{ "vidsc_layer2", 0x25823000, 0x1000, 0xFFADB000, MSM_VIDC_DEV_REGION_LAYER2 },
+	{ "vidsc_layer3", 0x25824000, 0x1000, 0xFFADA000, MSM_VIDC_DEV_REGION_LAYER3 },
+	{ "vidsc_depth0", 0x25815000, 0x1000, 0xFFAD9000, MSM_VIDC_DEV_REGION_DEPTH0 },
+	{ "vidsc_depth1", 0x25816000, 0x1000, 0xFFAD8000, MSM_VIDC_DEV_REGION_DEPTH1 },
 };
 
 /* decoder properties */
