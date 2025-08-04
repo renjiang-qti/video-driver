@@ -29,13 +29,13 @@
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8000800010
 #define MAX_BASE_LAYER_PRIORITY_ID 63
 #define MAX_OP_POINT            31
-#define MAX_BITRATE             400000000
-#define MAX_BITRATE_HEVC        180000000
-#define MAX_BITRATE_H264        220000000
+#define MAX_BITRATE             100000000
+#define MAX_BITRATE_HEVC        100000000
+#define MAX_BITRATE_H264        100000000
 #define DEFAULT_BITRATE         20000000
 #define MINIMUM_FPS             1
-#define MAXIMUM_FPS             480
-#define MAXIMUM_DEC_FPS         480
+#define MAXIMUM_FPS             120
+#define MAXIMUM_DEC_FPS         60
 #define MAX_QP                  51
 #define DEFAULT_QP              20
 #define MAX_CONSTANT_QUALITY    100
@@ -45,7 +45,7 @@
 #define MAX_SLICE_BYTE_SIZE_HEVC       \
 	((MAX_BITRATE_HEVC) >> 3)
 #define MAX_SLICE_MB_SIZE         \
-	(((4096 + 15) >> 4) * ((2304 + 15) >> 4))
+	(((3840 + 15) >> 4) * ((2176 + 15) >> 4))
 
 #define ENC     MSM_VIDC_ENCODER
 #define DEC     MSM_VIDC_DECODER
@@ -292,26 +292,24 @@ static const struct msm_platform_core_capability core_data_seraph[] = {
 	/* {type, value} */
 	{ENC_CODECS, H264 | HEVC | HEIC},
 	{DEC_CODECS, H264 | HEVC | HEIC},
-	{MAX_SESSION_COUNT, 16},
-	{MAX_NUM_720P_SESSIONS, 16},
-	{MAX_NUM_1080P_SESSIONS, 16},
-	{MAX_NUM_4K_SESSIONS, 8},
-	{MAX_NUM_8K_SESSIONS, 2},
+	{MAX_SESSION_COUNT, 8},
+	{MAX_NUM_720P_SESSIONS, 8},
+	{MAX_NUM_1080P_SESSIONS, 6},
+	{MAX_NUM_4K_SESSIONS, 2},
+	{MAX_NUM_8K_SESSIONS, 0},
 	{MAX_SECURE_SESSION_COUNT, 3},
-	{MAX_RT_MBPF, 259200},	/* ((7680x4320)/256) * 2)*/
-	{MAX_MBPF, 278528}, /* ((8192x4352)/256) * 2 */
-	{MAX_MBPS, 7833600},
+	{MAX_RT_MBPF, 65280},	/* ((3840x2176)/256) * 2)*/
+	{MAX_MBPF, 81920}, /* 5x(2048x2048)/256 */
+	{MAX_MBPS, 4915200}, /* 5x(2048x2048)@60fps */
 	/* max_load
-	 * 7680x4320@60fps or 3840x2176@240fps
-	 * which is greater than 4096x2176@120fps,
-	 * 8192x4320@48fps
+	 * 5x(2048x2048)@60fps
 	 */
 	{MAX_IMAGE_MBPF, 1048576},  /* (16384x16384)/256 */
 	{MAX_MBPF_HQ, 8160}, /* ((1920x1088)/256) */
 	{MAX_MBPS_HQ, 489600}, /* ((1920x1088)/256)@60fps */
 	{MAX_MBPF_B_FRAME, 32640}, /* 3840x2176/256 */
 	{MAX_MBPS_B_FRAME, 1958400}, /* 3840x2176/256 MBs@60fps */
-	{MAX_MBPS_ALL_INTRA, 1044480}, /* 4096x2176/256 MBs@30fps */
+	{MAX_MBPS_ALL_INTRA, 979200}, /* 3840x2176/256 MBs@30fps */
 	{MAX_ENH_LAYER_COUNT, 5},
 	{NUM_VPP_PIPE, 2},
 	{SW_PC, 1},
@@ -415,45 +413,35 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		0, INT_MAX, 1, DRIVER_VERSION,
 		V4L2_CID_MPEG_VIDC_DRIVER_VERSION},
 
-	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 8192, 1, 1920},
+	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 3840, 1, 1920},
 
-	{FRAME_WIDTH, DEC, VP9, 96, 4096, 1, 1920},
+	{FRAME_WIDTH, DEC, VP9, 96, 3840, 1, 1920},
 
-	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 8192, 1, 1920},
-
-	{FRAME_WIDTH, ENC, HEVC, 96, 8192, 1, 1920},
+	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 3840, 1, 1920},
 
 	{FRAME_WIDTH, ENC, HEIC, 128, 16384, 1, 16384},
 
-	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
+	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 3840, 1, 1920},
 
-	{LOSSLESS_FRAME_WIDTH, ENC, HEVC, 96, 4096, 1, 1920},
+	{LOSSLESS_FRAME_WIDTH, ENC, HEVC, 128, 3840, 1, 1920},
 
-	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
+	{SECURE_FRAME_WIDTH, DEC, CODECS_ALL, 96, 3840, 1, 1920},
 
-	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
+	{SECURE_FRAME_WIDTH, ENC, CODECS_ALL, 128, 3840, 1, 1920},
 
-	{SECURE_FRAME_WIDTH, ENC, HEVC, 96, 4096, 1, 1920},
+	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 3840, 1, 1080},
 
-	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 8192, 1, 1080},
+	{FRAME_HEIGHT, DEC, VP9, 96, 3840, 1, 1080},
 
-	{FRAME_HEIGHT, DEC, VP9, 96, 4096, 1, 1080},
-
-	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 8192, 1, 1080},
-
-	{FRAME_HEIGHT, ENC, HEVC, 96, 8192, 1, 1080},
+	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 3840, 1, 1080},
 
 	{FRAME_HEIGHT, ENC, HEIC, 128, 16384, 1, 16384},
 
-	{LOSSLESS_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
+	{LOSSLESS_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 3840, 1, 1080},
 
-	{LOSSLESS_FRAME_HEIGHT, ENC, HEVC, 96, 4096, 1, 1080},
+	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 3840, 1, 1080},
 
-	{SECURE_FRAME_HEIGHT, DEC, CODECS_ALL, 96, 4096, 1, 1080},
-
-	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
-
-	{SECURE_FRAME_HEIGHT, ENC, HEVC, 96, 4096, 1, 1080},
+	{SECURE_FRAME_HEIGHT, ENC, CODECS_ALL, 128, 3840, 1, 1080},
 
 	{PIX_FMTS, ENC | DEC, H264,
 		MSM_VIDC_FMT_NV12,
@@ -497,35 +485,33 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		HFI_PROP_BUFFER_FW_MIN_OUTPUT_COUNT,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_VOLATILE},
 
-	/* (8192 * 4320) / 256 */
-	{MBPF, ENC, CODECS_ALL, 64, 138240, 1, 138240},
-
-	{MBPF, ENC, HEVC, 36, 138240, 1, 138240},
+	/* (3840 * 2176) / 256 */
+	{MBPF, ENC, CODECS_ALL, 64, 32640, 1, 32640},
 
 	/* ((16384x16384)/256) */
 	{MBPF, ENC, HEIC, 36, 1048576, 1, 1048576},
 
-	{MBPF, DEC, CODECS_ALL, 36, 138240, 1, 138240},
+	{MBPF, DEC, CODECS_ALL, 36, 32640, 1, 32640},
 
-	/* (4096 * 2304) / 256 */
-	{MBPF, DEC, VP9, 36, 36864, 1, 36864},
+	/* (3840 * 2176) / 256 */
+	{MBPF, DEC, VP9, 36, 32640, 1, 32640},
 
 	/* ((8192x8192)/256) */
 	{MBPF, DEC, HEIC, 64, 262144,  1, 262144 },
 
-	/* (4096 * 2304) / 256 */
-	{LOSSLESS_MBPF, ENC, H264 | HEVC, 64, 36864, 1, 36864},
+	/* (3840 * 2176) / 256 */
+	{LOSSLESS_MBPF, ENC, H264 | HEVC, 64, 32640, 1, 32640},
 
 	/* Batch Mode Decode */
 	/* TODO: update with new values based on updated voltage corner */
 	{BATCH_MBPF, DEC, H264 | HEVC | VP9 | AV1, 64, 34816, 1, 34816},
 
-	/* (4096 * 2304) / 256 */
-	{BATCH_FPS, DEC, H264 | HEVC | VP9 | AV1, 1, 120, 1, 120},
+	/* (3840 * 2176) / 256 */
+	{BATCH_FPS, DEC, H264 | HEVC | VP9 | AV1, 1, 60, 1, 60},
 
-	{SECURE_MBPF, ENC | DEC, H264 | HEVC | VP9 | AV1, 64, 36864, 1, 36864},
+	{SECURE_MBPF, DEC, H264 | HEVC | VP9 | AV1, 36, 32640, 1, 32640},
 
-	{SECURE_MBPF, ENC, HEVC, 36, 36864, 1, 36864},
+	{SECURE_MBPF, ENC, HEVC, 64, 32640, 1, 32640},
 
 	{FRAME_RATE, ENC, CODECS_ALL,
 		(MINIMUM_FPS << 16), (MAXIMUM_FPS << 16),
@@ -719,6 +705,11 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		HFI_PROP_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
+	{OUTPUT_SCID, DEC, H264 | HEVC | VP9 | AV1,
+		V4L2_MPEG_VIDSC_NONE, V4L2_MPEG_VIDSC_DEPTH1 + 1,
+		1, V4L2_MPEG_VIDSC_NONE,
+		V4L2_CID_MPEG_VIDC_OUTPUT_SUBCACHE_ID},
+
 	{TS_REORDER, DEC, H264 | HEVC,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_TS_REORDER},
@@ -764,7 +755,7 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		CAP_FLAG_INPUT_PORT},
 
 	{EARLY_NOTIFY_LINE_COUNT, DEC, H264|HEVC|AV1,
-		0, 8192, 256, 0,
+		0, 3840, 256, 0,
 		V4L2_CID_MPEG_VIDC_EARLY_NOTIFY_LINE_COUNT,
 		HFI_PROP_EARLY_NOTIFY_LINE_COUNT,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_DYNAMIC_ALLOWED},
@@ -1770,7 +1761,7 @@ static struct msm_platform_inst_capability instance_cap_data_seraph[] = {
 		HFI_PROP_CODED_FRAMES,
 		CAP_FLAG_VOLATILE},
 
-	{BIT_DEPTH, DEC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
+	{BIT_DEPTH, DEC | ENC, CODECS_ALL, BIT_DEPTH_8, BIT_DEPTH_10, 1, BIT_DEPTH_8,
 		0,
 		HFI_PROP_LUMA_CHROMA_BIT_DEPTH},
 
@@ -2189,18 +2180,22 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 	 */
 
 	{PIX_FMTS, ENC, H264,
-		{IR_PERIOD, CSC}},
+		{IR_PERIOD, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, ENC, HEVC,
 		{PROFILE, MIN_FRAME_QP, MAX_FRAME_QP, I_FRAME_QP, P_FRAME_QP,
 			B_FRAME_QP, MIN_QUALITY, BLUR_TYPES, IR_PERIOD,
-			LTR_COUNT, CSC}},
+			LTR_COUNT, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, ENC, HEIC,
-		{PROFILE, CSC}},
+		{PROFILE, CSC, BIT_DEPTH}},
 
 	{PIX_FMTS, DEC, HEVC | HEIC,
 		{PROFILE}},
+
+	{BIT_DEPTH, ENC, CODECS_ALL,
+		{0},
+		msm_vidc_adjust_bitdepth},
 
 	{FRAME_RATE, ENC, CODECS_ALL,
 		{LEVEL},
@@ -2273,6 +2268,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_rx_fence_type,
+		NULL},
+
+	{OUTPUT_SCID, DEC, H264 | HEVC | VP9 | AV1,
+		{0},
+		msm_vidc_adjust_output_subcache_id,
 		NULL},
 
 	{HFLIP, ENC, CODECS_ALL,
@@ -2686,7 +2686,7 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_sera
 
 	{CHROMA_QP_INDEX_OFFSET, ENC, HEVC | H264,
 		{0},
-		msm_vidc_adjust_chroma_qp_index_offset,
+		msm_vidc_adjust_chroma_qp_index_offset_iris35,
 		msm_vidc_set_chroma_qp_index_offset},
 
 	{DISPLAY_DELAY_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
@@ -2928,6 +2928,17 @@ static const struct clk_rst_table seraph_clk_reset_table[] = {
 	{ "video_mvs0c_freerun_reset",          0  },
 };
 
+/* name, llcc_ucid, llcc_type, level(system/session) */
+static const struct subcache_table seraph_subcache_table[] = {
+	{ "vidsc0",         LLCC_VIDSC0,         V4L2_MPEG_VIDSC_NONE,     0, },
+	{ "vidsc_layer0",   LLCC_VIDSC_LAYER0,   V4L2_MPEG_VIDSC_LAYER0,   1, },
+	{ "vidsc_layer1",   LLCC_VIDSC_LAYER1,   V4L2_MPEG_VIDSC_LAYER1,   1, },
+	{ "vidsc_layer2",   LLCC_VIDSC_LAYER2,   V4L2_MPEG_VIDSC_LAYER2,   1, },
+	{ "vidsc_layer3",   LLCC_VIDSC_LAYER3,   V4L2_MPEG_VIDSC_LAYER3,   1, },
+	{ "vidsc_depth0",   LLCC_VIDSC_DEPTH0,   V4L2_MPEG_VIDSC_DEPTH0,   1, },
+	{ "vidsc_depth1",   LLCC_VIDSC_DEPTH1,   V4L2_MPEG_VIDSC_DEPTH1,   1, },
+};
+
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table seraph_context_bank_table[] = {
 	{"qcom,vidc,cb-sec-non-pxl",   0x01000000, 0x32000000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0 },
@@ -3088,6 +3099,8 @@ static const struct msm_vidc_platform_data seraph_data = {
 	.clk_tbl_size = ARRAY_SIZE(seraph_clk_table),
 	.clk_rst_tbl = seraph_clk_reset_table,
 	.clk_rst_tbl_size = ARRAY_SIZE(seraph_clk_reset_table),
+	.subcache_tbl = seraph_subcache_table,
+	.subcache_tbl_size = ARRAY_SIZE(seraph_subcache_table),
 
 	/* populate context bank */
 	.context_bank_tbl = seraph_context_bank_table,

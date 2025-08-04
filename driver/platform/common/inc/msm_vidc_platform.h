@@ -57,6 +57,20 @@ struct regulator_table {
 	bool             hw_trigger;
 };
 
+enum clk_levels {
+	CLK_LEVEL_LOW_SVS_D2,
+	CLK_LEVEL_LOW_SVS_D1,
+	CLK_LEVEL_LOW_SVS,
+	CLK_LEVEL_SVS,
+	CLK_LEVEL_SVS_L1,
+	CLK_LEVEL_NOM,
+	CLK_LEVEL_NOM_L1,
+	CLK_LEVEL_TURBO,
+	CLK_LEVEL_TURBO_L0,
+	CLK_LEVEL_TURBO_L1,
+	CLK_LEVEL_MAX
+};
+
 struct clk_table {
 	const char      *name;
 	u32              clk_id;
@@ -72,7 +86,9 @@ struct clk_rst_table {
 
 struct subcache_table {
 	const char      *name;
-	u32              llcc_id;
+	u32              llcc_ucid;
+	u32              llcc_type;
+	bool             session_level;
 };
 
 struct context_bank_table {
@@ -216,6 +232,7 @@ struct msm_vidc_platform_data {
 	struct dev_pm_domain_list *opp_pmdomain_tbl;
 	const struct clk_table *clk_tbl;
 	unsigned int clk_tbl_size;
+	const int *clk_corner_idx_tbl;
 	const struct clk_rst_table *clk_rst_tbl;
 	unsigned int clk_rst_tbl_size;
 	const struct subcache_table *subcache_tbl;
@@ -308,6 +325,12 @@ struct h265_level_table {
 	u64 max_br_high_tier;
 };
 
+struct apv_level_table {
+	u64 level;
+	u64 max_luma_sample;
+	u64 max_coded_rate;
+};
+
 static inline bool is_sys_cache_present(struct msm_vidc_core *core)
 {
 	return !!core->platform->data.subcache_tbl_size;
@@ -354,6 +377,7 @@ int msm_vidc_adjust_input_buf_host_max_count(void *instance, struct v4l2_ctrl *c
 int msm_vidc_adjust_output_buf_host_max_count(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_transform_8x8(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_chroma_qp_index_offset(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_chroma_qp_index_offset_iris35(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_slice_count(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_layer_count(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_gop_size(void *instance, struct v4l2_ctrl *ctrl);
@@ -378,6 +402,7 @@ int msm_vidc_adjust_dec_input_rx_fence_type(void *instance, struct v4l2_ctrl *ct
 int msm_vidc_adjust_dec_input_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_output_rx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_output_tx_fence_type(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_output_subcache_id(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_dec_slice_mode(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_enable(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_early_notify_line_count(void *instance, struct v4l2_ctrl *ctrl);
@@ -429,5 +454,8 @@ int msm_vidc_set_conceal_color(void *instance, enum msm_vidc_inst_capability_typ
 int msm_vidc_adjust_lookahead_encode_enable(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_adjust_lookahead_encode_size(void *instance, struct v4l2_ctrl *ctrl);
 int msm_vidc_set_lookahead_encode_size(void *instance, enum msm_vidc_inst_capability_type cap_id);
+int msm_vidc_adjust_log_mode(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_bitdepth(void *instance, struct v4l2_ctrl *ctrl);
+int msm_vidc_adjust_req_sync_frame(void *instance, struct v4l2_ctrl *ctrl);
 
 #endif // _MSM_VIDC_PLATFORM_H_

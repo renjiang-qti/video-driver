@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef __V4l2_VIDC_EXTENSIONS_H__
@@ -434,5 +434,27 @@ enum v4l2_mpeg_vidc_apv_level {
  * (number of tile rows) << 16 | (number of tile columns) & 0xffff
  */
 #define V4L2_CID_MPEG_VIDC_HEIF_TILES                        (VIDC_BASE + 0x68)
+
+/* Control to enable or disable LOG video encoding */
+#define V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE                  (VIDC_BASE + 0x69)
+
+/* Control to set input subcache id */
+#define V4L2_CID_MPEG_VIDC_INPUT_SUBCACHE_ID                 (VIDC_BASE + 0x6A)
+
+/* Control to set output subcache id */
+#define V4L2_CID_MPEG_VIDC_OUTPUT_SUBCACHE_ID                (VIDC_BASE + 0x6B)
+enum v4l2_mpeg_vidc_subcache_type {
+	V4L2_MPEG_VIDSC_NONE        = 0,
+	V4L2_MPEG_VIDSC_LAYER0      = 1,
+	V4L2_MPEG_VIDSC_LAYER1      = 2,
+	V4L2_MPEG_VIDSC_LAYER2      = 3,
+	V4L2_MPEG_VIDSC_LAYER3      = 4,
+	V4L2_MPEG_VIDSC_LAYER4      = 5,
+	V4L2_MPEG_VIDSC_LAYER5      = 6,
+	V4L2_MPEG_VIDSC_LAYER6      = 7,
+	V4L2_MPEG_VIDSC_LAYER7      = 8,
+	V4L2_MPEG_VIDSC_DEPTH0      = 9,
+	V4L2_MPEG_VIDSC_DEPTH1      = 10,
+};
 
 #endif

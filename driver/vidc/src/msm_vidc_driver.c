@@ -13,6 +13,7 @@
 #include <media/videobuf2-core.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/v4l2-event.h>
+#include <media/v4l2_vidc_extensions.h>
 #include <linux/vmalloc.h>
 
 #include "msm_media_info.h"
@@ -5383,9 +5384,8 @@ static void msm_vidc_close_helper(struct kref *kref)
 {
 	struct msm_vidc_inst *inst = container_of(kref,
 		struct msm_vidc_inst, kref);
-	struct msm_vidc_core *core;
-
-	core = inst->core;
+	struct msm_vidc_core *core = inst->core;
+	u32 llcc_type = inst->capabilities[OUTPUT_SCID].value;
 
 	i_vpr_h(inst, "%s()\n", __func__);
 	msm_vidc_debugfs_deinit_inst(inst);
@@ -5406,6 +5406,9 @@ static void msm_vidc_close_helper(struct kref *kref)
 	inst_unlock(inst, __func__);
 	destroy_workqueue(inst->workq);
 	msm_vidc_destroy_buffers(inst);
+	/* de-activate session subcache */
+	if (llcc_type != V4L2_MPEG_VIDSC_NONE)
+		call_res_op(core, session_subcache_disable, inst, llcc_type);
 	msm_vidc_remove_session(inst);
 	msm_vidc_remove_dangling_session(inst);
 	mutex_destroy(&inst->client_lock);
@@ -5428,6 +5431,24 @@ struct msm_vidc_inst *get_inst_ref(struct msm_vidc_core *core,
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
 		if (inst == instance) {
+			matches = true;
+			break;
+		}
+	}
+	inst = matches ? get_inst_ref_locked(inst) : NULL;
+	mutex_unlock(&core->lock);
+	return inst;
+}
+
+struct msm_vidc_inst *get_inst_using_session_id(struct msm_vidc_core *core,
+		u32 session_id)
+{
+	struct msm_vidc_inst *inst = NULL;
+	bool matches = false;
+
+	mutex_lock(&core->lock);
+	list_for_each_entry(inst, &core->instances, list) {
+		if (inst->session_id == session_id) {
 			matches = true;
 			break;
 		}
