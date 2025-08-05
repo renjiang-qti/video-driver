@@ -83,6 +83,8 @@
 		num_ref = num_ref + ltr_count;                                 \
 }
 
+extern struct msm_vidc_core *g_core;
+
 /*
  * Custom conversion coefficients for resolution: 176x144 negative
  * coeffs are converted to s4.9 format
@@ -358,6 +360,11 @@ int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core)
 	rc = msm_vidc_init_vpu(core);
 
 	return rc;
+}
+
+enum msm_vidc_hw_version msm_vidc_get_hw_version(void)
+{
+	return g_core->hw_version;
 }
 
 int msm_vidc_read_efuse(struct msm_vidc_core *core)

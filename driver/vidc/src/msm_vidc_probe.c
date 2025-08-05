@@ -819,6 +819,8 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 	}
 	g_core = core;
 
+	core->hw_version = MSM_VIDC_HW_VERSION_V1;
+
 	core->pdev = pdev;
 	dev_set_drvdata(&pdev->dev, core);
 
