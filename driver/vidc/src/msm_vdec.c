@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <media/v4l2-event.h>
@@ -287,7 +287,7 @@ static int msm_vdec_set_bit_depth(struct msm_vidc_inst *inst,
 {
 	int rc = 0;
 	u32 pix_fmt;
-	u32 bitdepth = 8 << 16 | 8;
+	u32 bitdepth = BIT_DEPTH_8;
 	enum msm_vidc_colorformat_type colorformat;
 
 	if (port != INPUT_PORT && port != OUTPUT_PORT) {
@@ -298,7 +298,7 @@ static int msm_vdec_set_bit_depth(struct msm_vidc_inst *inst,
 	pix_fmt = inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat;
 	colorformat = v4l2_colorformat_to_driver(inst, pix_fmt, __func__);
 	if (is_10bit_colorformat(colorformat))
-		bitdepth = 10 << 16 | 10;
+		bitdepth = BIT_DEPTH_10;
 
 	inst->subcr_params[port].bit_depth = bitdepth;
 	msm_vidc_update_cap_value(inst, BIT_DEPTH, bitdepth, __func__);
@@ -2285,19 +2285,23 @@ int msm_vdec_try_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 	if (f->type == INPUT_MPLANE) {
 		pix_fmt = v4l2_codec_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
 		if (!pix_fmt) {
-			i_vpr_e(inst, "%s: unsupported codec, set current params\n", __func__);
+			i_vpr_e(inst, "%s: unsupported codec: 0x%x\n",
+					__func__, f->fmt.pix_mp.pixelformat);
 			f->fmt.pix_mp.width = inst->fmts[INPUT_PORT].fmt.pix_mp.width;
 			f->fmt.pix_mp.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
 			f->fmt.pix_mp.pixelformat = inst->fmts[INPUT_PORT].fmt.pix_mp.pixelformat;
 			pix_fmt = v4l2_codec_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
+			rc = -EINVAL;
 		}
 	} else if (f->type == OUTPUT_MPLANE) {
 		pix_fmt = v4l2_colorformat_to_driver(inst, f->fmt.pix_mp.pixelformat, __func__);
 		if (!pix_fmt) {
-			i_vpr_e(inst, "%s: unsupported format, set current params\n", __func__);
+			i_vpr_e(inst, "%s: unsupported format: 0x%x\n",
+					__func__, f->fmt.pix_mp.pixelformat);
 			f->fmt.pix_mp.pixelformat = inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat;
 			f->fmt.pix_mp.width = inst->fmts[OUTPUT_PORT].fmt.pix_mp.width;
 			f->fmt.pix_mp.height = inst->fmts[OUTPUT_PORT].fmt.pix_mp.height;
+			rc = -EINVAL;
 		}
 		if (inst->bufq[INPUT_PORT].vb2q->streaming && !is_image_decode_session(inst)) {
 			f->fmt.pix_mp.height = inst->fmts[INPUT_PORT].fmt.pix_mp.height;
