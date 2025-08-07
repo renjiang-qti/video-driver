@@ -6171,8 +6171,8 @@ static int msm_vidc_check_max_sessions(struct msm_vidc_inst *inst)
 					       1088 + (1088 >> 1))) {
 			num_4k_sessions += 1;
 			num_1080p_sessions += 2;
-		} else if (res_is_greater_than(width, height, 1280 + (1280 >> 1),
-					       736 + (736 >> 1))) {
+		} else if (res_is_greater_than(width, height, 1280 + (1280 >> 2),
+					       736 + (736 >> 2))) {
 			num_1080p_sessions += 1;
 		}
 	}
