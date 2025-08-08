@@ -2880,8 +2880,8 @@ int msm_vidc_adjust_eva_stats(void *instance, struct v4l2_ctrl *ctrl)
 				      &rc_type, __func__))
 		return -EINVAL;
 
-	/* disable Eva stats metadata for CQ rate control */
-	if (rc_type == HFI_RC_CQ) {
+	/* disable Eva stats metadata for CQ rate control other than APV*/
+	if (rc_type == HFI_RC_CQ && inst->codec != MSM_VIDC_APV) {
 		i_vpr_h(inst, "%s: unsupported for CQ rate control\n", __func__);
 		adjusted_value = 0;
 	}
@@ -3769,6 +3769,13 @@ int msm_vidc_set_bitrate(void *instance,
 	int rc = 0;
 	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
 	u32 hfi_value = 0;
+
+	/*
+	 * for CQ mode, bitrate is not expected to be set instead
+	 * CONSTANT_QUALITY is expected to be set
+	 */
+	if (inst->codec == MSM_VIDC_APV && inst->hfi_rc_type == HFI_RC_CQ)
+		return 0;
 
 	/* set Total Bitrate */
 	if (inst->capabilities[BIT_RATE].flags & CAP_FLAG_CLIENT_SET)
