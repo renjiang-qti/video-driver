@@ -945,7 +945,7 @@ int msm_vidc_start_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q)
 
 			/* set session subcache */
 			rc = venus_hfi_set_session_subcache(inst, llcc_type,
-					inst->llcc_reg.align_device_addr, OUTPUT_PORT);
+					inst->llcc_reg.align_device_addr);
 			if (rc)
 				return rc;
 		}
