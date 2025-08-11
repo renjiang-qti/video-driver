@@ -227,6 +227,7 @@ struct msm_vidc_platform_data {
 	unsigned int regulator_tbl_size;
 	struct pd_table *pd_tbl;
 	unsigned int pd_tbl_size;
+	unsigned int gdsc_hw_ctrl_by_default;
 	const char * const *opp_tbl;
 	unsigned int opp_tbl_size;
 	struct dev_pm_domain_list *opp_pmdomain_tbl;
