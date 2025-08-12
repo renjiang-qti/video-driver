@@ -4,6 +4,7 @@
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
+#include <linux/soc/qcom/llcc-qcom.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/videobuf2-core.h>
 #include <media/v4l2_vidc_extensions.h>
@@ -2661,6 +2662,39 @@ int msm_vidc_adjust_roi_info_iris4(void *instance, struct v4l2_ctrl *ctrl)
 
 	msm_vidc_update_cap_value(inst, META_ROI_INFO, adjusted_value, __func__);
 
+	return 0;
+}
+
+int msm_vidc_adjust_output_subcache_id(void *instance, struct v4l2_ctrl *ctrl)
+{
+	struct msm_vidc_inst *inst = (struct msm_vidc_inst *)instance;
+	struct msm_vidc_core *core = inst->core;
+	struct subcache_info *sinfo;
+	s32 llcc_type;
+
+	llcc_type = inst->capabilities[OUTPUT_SCID].value;
+	if (llcc_type == V4L2_MPEG_VIDSC_NONE)
+		return 0;
+
+	/* find matching subcache */
+	sinfo = get_session_level_subcache(core, llcc_type);
+	if (!sinfo) {
+		i_vpr_e(inst, "%s: subcache not found %d\n", __func__, llcc_type);
+		llcc_type = V4L2_MPEG_VIDSC_NONE;
+		goto update_and_exit;
+	}
+
+	/* allow only inactive cache */
+	if (sinfo->isactive) {
+		i_vpr_e(inst, "%s: subcache already occupied %s ucid %d scid %u type %d level %d\n",
+			__func__, sinfo->name, sinfo->llcc_ucid, sinfo->subcache->slice_id,
+			sinfo->llcc_type, sinfo->session_level);
+		llcc_type = V4L2_MPEG_VIDSC_NONE;
+		goto update_and_exit;
+	}
+
+update_and_exit:
+	msm_vidc_update_cap_value(inst, OUTPUT_SCID, llcc_type, __func__);
 	return 0;
 }
 
