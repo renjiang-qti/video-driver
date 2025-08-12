@@ -3380,7 +3380,8 @@ int msm_vidc_set_constant_quality(void *instance,
 				      BITRATE_MODE, &rc_type, __func__))
 		return -EINVAL;
 
-	if (rc_type != HFI_RC_CQ)
+	/* Quality level can be set for APV encoder for all rate controls */
+	if (inst->codec != MSM_VIDC_APV && rc_type != HFI_RC_CQ)
 		return 0;
 
 	hfi_value = inst->capabilities[cap_id].value;
