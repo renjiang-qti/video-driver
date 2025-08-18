@@ -1491,6 +1491,9 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 	/* update output port info */
 	inst->fw_min_count = subsc_params.fw_min_count;
 
+	if (subsc_params.bit_depth == BIT_DEPTH_10)
+		inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat = V4L2_PIX_FMT_QC10C;
+
 	/* decide scaling needs fw_min_count, crop, input port resolution */
 	call_session_op(core, decide_scaling, inst);
 
