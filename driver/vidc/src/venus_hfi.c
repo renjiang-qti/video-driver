@@ -515,7 +515,7 @@ struct subcache_info *get_session_level_subcache(struct msm_vidc_core *core, u32
 }
 
 int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_type, u32 dev_addr, enum msm_vidc_port_type port)
+	u32 llcc_type, u32 dev_addr)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct subcache_info *sinfo;
@@ -548,7 +548,7 @@ int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
 	rc = venus_hfi_session_command(inst,
 				HFI_CMD_BUFFER,
 				HFI_BUF_HOST_FLAG_NONE,
-				get_hfi_port(inst, port),
+				HFI_PORT_NONE,
 				inst->session_id,
 				HFI_PAYLOAD_STRUCTURE,
 				&buf,
@@ -565,7 +565,7 @@ int venus_hfi_release_session_subcache(struct msm_vidc_inst *inst,
 }
 
 int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
-	u32 llcc_type, u32 dev_addr, enum msm_vidc_port_type port)
+	u32 llcc_type, u32 dev_addr)
 {
 	struct msm_vidc_core *core = inst->core;
 	struct subcache_info *sinfo;
@@ -598,7 +598,7 @@ int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
 	rc = venus_hfi_session_command(inst,
 				HFI_CMD_BUFFER,
 				HFI_BUF_HOST_FLAG_NONE,
-				get_hfi_port(inst, port),
+				HFI_PORT_NONE,
 				inst->session_id,
 				HFI_PAYLOAD_STRUCTURE,
 				&buf,
@@ -612,6 +612,23 @@ int venus_hfi_set_session_subcache(struct msm_vidc_inst *inst,
 		sinfo->llcc_type, sinfo->session_level);
 
 	return rc;
+}
+
+u64 venus_hfi_get_subcache_mask(struct msm_vidc_inst *inst)
+{
+	struct msm_vidc_core *core = inst->core;
+	struct subcache_info *sinfo;
+	u64 scid_mask = 0;
+
+	venus_hfi_for_each_subcache(core, sinfo) {
+		if (!sinfo->subcache)
+			continue;
+
+		scid_mask |= BIT(sinfo->llcc_type);
+	}
+	i_vpr_h(inst, "%s: %#llx\n", __func__, scid_mask);
+
+	return scid_mask;
 }
 
 static int __venus_power_off(struct msm_vidc_core *core)
