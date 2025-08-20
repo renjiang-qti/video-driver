@@ -1686,7 +1686,7 @@ int msm_vidc_init_platform_kera(struct msm_vidc_core *core)
 
 	d_vpr_h("%s: initialize kera ops\n", __func__);
 
-	rc = msm_vidc_kera_check_ddr_type(core);
+	rc = msm_vidc_kera_check_ddr_type();
 	if (rc)
 		return rc;
 
