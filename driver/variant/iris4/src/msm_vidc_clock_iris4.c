@@ -387,8 +387,6 @@ static u32 get_vpp_cycles(struct api_calculation_input codec_input)
 			i = 0;
 		else if (codec_input.lcu_size <= 32)
 			i = 1;
-		else if (codec_input.lcu_size <= 64)
-			i = 3;
 		else
 			i = 2;
 	}
