@@ -337,7 +337,8 @@ static int __program_bootup_registers_iris4(struct msm_vidc_core *core)
 	}
 
 	/* Based on below register programming, firmware WA for canoe-v2 would be enabled */
-	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")) {
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v2")
+			|| of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v3")) {
 		rc = __write_register(core, WRAPPER_IRIS_VCODEC_VPU_WRAPPER_SPARE_0_IRIS4, 0x1);
 		if (rc)
 			return rc;

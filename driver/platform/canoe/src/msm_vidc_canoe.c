@@ -4381,6 +4381,27 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		}
 	}
 
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v3")) {
+		d_vpr_h("%s: update context bank table for canoe v3\n", __func__);
+		/* It's same as V2 expect frequency table
+		 * V1 and V3 should use same frequency table
+		 */
+		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
+		core->platform->data.context_bank_tbl_size =
+			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.clk_tbl = canoe_clk_table;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table);
+		core->platform->data.clk_corner_idx_tbl = canoe_corner_idx_tbl;
+		core->platform->data.fwname = "vpu40_2v";
+
+		platform_cap_data = core->platform->data.inst_cap_data;
+		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
+			if (platform_cap_data[i].cap_id == SECURE_MODE) {
+				platform_cap_data[i].max = 1;
+				break;
+			}
+		}
+	}
 	return rc;
 }
 
