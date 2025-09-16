@@ -452,8 +452,11 @@ int msm_vidc_update_cap_value(struct msm_vidc_inst *inst, u32 cap_id,
 		    adjusted_val & MSM_VIDC_META_DYN_ENABLE) {
 			/* enable metadata */
 			inst->capabilities[cap_id].value |= adjusted_val;
+		} else if (adjusted_val == 0) {
+			/* disable all metadata bits */
+			inst->capabilities[cap_id].value = 0;
 		} else {
-			/* disable metadata */
+			/* disable required metadata bits */
 			inst->capabilities[cap_id].value &= ~adjusted_val;
 		}
 	} else {
