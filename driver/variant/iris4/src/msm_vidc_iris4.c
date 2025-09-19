@@ -604,7 +604,7 @@ static int __power_off_iris4_hardware(struct msm_vidc_core *core)
 				__func__, core->sub_state_name);
 			goto disable_power;
 		} else {
-			d_vpr_e("%s: video hw is power ON, try power collpase hw %s\n",
+			d_vpr_h("%s: video hw is power ON, try power collpase hw %s\n",
 				__func__, core->sub_state_name);
 		}
 	}
