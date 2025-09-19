@@ -2103,6 +2103,7 @@ static int handle_property_with_payload(struct msm_vidc_inst *inst,
 				__func__,  payload_ptr[0], inst->capabilities[PIPE].value);
 		break;
 	case HFI_PROP_FENCE_OUTPUT:
+	case HFI_PROP_RX_FENCE_ID_OUTPUT:
 		rc = handle_property_fence_array(inst, pkt);
 		if (rc)
 			break;
