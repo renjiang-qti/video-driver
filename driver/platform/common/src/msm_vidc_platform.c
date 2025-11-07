@@ -25,6 +25,11 @@
 #include "venus_hfi.h"
 #include "resources.h"
 
+#if defined(CONFIG_MSM_VIDC_CHORA)
+#include "msm_vidc_chora.h"
+#include "msm_vidc_iris2.h"
+#endif
+
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"
 #include "msm_vidc_iris35.h"
@@ -119,6 +124,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_pineapple,
 		.init_platform              = msm_vidc_init_platform_pineapple,
 		.init_iris                  = msm_vidc_init_iris33,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_CHORA)
+	{
+		.compat                     = "qcom,chora-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_chora,
+		.init_platform              = msm_vidc_init_platform_chora,
+		.init_iris                  = msm_vidc_init_iris2,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_SUN)

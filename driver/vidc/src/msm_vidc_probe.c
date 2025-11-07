@@ -64,7 +64,8 @@ static inline bool is_video_device(struct device *dev)
 		of_device_is_compatible(dev->of_node, "qcom,niobe-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,alor-vidc") ||
 		of_device_is_compatible(dev->of_node, "qcom,x1e80100-vidc") ||
-		of_device_is_compatible(dev->of_node, "qcom,sa8775p-iris"));
+		of_device_is_compatible(dev->of_node, "qcom,sa8775p-iris") ||
+		of_device_is_compatible(dev->of_node, "qcom,chora-vidc"));
 }
 
 static inline bool is_video_context_bank_device_node(struct device_node *of_node)
@@ -157,6 +158,7 @@ static const struct of_device_id msm_vidc_dt_match[] = {
 	{.compatible = "qcom,seraph-vidc"},
 	{.compatible = "qcom,seraph-vidc-v2"},
 	{.compatible = "qcom,alor-vidc"},
+	{.compatible = "qcom,chora-vidc"},
 	{.compatible = "qcom,sa8797-vidc"},
 	{.compatible = "qcom,cliffs-vidc"},
 	{.compatible = "qcom,volcano-vidc"},
@@ -982,6 +984,11 @@ static int msm_vidc_probe_video_device(struct platform_device *pdev)
 	 * match is a component_match_array and acts as a placeholder for
 	 * components added via component_add().
 	 */
+	if (!match) {
+		d_vpr_e("match is null.\n");
+		goto master_add_failed;
+	}
+
 	rc = component_master_add_with_match(&pdev->dev, &msm_vidc_component_master_ops, match);
 	if (rc) {
 		d_vpr_e("%s: component master add with match failed\n", __func__);

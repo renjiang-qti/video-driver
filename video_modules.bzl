@@ -59,6 +59,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_iris33.c",
             "driver/platform/pineapple/src/msm_vidc_pineapple.c",
         ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
+            "driver/platform/chora/src/msm_vidc_chora.c",
+        ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/variant/iris35/src/msm_vidc_buffer_iris35.c",
             "driver/variant/iris35/src/msm_vidc_bus_iris35.c",
@@ -162,6 +168,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_bus_iris33.c",
             "driver/variant/iris33/src/msm_vidc_clock_iris33.c",
             "driver/variant/iris33/src/msm_vidc_iris33.c",
+        ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/platform/chora/src/chora.c",
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
         ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/platform/sun/src/sun.c",

@@ -3,6 +3,10 @@ ifneq ($(CONFIG_ARCH_LEMANS), y)
 KBUILD_CPPFLAGS += -DCONFIG_MSM_MMRM=1
 endif
 
+ifeq ($(CONFIG_ARCH_CHORA),y)
+KBUILD_CPPFLAGS += -DCONFIG_MSM_MMRM=0
+endif
+
 ifeq ($(CONFIG_QCOM_MINIDUMP), y)
 KBUILD_CPPFLAGS += -DCONFIG_MSM_VIDC_MINIDUMP=1
 endif
@@ -31,6 +35,12 @@ ifeq ($(CONFIG_MSM_VIDC_NIOBE), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/niobe/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc
 endif
+
+ifeq ($(CONFIG_ARCH_CHORA), y)
+include $(VIDEO_ROOT)/config/chora_video.conf
+LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/chora_video.h
+endif
+
 ifeq ($(CONFIG_ARCH_SUN), y)
 include $(VIDEO_ROOT)/config/sun_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/sun_video.h
@@ -62,6 +72,11 @@ endif
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/pineapple/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris33/inc
+endif
+
+ifeq ($(CONFIG_MSM_VIDC_CHORA), y)
+LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/chora/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris2/inc
 endif
 
 ifeq ($(CONFIG_MSM_VIDC_SUN), y)
@@ -121,6 +136,12 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/niobe/src/msm_vidc_niobe.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_bus_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_clock_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_iris3.o
+endif
+ifeq ($(CONFIG_MSM_VIDC_CHORA), y)
+msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/chora/src/msm_vidc_chora.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_buffer_iris2.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_power_iris2.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_iris2.o
 endif
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/pineapple/src/msm_vidc_pineapple.o \
