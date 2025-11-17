@@ -34,13 +34,13 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
-        "CONFIG_MSM_VIDC_X1E80100" : [
+        "CONFIG_MSM_VIDC_HAMOA" : [
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
             "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
             "driver/variant/iris3/src/msm_vidc_clock_iris3.c",
             "driver/variant/iris3/src/msm_vidc_power_iris3.c",
             "driver/variant/iris3/src/msm_vidc_iris3.c",
-            "driver/platform/x1e80100/src/msm_vidc_x1e80100.c",
+            "driver/platform/hamoa/src/msm_vidc_hamoa.c",
         ],
         "CONFIG_MSM_VIDC_NIOBE" : [
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
@@ -152,8 +152,8 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
-        "CONFIG_MSM_VIDC_X1E80100" : [
-            "driver/platform/x1e80100/src/x1e80100.c",
+        "CONFIG_MSM_VIDC_HAMOA" : [
+            "driver/platform/hamoa/src/hamoa.c",
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
             "driver/variant/iris3/src/msm_vidc_power_iris3.c",
             "driver/variant/iris3/src/msm_vidc_bus_iris3.c",

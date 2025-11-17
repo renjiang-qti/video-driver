@@ -16,9 +16,9 @@ ddk_headers(
 ddk_headers(
     name = "hamoa_headers",
     hdrs = glob([
-      "driver/platform/x1e80100/inc/*.h",
+      "driver/platform/hamoa/inc/*.h",
     ]),
-    includes = ["driver/platform/x1e80100/inc"]
+    includes = ["driver/platform/hamoa/inc"]
 )
 
 ddk_headers(

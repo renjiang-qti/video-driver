@@ -3,4 +3,4 @@
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
-#define CONFIG_MSM_VIDC_X1E80100   1
+#define CONFIG_MSM_VIDC_HAMOA   1

@@ -41,8 +41,8 @@
 #include "msm_vidc_pineapple.h"
 #include "msm_vidc_iris33.h"
 #endif
-#if defined(CONFIG_MSM_VIDC_X1E80100)
-#include "msm_vidc_x1e80100.h"
+#if defined(CONFIG_MSM_VIDC_HAMOA)
+#include "msm_vidc_hamoa.h"
 #include "msm_vidc_iris3.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
@@ -160,11 +160,11 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
-#if defined(CONFIG_MSM_VIDC_X1E80100)
+#if defined(CONFIG_MSM_VIDC_HAMOA)
 	{
 		.compat                     = "qcom,x1e80100-vidc",
-		.get_platform_data          = msm_vidc_get_platform_data_x1e80100,
-		.init_platform              = msm_vidc_init_platform_x1e80100,
+		.get_platform_data          = msm_vidc_get_platform_data_hamoa,
+		.init_platform              = msm_vidc_init_platform_hamoa,
 		.init_iris                  = msm_vidc_init_iris3,
 	},
 #endif
