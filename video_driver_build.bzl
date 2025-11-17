@@ -176,6 +176,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING",
             "CONFIG_MSM_VIDC_{}".format(lunch_target.upper()),
+            "CONFIG_MSM_VIDC_SYNX",
         ]
     elif target == "autogvm":
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
@@ -186,11 +187,21 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "CONFIG_MSM_VIDC_NORDAU",
             "CONFIG_MSM_VIDC_IRIS33_AU",
             "MSM_VIDC_HW_VIRT",
+            "CONFIG_MSM_VIDC_SYNX",
         ]
         auto_deps = [
             "//vendor/qcom/opensource/virtio-video:{}_msm_virtio_video".format(kernel_build),
             "//vendor/qcom/opensource/virtio-video:virtio_video_driver_headers",
         ]
+    elif target in [ "hamoa" ]:
+        dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
+        print("dist_target_name: " + dist_target_name)
+        config_options = [
+            "CONFIG_MSM_VIDC_LLCC",
+            "CONFIG_MSM_VIDC_ANDROID",
+            "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            ]
     else:
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
@@ -201,6 +212,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING",
             "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            "CONFIG_MSM_VIDC_SYNX",
         ]
 
 

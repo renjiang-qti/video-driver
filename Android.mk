@@ -29,6 +29,7 @@ KBUILD_OPTIONS += $(VIDEO_SELECT)
 KBUILD_OPTIONS += TARGET_BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 
 ifneq ($(TARGET_BOARD_PLATFORM),canoe)
+ifneq ($(TARGET_BOARD_PLATFORM),hamoa)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
 ifneq ($(TARGET_BOARD_PLATFORM), gen5)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(shell pwd)/$(call intermediates-dir-for,DLKM,mmrm-module-symvers)/Module.symvers
@@ -36,6 +37,7 @@ KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS+=$(shell pwd)/$(call intermediates-dir-fo
 else
 ifeq ($(ENABLE_HYP), true)
 KBUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(PWD)/$(call intermediates-dir-for,DLKM,virtio-video-symvers)/Module.symvers
+endif
 endif
 endif
 endif
@@ -62,6 +64,7 @@ LOCAL_MODULE_DDK_SUBTARGET_REGEX := "video.*"
 LOCAL_MODULE_KO_DIRS      := msm_video/msm_video.ko
 
 ifneq ($(TARGET_BOARD_PLATFORM),canoe)
+ifneq ($(TARGET_BOARD_PLATFORM),hamoa)
 LOCAL_REQUIRED_MODULES    += hw-fence-module-symvers
 ifneq ($(TARGET_BOARD_PLATFORM), gen5)
 LOCAL_REQUIRED_MODULES    := mmrm-module-symvers
@@ -76,6 +79,6 @@ endif
 endif
 LOCAL_ADDITIONAL_DEPENDENCIES += $(call intermediates-dir-for,DLKM,hw-fence-module-symvers)/Module.symvers
 endif
-
+endif
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
