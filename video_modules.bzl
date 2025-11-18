@@ -90,6 +90,14 @@ module_entry(
             "driver/variant/iris4/src/msm_vidc_iris4.c",
             "driver/platform/seraph/src/msm_vidc_seraph.c",
         ],
+        "CONFIG_MSM_VIDC_NORDAU" : [
+            "driver/variant/iris36/src/msm_vidc_buffer_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_bus_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_clock_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_power_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_iris36.c",
+            "driver/platform/nordau/src/msm_vidc_nordau.c",
+        ],
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",
         ],
@@ -184,6 +192,14 @@ module_entry(
             "driver/variant/iris4/src/msm_vidc_bus_iris4.c",
             "driver/variant/iris4/src/msm_vidc_clock_iris4.c",
             "driver/variant/iris4/src/msm_vidc_iris4.c",
+        ],
+        "CONFIG_MSM_VIDC_NORDAU" : [
+            "driver/platform/nordau/src/nordau.c",
+            "driver/variant/iris36/src/msm_vidc_buffer_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_power_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_bus_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_clock_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_iris36.c",
         ],
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",

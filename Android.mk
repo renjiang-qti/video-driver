@@ -49,7 +49,11 @@ include $(CLEAR_VARS)
 # For incremental compilation
 LOCAL_SRC_FILES           := $(wildcard $(LOCAL_PATH)/**/*) $(wildcard $(LOCAL_PATH)/*)
 LOCAL_MODULE              := msm_video.ko
+ifneq ($(TARGET_BOARD_PLATFORM), gen5)
 LOCAL_MODULE_KBUILD_NAME  := msm_video/msm_video.ko
+else
+LOCAL_MODULE_KBUILD_NAME  := msm_video.ko
+endif
 LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
