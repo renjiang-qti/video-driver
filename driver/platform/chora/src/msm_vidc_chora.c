@@ -4100,9 +4100,9 @@ static const struct bw_table chora_bw_table[] = {
 };
 
 /* name, hw_trigger, hw_enable */
-static const struct regulator_table chora_regulator_table[] = {
-	{ "iris-ctl", 0 },
-	{ "vcodec",   1 },
+static struct pd_table chora_pd_table[] = {
+	{ "iris-ctl", 0, 1},
+	{ "vcodec",   1, 1},
 };
 
 /* name, clock id, scaling */
@@ -4223,8 +4223,8 @@ static const struct msm_vidc_platform_data chora_data_v0 = {
 	/* resources dependent on other module */
 	.bw_tbl = chora_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(chora_bw_table),
-	.regulator_tbl = chora_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(chora_regulator_table),
+	.pd_tbl = chora_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(chora_pd_table),
 	.clk_tbl = chora_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(chora_clk_table),
 
@@ -4285,8 +4285,8 @@ static const struct msm_vidc_platform_data chora_data_v1 = {
 	/* resources dependent on other module */
 	.bw_tbl = chora_bw_table,
 	.bw_tbl_size = ARRAY_SIZE(chora_bw_table),
-	.regulator_tbl = chora_regulator_table,
-	.regulator_tbl_size = ARRAY_SIZE(chora_regulator_table),
+	.pd_tbl = chora_pd_table,
+	.pd_tbl_size = ARRAY_SIZE(chora_pd_table),
 	.clk_tbl = chora_clk_table,
 	.clk_tbl_size = ARRAY_SIZE(chora_clk_table),
 
