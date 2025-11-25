@@ -508,6 +508,10 @@ static int __power_off_iris2(struct msm_vidc_core *core)
 	if (rc)
 		d_vpr_e("%s: resetting clocks failed\n", __func__);
 
+	rc = call_res_op(core, gdsc_sw_ctrl, core);
+	if (rc)
+		d_vpr_e("%s: gdsc_sw_ctrl failed\n", __func__);
+
 	if (__power_off_iris2_hardware(core))
 		d_vpr_e("%s: failed to power off hardware\n", __func__);
 
@@ -604,6 +608,10 @@ static int __power_on_iris2_hardware(struct msm_vidc_core *core)
 			goto fail_clk_axi;
 		}
 
+		rc = call_res_op(core, gdsc_sw_ctrl, core);
+		if (rc)
+			goto fail_sw_ctrl;
+
 		rc = call_res_op(core, clk_enable, core, "video_mvs0_axi_clk");
 		if (rc)
 			goto fail_clk_axi;
@@ -622,6 +630,7 @@ fail_clk_controller:
 fail_clk_axi:
 	call_res_op(core, gdsc_off, core, "vcodec");
 fail_regulator:
+fail_sw_ctrl:
 	return rc;
 }
 
@@ -1081,6 +1090,16 @@ exit:
 	return 0;
 }
 
+static int __hw_ctrl_gdsc_iris2(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_hw_ctrl, core);
+}
+
+static int __sw_ctrl_gdsc_iris2(struct msm_vidc_core *core)
+{
+	return call_res_op(core, gdsc_sw_ctrl, core);
+}
+
 static struct msm_vidc_venus_ops iris2_ops = {
 	.boot_firmware = __boot_firmware_iris2,
 	.raise_interrupt = __raise_interrupt_iris2,
@@ -1091,6 +1110,8 @@ static struct msm_vidc_venus_ops iris2_ops = {
 	.watchdog = __watchdog_iris2,
 	.noc_error_info = __noc_error_info_iris2,
 	.scm_mem_protect = msm_vidc_mem_protect_video_regions_v1,
+	.hw_ctrl_gdsc = __hw_ctrl_gdsc_iris2,
+	.sw_ctrl_gdsc = __sw_ctrl_gdsc_iris2,
 };
 
 static struct msm_vidc_session_ops msm_session_ops = {
