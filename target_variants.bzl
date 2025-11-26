@@ -1,10 +1,10 @@
 targets = [
     # keep sorted
+    "autogvm",
     "canoe",
     "chora",
     "hamoa",
     "gen3auto",
-    "nordau",
     "sun",
     "seraph",
     "vienna",

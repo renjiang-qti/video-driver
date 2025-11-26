@@ -114,8 +114,12 @@ module_entry(
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+    ],
+    config_deps = {
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )
 
 module_entry(
@@ -224,6 +228,10 @@ module_entry(
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+    ],
+    config_deps = {
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )
