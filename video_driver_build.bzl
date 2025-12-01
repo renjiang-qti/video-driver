@@ -199,6 +199,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "CONFIG_MSM_VIDC_MINIDUMP",
             "CONFIG_MSM_VIDC_{}".format(target.upper()),
             ]
+        modules = [m for m in modules if m != "video"]
     else:
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
