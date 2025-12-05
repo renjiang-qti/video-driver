@@ -876,7 +876,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v0[] = {
 		V4L2_MPEG_MSM_VIDC_DISABLE,
 		V4L2_MPEG_MSM_VIDC_ENABLE,
 		1, V4L2_MPEG_MSM_VIDC_DISABLE,
-		0,
+		V4L2_CID_MPEG_VIDC_CSC,
 		HFI_PROP_CSC,
 		CAP_FLAG_OUTPUT_PORT},
 
@@ -2401,7 +2401,7 @@ static struct msm_platform_inst_capability instance_cap_data_chora_v1[] = {
 		V4L2_MPEG_MSM_VIDC_DISABLE,
 		V4L2_MPEG_MSM_VIDC_ENABLE,
 		1, V4L2_MPEG_MSM_VIDC_DISABLE,
-		0,
+		V4L2_CID_MPEG_VIDC_CSC,
 		HFI_PROP_CSC,
 		CAP_FLAG_OUTPUT_PORT},
 
@@ -4096,7 +4096,7 @@ static struct msm_vidc_format_capability format_data_chora = {
 /* name, min_kbps, max_kbps */
 static const struct bw_table chora_bw_table[] = {
 	{ "venus-cnoc",  1000, 1000     },
-	{ "venus-ddr",   1000, 6000000 },
+	{ "venus-ddr",   1000, 8000000 },
 };
 
 /* name, hw_trigger, hw_enable */
@@ -4137,6 +4137,10 @@ const struct context_bank_table chora_context_bank_table[] = {
 /* register, value, mask */
 static const struct reg_preset_table chora_reg_preset_table[] = {
 	{ 0xB0088, 0x0,        0xFFFFFFFF},
+	{ 0x10030, 0x33332222, 0xFFFFFFFF},
+	{ 0x10034, 0x44444444, 0xFFFFFFFF},
+	{ 0x10038, 0x00001022, 0xFFFFFFFF},
+	{ 0xA013C, 0x99,       0xFFFFFFFF},
 };
 
 /* decoder properties */
