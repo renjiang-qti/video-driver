@@ -702,6 +702,7 @@ enum msm_vidc_core_capability_type {
 	SUPPORTS_DEEPSLEEP,
 	NUM_VPU,
 	SKIP_DELAYED_UNMAP,
+	CACHE_OPS_REQUIRED,
 	CORE_CAP_MAX,
 };
 
