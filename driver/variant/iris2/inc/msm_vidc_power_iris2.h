@@ -6,6 +6,7 @@
 #ifndef __H_MSM_VIDC_POWER_IRIS2_H__
 #define __H_MSM_VIDC_POWER_IRIS2_H__
 
+#include "perf_static_model.h"
 #include "msm_vidc_power.h"
 #include "msm_vidc_inst.h"
 

@@ -297,7 +297,7 @@ static int __power_off_iris2_hardware(struct msm_vidc_core *core)
 				__func__, i, value);
 	}
 
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE)
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P)
 		goto skip_aon_mvp_noc;
 
 	/* Apply partial reset on MSF interface and wait for ACK */
@@ -359,7 +359,7 @@ disable_power:
 		rc = 0;
 	}
 
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE) {
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P) {
 	rc = call_res_op(core, clk_disable, core, "video_mvs0_axi_clk");
 	if (rc) {
 		d_vpr_e("%s: disable unprepare video_mvs0_axi_clk failed\n", __func__);
@@ -383,7 +383,7 @@ static int __power_off_iris2_controller(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE)
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P)
 		goto skip_aon_mvp_noc;
 
 	/* set MNoC to low power, set PD_NOC_QREQ (bit 0) */
@@ -434,7 +434,7 @@ skip_aon_mvp_noc:
 		d_vpr_h("%s: debug bridge release failed\n", __func__);
 
 	/* Disable VIDEO_CC_VENUS_AHB_CLK clock */
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE) {
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P) {
 		if (!core) {
 			d_vpr_e("%s: invalid params\n", __func__);
 			return -EINVAL;
@@ -463,9 +463,9 @@ skip_aon_mvp_noc:
 		return -EINVAL;
 	}
 
-	rc = call_res_op(core, clk_disable, core, "video_ctl_axi0_clk");
+	rc = call_res_op(core, clk_disable, core, "video_ctl_axi_clk");
 	if (rc) {
-		d_vpr_e("%s: disable unprepare video_ctl_axi0_clk failed\n", __func__);
+		d_vpr_e("%s: disable unprepare video_ctl_axi_clk failed\n", __func__);
 		rc = 0;
 	}
 
@@ -554,7 +554,7 @@ static int __power_on_iris2_controller(struct msm_vidc_core *core)
 		goto fail_clk_axi;
 	}
 
-	rc = call_res_op(core, clk_enable, core, "video_ctl_axi0_clk");
+	rc = call_res_op(core, clk_enable, core, "video_ctl_axi_clk");
 	if (rc)
 		goto fail_clk_axi;
 
@@ -568,7 +568,7 @@ static int __power_on_iris2_controller(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_clk_controller;
 
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE) {
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P) {
 		rc = call_res_op(core, clk_enable, core, "iface_clk");
 		if (rc)
 			goto fail_iface_clk;
@@ -578,7 +578,7 @@ static int __power_on_iris2_controller(struct msm_vidc_core *core)
 fail_iface_clk:
 	call_res_op(core, clk_disable, core, "core_clk");
 fail_clk_controller:
-	call_res_op(core, clk_disable, core, "video_ctl_axi0_clk");
+	call_res_op(core, clk_disable, core, "video_ctl_axi_clk");
 fail_clk_axi:
 fail_reset_ahb2axi:
 	call_res_op(core, gdsc_off, core, "iris-ctl");
@@ -600,7 +600,7 @@ static int __power_on_iris2_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_regulator;
 
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE) {
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P) {
 
 		if (!core || !core->platform) {
 			d_vpr_e("%s: invalid params\n", __func__);
@@ -621,16 +621,22 @@ static int __power_on_iris2_hardware(struct msm_vidc_core *core)
 	if (rc)
 		goto fail_clk_controller;
 
+	rc = msm_vidc_change_core_sub_state(core, 0, CORE_SUBSTATE_POWER_ENABLE, __func__);
+	if (rc)
+		goto fail_power_on_substate;
+
 	return 0;
 
+fail_power_on_substate:
+	call_res_op(core, clk_disable, core, "vcodec_clk");
 fail_clk_controller:
-	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1PIPE) {
+	if (core->platform->data.vpu_ver == VPU_VERSION_IRIS2_1P) {
 		call_res_op(core, clk_disable, core, "video_mvs0_axi_clk");
 	}
 fail_clk_axi:
+fail_sw_ctrl:
 	call_res_op(core, gdsc_off, core, "vcodec");
 fail_regulator:
-fail_sw_ctrl:
 	return rc;
 }
 

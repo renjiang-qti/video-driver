@@ -4119,19 +4119,19 @@ static const struct clk_table chora_clk_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table chora_context_bank_table[] = {
-	{"qcom,vidc,cb-sec-non-pxl",	0x010000000, 0x24800000, 1, 0,
-		MSM_VIDC_SECURE_NONPIXEL,		0 },
-	{"qcom,vidc,cb-ns",				0x25800000, 0xba800000, 0, 1,
-		MSM_VIDC_NON_SECURE |
-		MSM_VIDC_NON_SECURE_BITSTREAM,	0 },
-	{"qcom,vidc,cb-ns-bitstream",	0x00100000, 0xffb00000, 0, 1,
-		MSM_VIDC_REGION_NONE,			0 },
-	{"qcom,vidc,cb-ns-pxl",			0x00100000, 0xdff00000, 0, 1,
-		MSM_VIDC_NON_SECURE_PIXEL,		0 },
-	{"qcom,vidc,cb-sec-pxl",		0x00500000, 0xdfb00000, 1, 0,
-		MSM_VIDC_SECURE_PIXEL,			0 },
-	{"qcom,vidc,cb-sec-bitstream",	0x00500000, 0xdfb00000, 1, 0,
-		MSM_VIDC_SECURE_BITSTREAM,		0 },
+    {"qcom,vidc,cb-sec-non-pxl",    0x01000000, 0x24800000, 1, 0,
+        MSM_VIDC_SECURE_NONPIXEL,      0 },
+    {"qcom,vidc,cb-ns",             0x25800000, 0xda400000, 0, 1,
+        MSM_VIDC_NON_SECURE |
+        MSM_VIDC_NON_SECURE_BITSTREAM, 0 },
+    {"qcom,vidc,cb-ns-bitstream",   0x00100000, 0xffb00000, 0, 1,
+        MSM_VIDC_REGION_NONE,          0 },
+    {"qcom,vidc,cb-ns-pxl",         0x00100000, 0xffb00000, 0, 1,
+        MSM_VIDC_NON_SECURE_PIXEL,     0 },
+    {"qcom,vidc,cb-sec-pxl",        0x00100000, 0xffb00000, 1, 0,
+        MSM_VIDC_SECURE_PIXEL,         0 },
+    {"qcom,vidc,cb-sec-bitstream",  0x00100000, 0xffb00000, 1, 0,
+        MSM_VIDC_SECURE_BITSTREAM,     0 },
 };
 
 /* register, value, mask */
@@ -4220,7 +4220,7 @@ static const u32 chora_msm_vidc_ssr_type[] = {
 
 static struct msm_vidc_efuse_data efuse_data_chora[] = {
 	/* IRIS_PLL_FMAX - max 4k@30 encode */
-	EFUSE_ENTRY(0x221C8118, 4, 0x100, 0x8, SKU_VERSION),
+	EFUSE_ENTRY(0x221C8120, 4, 0x10, 0x4, SKU_VERSION),
 };
 
 static const struct msm_vidc_platform_data chora_data_v0 = {
@@ -4243,7 +4243,7 @@ static const struct msm_vidc_platform_data chora_data_v0 = {
 	.fwname = "vpu20_1v",
 	.pas_id = 9,
 	.supports_mmrm = 0,
-	.vpu_ver = VPU_VERSION_IRIS2_1PIPE,
+	.vpu_ver = VPU_VERSION_IRIS2_1P,
 
 	/* caps related resorces */
 	.core_data = core_data_chora_v0,
@@ -4305,7 +4305,7 @@ static const struct msm_vidc_platform_data chora_data_v1 = {
 	.fwname = "vpu20_1v",
 	.pas_id = 9,
 	.supports_mmrm = 0,
-	.vpu_ver = VPU_VERSION_IRIS2_1PIPE,
+	.vpu_ver = VPU_VERSION_IRIS2_1P,
 
 	/* caps related resorces */
 	.core_data = core_data_chora_v1,

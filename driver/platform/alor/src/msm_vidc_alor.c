@@ -8,7 +8,6 @@
 
 #include <linux/soc/qcom/llcc-qcom.h>
 #include <soc/qcom/of_common.h>
-#include <soc/qcom/socinfo.h>
 
 #include <media/v4l2_vidc_extensions.h>
 #include "msm_vidc_alor.h"

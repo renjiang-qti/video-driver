@@ -218,6 +218,7 @@ enum vpu_version {
 	VPU_VERSION_IRIS33_2P, // IRIS3 2 PIPE
 	VPU_VERSION_IRIS2_2P, // IRIS2 2 PIPE
 	VPU_VERSION_IRIS4_1P, // IRIS4 1 PIPE
+	VPU_VERSION_IRIS2_1P, //IRIS2 1 PIPE
 };
 
 struct msm_vidc_platform_data {
