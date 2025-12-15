@@ -26,6 +26,7 @@
 
 extern struct msm_vidc_core *g_core;
 
+static struct sg_table *vb2_dc_get_base_sgt(struct msm_vidc_buffer *buf);
 static void msm_vb2_vm_open(struct vm_area_struct *vma);
 static void msm_vb2_vm_close(struct vm_area_struct *vma);
 static void msm_vb2_put(void *buf_priv);
@@ -69,11 +70,13 @@ static void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
 	unsigned long size)
 {
 	struct context_bank_info *cb = NULL;
+	struct msm_vidc_dma_buf_info *dinfo;
 	enum msm_vidc_buffer_region region;
 	enum msm_vidc_buffer_type buf_type;
 	struct msm_vidc_buffer *buf;
 	struct msm_vidc_inst *inst;
 	struct msm_vidc_core *core;
+	int rc = 0;
 
 	if (!vb || !dev || !vb->vb2_queue)
 		return ERR_PTR(-EINVAL);
@@ -92,14 +95,16 @@ static void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
 	buf = msm_vidc_fetch_buffer(inst, vb->type, vb->index);
 	if (!buf) {
 		i_vpr_e(inst, "%s: failed to fetch buffer\n", __func__);
-		goto error;
+		rc = -EINVAL;
+		goto error_inst;
 	}
 
 	region = call_mem_op(core, buffer_region, inst, buf_type);
 	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
 	if (!cb) {
 		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
-		goto error;
+		rc = -EINVAL;
+		goto error_inst;
 	}
 
 	buf->inst = inst;
@@ -115,21 +120,44 @@ static void *msm_vb2_alloc(struct vb2_buffer *vb, struct device *dev,
 					  buf->dma_attrs);
 	if (!buf->kvaddr) {
 		i_vpr_e(inst, "dma alloc of size %lu failed\n", size);
-		goto error;
+		rc = -ENOMEM;
+		goto error_inst;
 	}
 
-	buf->handler.refcount = &buf->refcount;
-	buf->handler.put = msm_vb2_put;
-	buf->handler.arg = buf;
+	buf->sg_table = vb2_dc_get_base_sgt(buf);
+	if (!buf->sg_table) {
+		print_vidc_buffer(VIDC_ERR, "err ", "sg table build failed", inst, buf);
+		rc = -ENOMEM;
+		goto error_free_attrs;
+	}
 
-	refcount_set(&buf->refcount, 1);
+	dinfo = kzalloc(sizeof(*dinfo), GFP_KERNEL);
+	if (!dinfo) {
+		i_vpr_e(inst, "dma buf info alloc failed\n");
+		rc = -ENOMEM;
+		goto error_free_sgtable;
+	}
 
+	dinfo->buf = buf;
+	refcount_set(&dinfo->refcount, 1);
+	i_vpr_l(inst, "%s: refcount set to %d\n", __func__,
+		refcount_read(&dinfo->refcount));
+	buf->dma_buf_info = dinfo;
+	put_inst(inst);
 	return buf;
 
-error:
+error_free_sgtable:
+	kfree(buf->sg_table);
+	buf->sg_table = NULL;
+error_free_attrs:
+	dma_free_attrs(cb->dev, buf->buffer_size, buf->kvaddr,
+		       buf->device_addr, buf->dma_attrs);
+	buf->kvaddr = NULL;
+	buf->device_addr = 0x0;
+error_inst:
 	msm_vidc_change_state(inst, MSM_VIDC_ERROR, __func__);
 	put_inst(inst);
-	return ERR_PTR(-ENOMEM);
+	return ERR_PTR(rc);
 }
 
 static void *msm_vb2_attach_dmabuf(struct vb2_buffer *vb, struct device *dev,
@@ -199,6 +227,8 @@ void msm_vb2_vm_open(struct vm_area_struct *vma)
 		return;
 
 	refcount_inc(h->refcount);
+	d_vpr_l("%s: refcount incremented to %d dma_buf: %pK\n", __func__,
+		refcount_read(h->refcount), h->arg);
 }
 
 void msm_vb2_vm_close(struct vm_area_struct *vma)
@@ -208,8 +238,10 @@ void msm_vb2_vm_close(struct vm_area_struct *vma)
 	if (IS_ERR_OR_NULL(h))
 		return;
 
-	if (h->put && h->arg)
-		h->put(h->arg);
+	refcount_dec(h->refcount);
+	d_vpr_l("%s: refcount decremented to %d dma_buf: %pK\n", __func__,
+		refcount_read(h->refcount), h->arg);
+
 }
 
 static const struct vm_operations_struct msm_vb2_vm_dma_ops = {
@@ -220,7 +252,9 @@ static const struct vm_operations_struct msm_vb2_vm_dma_ops = {
 void msm_vb2_put(void *buf_priv)
 {
 	struct msm_vidc_buffer *buf = buf_priv;
+	struct msm_vidc_buffer *temp, *dummy;
 	enum msm_vidc_buffer_region region;
+	struct msm_vidc_buffers *buffers;
 	struct context_bank_info *cb;
 	struct msm_vidc_inst *inst;
 	struct msm_vidc_core *core;
@@ -234,9 +268,6 @@ void msm_vb2_put(void *buf_priv)
 
 	core = inst->core;
 
-	if (refcount_read(&buf->refcount) == 0)
-		return;
-
 	region = call_mem_op(core, buffer_region, inst, buf->type);
 	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
 	if (!cb) {
@@ -244,54 +275,62 @@ void msm_vb2_put(void *buf_priv)
 		return;
 	}
 
-	if (!refcount_dec_and_test(&buf->refcount))
-		return;
-
-	if (buf->kvaddr && buf->device_addr) {
-		dma_free_attrs(cb->dev, buf->buffer_size, buf->kvaddr,
-			       buf->device_addr, buf->dma_attrs);
-		buf->kvaddr = NULL;
-		buf->device_addr = 0x0;
+	if (buf->dma_buf_info) {
+		if (refcount_dec_and_test(&buf->dma_buf_info->refcount)) {
+			i_vpr_h(inst, "%s: dma_free_atts: device_addr 0x%#llx, size %d\n",
+				__func__, buf->device_addr, buf->buffer_size);
+			dma_free_attrs(cb->dev, buf->buffer_size, buf->kvaddr,
+				       buf->device_addr, buf->dma_attrs);
+			kfree(buf->dma_buf_info);
+			buf->dma_buf_info = NULL;
+		} else {
+			i_vpr_l(inst, "%s: refcount decremented to %d dma_buf: %pK\n", __func__,
+				refcount_read(&buf->dma_buf_info->refcount), buf->dmabuf);
+		}
 	}
-	put_inst(inst);
+
+	buffers = msm_vidc_get_buffers(inst, buf->type, __func__);
+	if (!buffers)
+		return;
+	list_for_each_entry_safe(temp, dummy, &buffers->list, list) {
+		if (temp == buf) {
+			list_del_init(&temp->list);
+			msm_vidc_pool_free(inst, temp);
+			break;
+		}
+	}
 }
 
-static int msm_vb2_mmap(void *buf_priv, struct vm_area_struct *vma)
+int msm_vb2_mmap(void *dma_buf, struct vm_area_struct *vma)
 {
-	struct msm_vidc_buffer *buf = buf_priv;
-	enum msm_vidc_buffer_region region;
-	struct context_bank_info *cb;
-	struct msm_vidc_inst *inst;
-	struct msm_vidc_core *core;
+	struct msm_vidc_dma_buf_info *dinfo;
+	struct dma_buf *dbuf;
 	int ret;
 
-	if (IS_ERR_OR_NULL(buf_priv))
+	if (IS_ERR_OR_NULL(dma_buf))
 		return -EINVAL;
 
-	inst = buf->inst;
-	if (!inst || !inst->core)
+	dbuf = dma_buf;
+
+	if (IS_ERR_OR_NULL(dbuf->priv)) {
+		d_vpr_e("%s: Invalid dma_buf priv data\n", __func__);
 		return -EINVAL;
-
-	core = inst->core;
-
-	region = call_mem_op(core, buffer_region, inst, buf->type);
-	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
-	if (!cb) {
-		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
-		return 0;
 	}
 
-	ret = dma_mmap_attrs(cb->dev, vma, buf->kvaddr, buf->device_addr,
-			     buf->buffer_size, buf->dma_attrs);
+	dinfo = dbuf->priv;
+	ret = dma_mmap_attrs(dinfo->dev, vma, dinfo->kvaddr, dinfo->device_addr,
+			     dinfo->buffer_size, dinfo->dma_attrs);
 	if (ret) {
-		i_vpr_e(inst, "Remapping memory failed, error: %d\n", ret);
+		d_vpr_e("Remapping memory failed, error: %d\n", ret);
 		return ret;
 	}
 
-	vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
+	dinfo->handler.refcount = &dinfo->refcount;
+	dinfo->handler.arg = dbuf;
 
-	vma->vm_private_data = &buf->handler;
-	vma->vm_ops          = &msm_vb2_vm_dma_ops;
+	vm_flags_set(vma, VM_DONTEXPAND | VM_DONTDUMP);
+	vma->vm_private_data = &dinfo->handler;
+	vma->vm_ops = &msm_vb2_vm_dma_ops;
 
 	vma->vm_ops->open(vma);
 
@@ -306,12 +345,28 @@ struct msm_vb2_attachment {
 static int msm_vb2_dmabuf_ops_attach(struct dma_buf *dbuf,
 				     struct dma_buf_attachment *dbuf_attach)
 {
+	struct msm_vidc_dma_buf_info *dinfo;
 	struct msm_vb2_attachment *attach;
-	unsigned int i;
 	struct scatterlist *rd, *wr;
+	struct msm_vidc_buffer *buf;
 	struct sg_table *sgt;
-	struct msm_vidc_buffer *buf = dbuf->priv;
+	unsigned int i;
 	int ret;
+
+	if (IS_ERR_OR_NULL(dbuf))
+		return -EINVAL;
+
+	dinfo = dbuf->priv;
+
+	if (IS_ERR_OR_NULL(dinfo))
+		return -EINVAL;
+
+	buf = dinfo->buf;
+
+	if (IS_ERR_OR_NULL(buf)) {
+		d_vpr_e("%s: invalid buffer in dma_buf_info\n", __func__);
+		return -EINVAL;
+	}
 
 	attach = kzalloc(sizeof(*attach), GFP_KERNEL);
 	if (!attach)
@@ -408,8 +463,29 @@ static void msm_vb2_dmabuf_ops_unmap(struct dma_buf_attachment *db_attach,
 
 static void msm_vb2_dmabuf_ops_release(struct dma_buf *dbuf)
 {
-	/* drop reference obtained in vb2_dc_get_dmabuf */
-	msm_vb2_put(dbuf->priv);
+	struct msm_vidc_dma_buf_info *dinfo;
+
+	if (IS_ERR_OR_NULL(dbuf) || IS_ERR_OR_NULL(dbuf->priv))
+		return;
+
+	dinfo = dbuf->priv;
+
+	if (refcount_read(&dinfo->refcount) == 0)
+		return;
+
+	if (!refcount_dec_and_test(&dinfo->refcount)) {
+		d_vpr_l("%s: refcount decremented to %d dma_buf: %pK\n", __func__,
+			refcount_read(&dinfo->refcount), dbuf);
+		return;
+	}
+	d_vpr_h("%s: dma_free_atts: device_addr 0x%#llx, size %d\n",
+		__func__, dinfo->device_addr, dinfo->buffer_size);
+
+	dma_free_attrs(dinfo->dev, dinfo->buffer_size, dinfo->kvaddr,
+		       dinfo->device_addr, dinfo->dma_attrs);
+
+	kfree(dinfo);
+	dbuf->priv = NULL;
 }
 
 static int
@@ -429,7 +505,7 @@ msm_vb2_dmabuf_ops_end_cpu_access(struct dma_buf *dbuf,
 static int msm_vb2_dmabuf_ops_mmap(struct dma_buf *dbuf,
 	struct vm_area_struct *vma)
 {
-	return msm_vb2_mmap(dbuf->priv, vma);
+	return msm_vb2_mmap((void *)dbuf, vma);
 }
 
 static const struct dma_buf_ops msm_vb2_dmabuf_ops = {
@@ -486,12 +562,26 @@ static struct dma_buf *msm_vb2_get_dmabuf(struct vb2_buffer *vb,
 	};
 	struct msm_vidc_buffer *buf = buf_priv;
 	struct msm_vidc_inst *inst = buf->inst;
+	enum msm_vidc_buffer_region region;
+	struct context_bank_info *cb;
+	struct msm_vidc_dma_buf_info *dinfo = buf->dma_buf_info;
 	struct dma_buf *dbuf;
 
+	region = call_mem_op((struct msm_vidc_core *)(inst->core), buffer_region, inst, buf->type);
+	cb = msm_vidc_get_context_bank_for_region(inst->core, region);
+	if (!cb) {
+		i_vpr_e(inst, "%s: failed to get context bank device\n", __func__);
+		return NULL;
+	}
+	dinfo->dev = cb->dev;
+	dinfo->buffer_size = buf->buffer_size;
+	dinfo->kvaddr = buf->kvaddr;
+	dinfo->device_addr = buf->device_addr;
+	dinfo->dma_attrs = buf->dma_attrs;
 	exp_info.ops = &msm_vb2_dmabuf_ops;
 	exp_info.size = buf->buffer_size;
 	exp_info.flags = flags;
-	exp_info.priv = buf;
+	exp_info.priv = dinfo;
 
 	if (!buf->sg_table)
 		buf->sg_table = vb2_dc_get_base_sgt(buf);
@@ -504,10 +594,10 @@ static struct dma_buf *msm_vb2_get_dmabuf(struct vb2_buffer *vb,
 		i_vpr_e(inst, "%s: failed to export dma buf\n", __func__);
 		return NULL;
 	}
-
-	/* dmabuf keeps reference to vb2 buffer */
-	refcount_inc(&buf->refcount);
-
+	buf->dmabuf = dbuf;
+	refcount_inc(&dinfo->refcount);
+	i_vpr_l(inst, "%s: refcount incremented to %d dma_buf: %pK\n", __func__,
+		refcount_read(&dinfo->refcount), dbuf);
 	return dbuf;
 }
 
