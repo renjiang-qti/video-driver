@@ -2795,7 +2795,7 @@ static const struct msm_vidc_platform_data lemans_data = {
 	.dev_reg_tbl = lemans_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(lemans_device_region_table),
 	.clock_source_scaling_ratio = 3,
-	.fwname = "vpu30_4v",
+	.fwname = "vpu30_4v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 

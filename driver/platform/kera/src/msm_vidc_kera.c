@@ -4649,7 +4649,7 @@ static const struct msm_vidc_platform_data kera_data_v0 = {
 	.dev_reg_tbl = kera_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(kera_device_region_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu30_2v",
+	.fwname = "vpu30_2v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 	.vpu_ver = VPU_VERSION_IRIS33_2P,
@@ -4724,7 +4724,7 @@ static const struct msm_vidc_platform_data kera_data_v1 = {
 	.reg_prst_tbl_size = ARRAY_SIZE(kera_reg_preset_table),
 	.dev_reg_tbl = kera_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(kera_device_region_table),
-	.fwname = "vpu30_2v",
+	.fwname = "vpu30_2v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 

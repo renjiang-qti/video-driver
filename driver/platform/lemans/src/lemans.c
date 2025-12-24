@@ -2063,7 +2063,7 @@ static const struct msm_vidc_platform_data lemans_data = {
 	.reg_prst_tbl = lemans_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(lemans_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "./qcom/vpu-3.0/vpu30_4v",
+	.fwname = "./qcom/vpu/vpu/vpu30_p4_s6.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 

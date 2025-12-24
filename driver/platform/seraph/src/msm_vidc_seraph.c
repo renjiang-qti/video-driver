@@ -3139,7 +3139,7 @@ static const struct msm_vidc_platform_data seraph_data = {
 	.dev_reg_tbl = seraph_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(seraph_device_region_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v_xr",
+	.fwname = "vpu40_2v_xr.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 

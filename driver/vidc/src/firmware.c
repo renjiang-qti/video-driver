@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/types.h>
 #include <linux/list.h>
@@ -32,12 +32,11 @@ enum tzbsp_video_state {
 };
 
 static int __load_fw_to_memory(struct platform_device *pdev,
-			const char *fw_name)
+			const char *firmware_name)
 {
 	int rc = 0;
 	const struct firmware *firmware = NULL;
 	struct msm_vidc_core *core;
-	char firmware_name[MAX_FIRMWARE_NAME_SIZE] = { 0 };
 	struct device_node *node = NULL;
 	struct resource res = { 0 };
 	phys_addr_t phys = 0;
@@ -46,11 +45,12 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 	void *virt = NULL;
 	int pas_id = 0;
 
-	if (!fw_name || !(*fw_name) || !pdev) {
+	if (!firmware_name || !(*firmware_name) || !pdev) {
 		d_vpr_e("%s: Invalid inputs\n", __func__);
 		return -EINVAL;
 	}
-	if (strlen(fw_name) >= MAX_FIRMWARE_NAME_SIZE - 4) {
+
+	if (strlen(firmware_name) >= MAX_FIRMWARE_NAME_SIZE - 4) {
 		d_vpr_e("%s: Invalid fw name\n", __func__);
 		return -EINVAL;
 	}
@@ -61,7 +61,6 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 			__func__, dev_name(&pdev->dev));
 		return -EINVAL;
 	}
-	scnprintf(firmware_name, ARRAY_SIZE(firmware_name), "%s.mbn", fw_name);
 
 	pas_id = core->platform->data.pas_id;
 
@@ -140,16 +139,27 @@ exit:
 
 int fw_load(struct msm_vidc_core *core)
 {
+	const char *fwpath = NULL;
 	int rc;
 
 	if (!core->resource->fw_cookie) {
-		core->resource->fw_cookie = __load_fw_to_memory(core->pdev,
-								core->platform->data.fwname);
+		/*
+		 * Use the firmware path provided by Device Tree via the "firmware-name"
+		 * property when available. If the DT does not specify it, fall back to
+		 * the platform default (core->platform->data.fwname).
+		 */
+		rc = of_property_read_string_index(core->pdev->dev.of_node,
+						   "firmware-name", 0, &fwpath);
+		if (rc)
+			fwpath = core->platform->data.fwname;
+
+		core->resource->fw_cookie = __load_fw_to_memory(core->pdev, fwpath);
 		if (core->resource->fw_cookie <= 0) {
+			rc = core->resource->fw_cookie;
 			d_vpr_e("%s: firmware download failed %d\n",
 				__func__, core->resource->fw_cookie);
 			core->resource->fw_cookie = 0;
-			return -ENOMEM;
+			return rc ? rc : -ENOMEM;
 		}
 	}
 

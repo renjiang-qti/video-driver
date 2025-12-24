@@ -2845,7 +2845,7 @@ static const struct msm_vidc_platform_data nordau_data = {
 	/* platform specific resources */
 	.reg_prst_tbl = nordau_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(nordau_reg_preset_table),
-	.fwname = "vpu36_4v",
+	.fwname = "vpu36_4v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 

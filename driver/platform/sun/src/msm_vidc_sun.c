@@ -3108,7 +3108,7 @@ static const struct msm_vidc_platform_data sun_data = {
 	.dev_reg_tbl = sun_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(sun_device_region_table),
 	.clock_source_scaling_ratio = 3,
-	.fwname = "vpu35_4v",
+	.fwname = "vpu35_4v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 

@@ -3003,7 +3003,7 @@ static const struct msm_vidc_platform_data niobe_data = {
 	.dev_reg_tbl = niobe_device_region_table,
 	.dev_reg_tbl_size = ARRAY_SIZE(niobe_device_region_table),
 	.clock_source_scaling_ratio = 3,
-	.fwname = "vpu33_4v",
+	.fwname = "vpu33_4v.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 0,
 
