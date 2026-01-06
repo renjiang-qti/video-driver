@@ -9,8 +9,9 @@
 #include "msm_vidc_power.h"
 #include "msm_vidc_inst.h"
 
-int msm_vidc_calc_freq_iris2(struct msm_vidc_inst *inst);
 int msm_vidc_calc_bw_iris2(struct msm_vidc_inst *inst,
 					struct vidc_bus_vote_data *vote_data);
+int msm_vidc_scale_clocks_iris2(struct msm_vidc_inst *inst);
+
 
 #endif
