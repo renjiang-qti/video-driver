@@ -281,6 +281,7 @@ static int msm_vidc_init_ops(struct msm_vidc_core *core)
 static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 {
 	struct device *dev = &core->pdev->dev;
+	const char *fwpath;
 	int i, rc = 0;
 
 	d_vpr_h("%s()\n", __func__);
@@ -293,6 +294,18 @@ static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 				d_vpr_e("%s: (%s) init failed with %d\n",
 					__func__, compat_handle[i].compat, rc);
 				return rc;
+			}
+
+			/*
+			 * If the device tree provides the firmware path through "firmware-name",
+			 * then that path should be used, and the core->platform->data.fwname
+			 * variable should be updated to this path.
+			 */
+			rc = of_property_read_string_index(dev->of_node,
+							   "firmware-name", 0, &fwpath);
+			if (!rc) {
+				core->platform->data.fwname = fwpath;
+				d_vpr_h("%s: update fwpath to %s\n", __func__, fwpath);
 			}
 			break;
 		}

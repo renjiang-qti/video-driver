@@ -143,15 +143,7 @@ int fw_load(struct msm_vidc_core *core)
 	int rc;
 
 	if (!core->resource->fw_cookie) {
-		/*
-		 * Use the firmware path provided by Device Tree via the "firmware-name"
-		 * property when available. If the DT does not specify it, fall back to
-		 * the platform default (core->platform->data.fwname).
-		 */
-		rc = of_property_read_string_index(core->pdev->dev.of_node,
-						   "firmware-name", 0, &fwpath);
-		if (rc)
-			fwpath = core->platform->data.fwname;
+		fwpath = core->platform->data.fwname;
 
 		core->resource->fw_cookie = __load_fw_to_memory(core->pdev, fwpath);
 		if (core->resource->fw_cookie <= 0) {
