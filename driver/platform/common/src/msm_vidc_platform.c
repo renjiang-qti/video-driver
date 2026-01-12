@@ -306,6 +306,9 @@ static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 			if (!rc) {
 				core->platform->data.fwname = fwpath;
 				d_vpr_h("%s: update fwpath to %s\n", __func__, fwpath);
+			} else {
+				rc = 0;
+				d_vpr_h("%s: Get fw path from platform specific file\n", __func__);
 			}
 			break;
 		}
