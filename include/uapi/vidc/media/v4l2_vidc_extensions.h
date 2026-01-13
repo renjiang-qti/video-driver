@@ -9,6 +9,7 @@
 
 #include <linux/types.h>
 #include <linux/v4l2-controls.h>
+#include <linux/videodev2.h>
 
 /* AV1 */
 #ifndef V4L2_PIX_FMT_AV1

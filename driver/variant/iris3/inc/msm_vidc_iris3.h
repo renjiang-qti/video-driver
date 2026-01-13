@@ -12,7 +12,8 @@ struct v4l2_ctrl;
 
 #if defined(CONFIG_MSM_VIDC_NIOBE) || \
 	defined(CONFIG_MSM_VIDC_HAMOA) || \
-	defined(CONFIG_MSM_VIDC_LEMANS)
+	defined(CONFIG_MSM_VIDC_LEMANS) || \
+	defined(CONFIG_MSM_VIDC_QLI)
 int msm_vidc_init_iris3(struct msm_vidc_core *core);
 int msm_vidc_adjust_bitrate_boost_iris3(void *instance, struct v4l2_ctrl *ctrl);
 #else

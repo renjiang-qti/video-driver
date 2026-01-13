@@ -8,7 +8,8 @@
 
 #include "msm_vidc_core.h"
 
-#if defined(CONFIG_MSM_VIDC_HAMOA)
+#if defined(CONFIG_MSM_VIDC_HAMOA) || \
+	defined(CONFIG_MSM_VIDC_QLI)
 int msm_vidc_get_platform_data_hamoa(struct msm_vidc_core *core);
 int msm_vidc_init_platform_hamoa(struct msm_vidc_core *core);
 #else
