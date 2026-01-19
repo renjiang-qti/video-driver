@@ -1901,10 +1901,12 @@ static const struct clk_rst_table hamoa_clk_reset_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table hamoa_context_bank_table[] = {
-	{"qcom,vidc,cb-ns",             0x25800000, 0xba800000, 0, 1, MSM_VIDC_NON_SECURE |
-								MSM_VIDC_NON_SECURE_BITSTREAM,  0},
-	{"qcom,vidc,cb-ns-pxl",        0x00100000, 0xdff00000, 0, 1, MSM_VIDC_NON_SECURE_PIXEL, 0},
-	{"qcom,vidc,cb-sec-non-pxl",   0x01400000, 0x24400000, 1, 0, MSM_VIDC_SECURE_NONPIXEL,  0},
+	{"qcom,x1e80100-iris",          0x25800000, 0xba800000, 0, 1,
+								MSM_VIDC_NON_SECURE |
+								MSM_VIDC_NON_SECURE_BITSTREAM |
+								MSM_VIDC_NON_SECURE_PIXEL,     0 },
+	{"qcom,x1e80100-iris",		0x01400000, 0x24400000, 1, 0,
+								MSM_VIDC_SECURE_NONPIXEL,      0 },
 };
 
 
