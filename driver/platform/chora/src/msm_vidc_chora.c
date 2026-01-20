@@ -4101,18 +4101,18 @@ static const struct bw_table chora_bw_table[] = {
 
 /* name, hw_trigger, hw_enable */
 static struct pd_table chora_pd_table[] = {
-	{ "iris-ctl", 0, 1},
-	{ "vcodec",   1, 1},
+	{ "venus", 0, 1},
+	{ "vcodec0",   1, 1},
 };
 
 /* name, clock id, scaling */
 static const struct clk_table chora_clk_table[] = {
-	{ "video_ctl_axi_clk",			VIDEO_CC_MVSC_CTL_AXI_CLK,	0},
-	{ "video_mvs0_axi_clk",			VIDEO_CC_MVS0_AXI_CLK,		0},
-	{ "core_clk",					VIDEO_CC_MVS0C_CLK,			0},
-	{ "vcodec_clk",					VIDEO_CC_MVS0_CLK,			0},
-	{ "iface_clk",					VIDEO_CC_VENUS_AHB_CLK,		0},
-	{ "video_cc_iris_clk_src",		VIDEO_CC_MVS0_CLK_SRC,		1,
+	{ "bus",			VIDEO_CC_MVSC_CTL_AXI_CLK,	0},
+	{ "vcodec_bus",			VIDEO_CC_MVS0_AXI_CLK,		0},
+	{ "core",			VIDEO_CC_MVS0C_CLK,		0},
+	{ "vcodec_core",		VIDEO_CC_MVS0_CLK,		0},
+	{ "iface",			VIDEO_CC_VENUS_AHB_CLK,		0},
+	{ "video_cc_iris_clk_src",	VIDEO_CC_MVS0_CLK_SRC,		1,
 	(u64[]) {460000000, 424000000,
 			366000000, 270000000, 165000000}, 5},
 };
