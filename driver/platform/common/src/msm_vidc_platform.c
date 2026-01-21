@@ -69,6 +69,7 @@
 #if defined(CONFIG_MSM_VIDC_QLI)
 #include "msm_vidc_hamoa.h"
 #include "msm_vidc_lemans.h"
+#include "msm_vidc_monaco.h"
 #include "msm_vidc_iris3.h"
 #endif
 
@@ -184,6 +185,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.compat                     = "qcom,sa8775p-iris",
 		.get_platform_data          = msm_vidc_get_platform_data_lemans,
 		.init_platform              = msm_vidc_init_platform_lemans,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,qcs8300-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_monaco,
+		.init_platform              = msm_vidc_init_platform_monaco,
 		.init_iris                  = msm_vidc_init_iris3,
 	},
 #endif
