@@ -242,7 +242,7 @@ static u32 msm_vidc_decoder_dpb_size_iris2(struct msm_vidc_inst *inst)
 	return size;
 }
 
-u32 msm_vidc_encoder_output_size(struct msm_vidc_inst *inst)
+static u32 msm_vidc_encoder_output_size(struct msm_vidc_inst *inst)
 {
 	u32 frame_size;
 	u32 mbs_per_frame;

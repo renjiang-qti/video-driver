@@ -96,7 +96,9 @@ ifeq ($(CONFIG_MSM_VIDC_QLI), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/lemans/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/hamoa/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/monaco/inc \
-                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc
+                  -I$(VIDEO_DRIVER_ABS_PATH)/platform/kodiak/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris2/inc
 endif
 
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/common/inc \
@@ -192,11 +194,15 @@ ifeq ($(CONFIG_MSM_VIDC_QLI), y)
 iris_vpu-objs +=  $(VIDEO_DRIVER_REL_PATH)/platform/lemans/src/lemans.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/hamoa/src/hamoa.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/monaco/src/monaco.o \
+                  $(VIDEO_DRIVER_REL_PATH)/platform/kodiak/src/kodiak.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_buffer_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_power_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_bus_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_clock_iris3.o \
-                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_iris3.o
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_iris3.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_buffer_iris2.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_power_iris2.o \
+                  $(VIDEO_DRIVER_REL_PATH)/variant/iris2/src/msm_vidc_iris2.o
 endif
 
 iris_vpu-objs +=  $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform.o \
