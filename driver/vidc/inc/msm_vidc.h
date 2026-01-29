@@ -13,7 +13,7 @@ union msm_v4l2_cmd {
 };
 
 void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type, struct file *filp);
-int msm_vidc_close(struct msm_vidc_inst *inst);
+int msm_vidc_close(struct msm_vidc_inst *inst, struct file *filp);
 int msm_vidc_querycap(struct msm_vidc_inst *inst, void *cap);
 int msm_vidc_enum_fmt(struct msm_vidc_inst *inst, void *f);
 int msm_vidc_try_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f);

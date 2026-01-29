@@ -881,8 +881,7 @@ void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type, struct file *f
 	INIT_DELAYED_WORK(&inst->stats_work, msm_vidc_stats_handler);
 	INIT_WORK(&inst->stability_work, msm_vidc_stability_handler);
 
-	inst->fh_filp = filp;
-	rc = msm_vidc_v4l2_fh_init(inst);
+	rc = msm_vidc_v4l2_fh_init(inst, filp);
 	if (rc)
 		goto fail_eventq_init;
 
@@ -929,6 +928,7 @@ fail_fence_init:
 fail_inst_init:
 	msm_vidc_vb2_queue_deinit(inst);
 fail_vb2q_init:
+	msm_vidc_v4l2_fh_del(inst, filp);
 	msm_vidc_v4l2_fh_deinit(inst);
 fail_eventq_init:
 	destroy_workqueue(inst->workq);
@@ -946,7 +946,7 @@ fail_add_session:
 	return NULL;
 }
 
-int msm_vidc_close(struct msm_vidc_inst *inst)
+int msm_vidc_close(struct msm_vidc_inst *inst, struct file *filp)
 {
 	int rc = 0;
 	struct msm_vidc_core *core;
@@ -976,6 +976,7 @@ int msm_vidc_close(struct msm_vidc_inst *inst)
 	cancel_stability_work_sync(inst);
 	cancel_stats_work_sync(inst);
 	msm_vidc_show_stats(inst);
+	msm_vidc_v4l2_fh_del(inst, filp);
 	put_inst(inst);
 	msm_vidc_schedule_core_deinit(core);
 

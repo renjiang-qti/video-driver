@@ -3701,7 +3701,7 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
+int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst, struct file *filp)
 {
 	struct video_device *vdev = get_video_device(inst);
 	int rc = 0;
@@ -3712,21 +3712,24 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
 		return -EINVAL;
 	}
 
-	if (!inst->fh_filp) {
-		i_vpr_e(inst, "%s: fh_filp is NULL\n", __func__);
-		return -EINVAL;
-	}
-
 	v4l2_fh_init(&inst->fh, vdev);
 	inst->fh.ctrl_handler = &inst->ctrl_handler;
-
 #if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-	v4l2_fh_add(&inst->fh, inst->fh_filp);
+	v4l2_fh_add(&inst->fh, filp);
 #else
 	v4l2_fh_add(&inst->fh);
 #endif
 
 	return rc;
+}
+
+void msm_vidc_v4l2_fh_del(struct msm_vidc_inst *inst, struct file *filp)
+{
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+	v4l2_fh_del(&inst->fh, filp);
+#else
+	v4l2_fh_del(&inst->fh);
+#endif
 }
 
 int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
@@ -3738,12 +3741,6 @@ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
 		i_vpr_h(inst, "%s: already not inited\n", __func__);
 		return 0;
 	}
-
-#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-	v4l2_fh_del(&inst->fh, inst->fh_filp);
-#else
-	v4l2_fh_del(&inst->fh);
-#endif
 
 	inst->fh.ctrl_handler = NULL;
 	v4l2_fh_exit(&inst->fh);
