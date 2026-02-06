@@ -748,27 +748,27 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_INPUT,
 		0, MSM_VIDC_META_DISABLE,
 		V4L2_CID_MPEG_VIDC_METADATA_OUTPUT_TX_FENCE,
-		HFI_PROP_FENCE_OUTPUT,
+		HFI_PROP_TX_FENCE_ID_OUTPUT,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
 	{OUTPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_ENABLE,
-		HFI_PROP_FENCE_OUTPUT,
+		HFI_PROP_RX_FENCE_ID_OUTPUT,
 		CAP_FLAG_OUTPUT_PORT},
 
 	/* enable input rx fence feature */
 	{INPUT_RX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_ENABLE,
-		HFI_PROP_FENCE_INPUT,
+		HFI_PROP_RX_FENCE_ID_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
-	/* enable input rx fence feature */
+	/* enable input tx fence feature */
 	{INPUT_TX_FENCE_ENABLE, DEC, H264 | HEVC | VP9 | AV1,
 		0, 1, 1, 0,
 		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_ENABLE,
-		HFI_PROP_FENCE_INPUT,
+		HFI_PROP_TX_FENCE_ID_INPUT,
 		CAP_FLAG_INPUT_PORT},
 
 	/*
@@ -811,7 +811,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_INPUT_RX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_RX_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
 	/* Fence type for input tx buffer */
@@ -821,7 +821,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_INPUT_TX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_TX_FENCE_TYPE,
 		CAP_FLAG_INPUT_PORT | CAP_FLAG_MENU},
 
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
@@ -830,7 +830,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_FENCE_NONE,
 		V4L2_CID_MPEG_VIDC_OUTPUT_RX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_RX_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
@@ -839,7 +839,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 			BIT(MSM_VIDC_SYNX_V2_FENCE),
 		MSM_VIDC_SW_FENCE,
 		V4L2_CID_MPEG_VIDC_OUTPUT_TX_FENCE_TYPE,
-		HFI_PROP_FENCE_TYPE,
+		HFI_PROP_TX_FENCE_TYPE,
 		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 
 	{TS_REORDER, DEC, H264 | HEVC,
@@ -2374,7 +2374,7 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 		HFI_PROP_DOLBY_RPU_METADATA,
 		CAP_FLAG_BITMASK | CAP_FLAG_META},
 
-	{META_DOLBY_RPU, DEC, H264 | HEVC,
+	{META_DOLBY_RPU, DEC, H264 | HEVC | AV1,
 		MSM_VIDC_META_DISABLE,
 		MSM_VIDC_META_ENABLE | MSM_VIDC_META_RX_OUTPUT,
 		0, MSM_VIDC_META_DISABLE,
@@ -2518,11 +2518,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -2600,11 +2602,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v2[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -2623,15 +2627,11 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 	 *      flags}
 	 */
 
-	{FRAME_WIDTH, DEC, CODECS_ALL, 96, 4096, 1, 1920},
-
 	{FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
 
 	{FRAME_WIDTH, ENC, HEVC | APV, 96, 4096, 1, 1920},
 
 	{LOSSLESS_FRAME_WIDTH, ENC, CODECS_ALL, 128, 4096, 1, 1920},
-
-	{FRAME_HEIGHT, DEC, CODECS_ALL, 96, 7680, 1, 1080},
 
 	{FRAME_HEIGHT, ENC, CODECS_ALL, 128, 4096, 1, 1080},
 
@@ -2832,11 +2832,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v1[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC | APV,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 /*
@@ -3062,11 +3064,13 @@ static struct msm_platform_inst_capability instance_cap_data_canoe_sku_v3[] = {
 
 	{LOG_VIDEO_ENCODE, ENC, HEVC,
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
-		MSM_VIDC_LOG_VIDEO_TYPE_COMMON, 1,
+		MSM_VIDC_LOG_VIDEO_TYPE_HDR,
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_NONE) |
+		BIT(MSM_VIDC_LOG_VIDEO_TYPE_HDR),
 		MSM_VIDC_LOG_VIDEO_TYPE_NONE,
 		V4L2_CID_MPEG_VIDC_LOG_VIDEO_ENCODE,
 		HFI_PROP_LOG_VIDEO_ENCODE,
-		CAP_FLAG_OUTPUT_PORT},
+		CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU},
 };
 
 static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_canoe[] = {
@@ -3162,22 +3166,22 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_cano
 	{INPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_input_rx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{INPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_input_tx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{OUTPUT_TX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_tx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{OUTPUT_RX_FENCE_TYPE, DEC, H264 | HEVC | VP9 | AV1,
 		{0},
 		msm_vidc_adjust_dec_output_rx_fence_type,
-		NULL},
+		msm_vidc_set_u32},
 
 	{HFLIP, ENC, CODECS_ALL,
 		{0},
@@ -4085,12 +4089,16 @@ static const u32 canoe_vdec_input_properties_avc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
+	HFI_PROP_TX_FENCE_ID_INPUT,
+	HFI_PROP_RX_FENCE_ID_INPUT,
 };
 
 static const u32 canoe_vdec_input_properties_hevc[] = {
 	HFI_PROP_NO_OUTPUT,
 	HFI_PROP_SUBFRAME_INPUT,
 	HFI_PROP_DPB_LIST,
+	HFI_PROP_TX_FENCE_ID_INPUT,
+	HFI_PROP_RX_FENCE_ID_INPUT,
 };
 
 static const u32 canoe_vdec_input_properties_apv[] = {
@@ -4117,14 +4125,16 @@ static const u32 canoe_vdec_output_properties_avc[] = {
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_CABAC_SESSION,
-	HFI_PROP_FENCE_OUTPUT,
+	HFI_PROP_TX_FENCE_ID_OUTPUT,
+	HFI_PROP_RX_FENCE_ID_OUTPUT,
 };
 
 static const u32 canoe_vdec_output_properties_hevc[] = {
 	HFI_PROP_WORST_COMPRESSION_RATIO,
 	HFI_PROP_WORST_COMPLEXITY_FACTOR,
 	HFI_PROP_PICTURE_TYPE,
-	HFI_PROP_FENCE_OUTPUT,
+	HFI_PROP_TX_FENCE_ID_OUTPUT,
+	HFI_PROP_RX_FENCE_ID_OUTPUT,
 };
 
 static const u32 canoe_vdec_output_properties_apv[] = {
@@ -4180,7 +4190,7 @@ static const struct msm_vidc_platform_data canoe_data = {
 	.reg_prst_tbl = canoe_reg_preset_table,
 	.reg_prst_tbl_size = ARRAY_SIZE(canoe_reg_preset_table),
 	.clock_source_scaling_ratio = 1,
-	.fwname = "vpu40_2v_v1",
+	.fwname = "vpu40_2v_v1.mbn",
 	.pas_id = 9,
 	.supports_mmrm = 1,
 
@@ -4369,7 +4379,8 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		core->platform->data.clk_tbl = canoe_clk_table_v2;
 		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table_v2);
 		core->platform->data.clk_corner_idx_tbl = canoe_corner_idx_tbl_v2;
-		core->platform->data.fwname = "vpu40_2v";
+		core->platform->data.fwname = "vpu40_2v.mbn";
+		core->hw_version = MSM_VIDC_HW_VERSION_V2;
 
 		platform_cap_data = core->platform->data.inst_cap_data;
 		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
@@ -4380,6 +4391,27 @@ int msm_vidc_get_platform_data_canoe(struct msm_vidc_core *core)
 		}
 	}
 
+	if (of_device_is_compatible(dev->of_node, "qcom,canoe-vidc-v3")) {
+		d_vpr_h("%s: update context bank table for canoe v3\n", __func__);
+		/* It's same as V2 expect frequency table
+		 * V1 and V3 should use same frequency table
+		 */
+		core->platform->data.context_bank_tbl = canoe_context_bank_table_v2;
+		core->platform->data.context_bank_tbl_size =
+			ARRAY_SIZE(canoe_context_bank_table_v2);
+		core->platform->data.clk_tbl = canoe_clk_table;
+		core->platform->data.clk_tbl_size = ARRAY_SIZE(canoe_clk_table);
+		core->platform->data.clk_corner_idx_tbl = canoe_corner_idx_tbl;
+		core->platform->data.fwname = "vpu40_2v.mbn";
+
+		platform_cap_data = core->platform->data.inst_cap_data;
+		for (i = 0; i < core->platform->data.inst_cap_data_size; i++) {
+			if (platform_cap_data[i].cap_id == SECURE_MODE) {
+				platform_cap_data[i].max = 1;
+				break;
+			}
+		}
+	}
 	return rc;
 }
 

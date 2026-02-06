@@ -733,9 +733,21 @@ enum hfi_codec_mode_type {
 
 enum hfi_log_video_encode_mode {
 	HFI_LOG_VIDEO_TYPE_NONE    = 0x0,
-	HFI_LOG_VIDEO_TYPE_COMMON  = 0x1,
+	HFI_LOG_VIDEO_TYPE_HDR  = 0x1,
 };
 #define HFI_PROP_LOG_VIDEO_ENCODE                               0x030001C0
+
+#define HFI_PROP_TX_FENCE_TYPE                                  0x030001C1
+
+#define HFI_PROP_RX_FENCE_TYPE                                  0x030001C2
+
+#define HFI_PROP_TX_FENCE_ID_OUTPUT                             HFI_PROP_FENCE_OUTPUT
+
+#define HFI_PROP_RX_FENCE_ID_OUTPUT                             0x030001C3
+
+#define HFI_PROP_TX_FENCE_ID_INPUT                              0x030001C4
+
+#define HFI_PROP_RX_FENCE_ID_INPUT                              HFI_PROP_FENCE_INPUT
 
 #define HFI_PROP_END                                            0x03FFFFFF
 

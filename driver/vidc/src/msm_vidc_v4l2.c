@@ -149,14 +149,16 @@ static int msm_v4l2_open(struct file *filp)
 	struct msm_vidc_inst *inst;
 
 	trace_msm_v4l2_vidc_open("START", NULL);
-	inst = msm_vidc_open(core, vid_dev->type);
+	inst = msm_vidc_open(core, vid_dev->type, filp);
 	if (!inst) {
 		d_vpr_e("Failed to create instance, type = %d\n",
 			vid_dev->type);
 		trace_msm_v4l2_vidc_open("END", NULL);
 		return -ENOMEM;
 	}
+#if (KERNEL_VERSION(6, 18, 0) > LINUX_VERSION_CODE)
 	filp->private_data = &(inst->fh);
+#endif
 	trace_msm_v4l2_vidc_open("END", inst);
 	return 0;
 }
@@ -174,8 +176,10 @@ static int msm_v4l2_close(struct file *filp)
 
 	trace_msm_v4l2_vidc_close("START", inst);
 
-	rc = msm_vidc_close(inst);
+	rc = msm_vidc_close(inst, filp);
+#if (KERNEL_VERSION(6, 18, 0) > LINUX_VERSION_CODE)
 	filp->private_data = NULL;
+#endif
 	trace_msm_v4l2_vidc_close("END", NULL);
 	return rc;
 }

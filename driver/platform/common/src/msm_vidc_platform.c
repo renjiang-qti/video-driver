@@ -25,18 +25,29 @@
 #include "venus_hfi.h"
 #include "resources.h"
 
+#if defined(CONFIG_MSM_VIDC_CHORA)
+#include "msm_vidc_chora.h"
+#include "msm_vidc_iris2.h"
+#endif
+
 #if defined(CONFIG_MSM_VIDC_SUN)
 #include "msm_vidc_sun.h"
 #include "msm_vidc_iris35.h"
 #include "msm_vidc_tuna.h"
+#include "msm_vidc_kera.h"
 #include "msm_vidc_iris33.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_PINEAPPLE)
 #include "msm_vidc_pineapple.h"
 #include "msm_vidc_iris33.h"
 #endif
+#if defined(CONFIG_MSM_VIDC_HAMOA)
+#include "msm_vidc_hamoa.h"
+#include "msm_vidc_iris3.h"
+#endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
 #include "msm_vidc_lemans.h"
+#include "msm_vidc_iris3.h"
 #endif
 #if defined(CONFIG_MSM_VIDC_NIOBE)
 #include "msm_vidc_niobe.h"
@@ -54,6 +65,14 @@
 #if defined(CONFIG_MSM_VIDC_NORDAU)
 #include "msm_vidc_nordau.h"
 #include "msm_vidc_iris36.h"
+#endif
+#if defined(CONFIG_MSM_VIDC_QLI)
+#include "msm_vidc_hamoa.h"
+#include "msm_vidc_lemans.h"
+#include "msm_vidc_monaco.h"
+#include "msm_vidc_kodiak.h"
+#include "msm_vidc_iris3.h"
+#include "msm_vidc_iris2.h"
 #endif
 
 #define CAP_TO_8BIT_QP(a) {          \
@@ -77,6 +96,8 @@
 	if (ltr_count)                                                         \
 		num_ref = num_ref + ltr_count;                                 \
 }
+
+extern struct msm_vidc_core *g_core;
 
 /*
  * Custom conversion coefficients for resolution: 176x144 negative
@@ -113,6 +134,14 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_iris                  = msm_vidc_init_iris33,
 	},
 #endif
+#if defined(CONFIG_MSM_VIDC_CHORA)
+	{
+		.compat                     = "qcom,chora-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_chora,
+		.init_platform              = msm_vidc_init_platform_chora,
+		.init_iris                  = msm_vidc_init_iris2,
+	},
+#endif
 #if defined(CONFIG_MSM_VIDC_SUN)
 	{
 		.compat                     = "qcom,sm8750-vidc",
@@ -131,6 +160,46 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_tuna,
 		.init_platform              = msm_vidc_init_platform_tuna,
 		.init_iris                  = msm_vidc_init_iris33,
+	},
+	{
+		.compat                     = "qcom,kera-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_kera,
+		.init_platform              = msm_vidc_init_platform_kera,
+		.init_iris                  = msm_vidc_init_iris33,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_HAMOA)
+	{
+		.compat                     = "qcom,x1e80100-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_hamoa,
+		.init_platform              = msm_vidc_init_platform_hamoa,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+#endif
+#if defined(CONFIG_MSM_VIDC_QLI)
+	{
+		.compat                     = "qcom,x1e80100-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_hamoa,
+		.init_platform              = msm_vidc_init_platform_hamoa,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,sa8775p-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_lemans,
+		.init_platform              = msm_vidc_init_platform_lemans,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,qcs8300-iris",
+		.get_platform_data          = msm_vidc_get_platform_data_monaco,
+		.init_platform              = msm_vidc_init_platform_monaco,
+		.init_iris                  = msm_vidc_init_iris3,
+	},
+	{
+		.compat                     = "qcom,sc7280-venus",
+		.get_platform_data          = msm_vidc_get_platform_data_kodiak,
+		.init_platform              = msm_vidc_init_platform_kodiak,
+		.init_iris                  = msm_vidc_init_iris2,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)
@@ -163,6 +232,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.init_iris                  = msm_vidc_init_iris4,
 	},
 	{
+		.compat                     = "qcom,canoe-vidc-v3",
+		.get_platform_data          = msm_vidc_get_platform_data_canoe,
+		.init_platform              = msm_vidc_init_platform_canoe,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
+	{
 		.compat                     = "qcom,alor-vidc",
 		.get_platform_data          = msm_vidc_get_platform_data_alor,
 		.init_platform              = msm_vidc_init_platform_alor,
@@ -172,6 +247,12 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 #if defined(CONFIG_MSM_VIDC_SERAPH)
 	{
 		.compat                     = "qcom,seraph-vidc",
+		.get_platform_data          = msm_vidc_get_platform_data_seraph,
+		.init_platform              = msm_vidc_init_platform_seraph,
+		.init_iris                  = msm_vidc_init_iris4,
+	},
+	{
+		.compat                     = "qcom,seraph-vidc-v2",
 		.get_platform_data          = msm_vidc_get_platform_data_seraph,
 		.init_platform              = msm_vidc_init_platform_seraph,
 		.init_iris                  = msm_vidc_init_iris4,
@@ -216,6 +297,7 @@ static int msm_vidc_init_ops(struct msm_vidc_core *core)
 static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 {
 	struct device *dev = &core->pdev->dev;
+	const char *fwpath;
 	int i, rc = 0;
 
 	d_vpr_h("%s()\n", __func__);
@@ -228,6 +310,21 @@ static int msm_vidc_get_platform_data(struct msm_vidc_core *core)
 				d_vpr_e("%s: (%s) init failed with %d\n",
 					__func__, compat_handle[i].compat, rc);
 				return rc;
+			}
+
+			/*
+			 * If the device tree provides the firmware path through "firmware-name",
+			 * then that path should be used, and the core->platform->data.fwname
+			 * variable should be updated to this path.
+			 */
+			rc = of_property_read_string_index(dev->of_node,
+							   "firmware-name", 0, &fwpath);
+			if (!rc) {
+				core->platform->data.fwname = fwpath;
+				d_vpr_h("%s: update fwpath to %s\n", __func__, fwpath);
+			} else {
+				rc = 0;
+				d_vpr_h("%s: Get fw path from platform specific file\n", __func__);
 			}
 			break;
 		}
@@ -341,6 +438,11 @@ int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core)
 	return rc;
 }
 
+enum msm_vidc_hw_version msm_vidc_get_hw_version(void)
+{
+	return g_core->hw_version;
+}
+
 int msm_vidc_read_efuse(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -426,8 +528,11 @@ int msm_vidc_update_cap_value(struct msm_vidc_inst *inst, u32 cap_id,
 		    adjusted_val & MSM_VIDC_META_DYN_ENABLE) {
 			/* enable metadata */
 			inst->capabilities[cap_id].value |= adjusted_val;
+		} else if (adjusted_val == 0) {
+			/* disable all metadata bits */
+			inst->capabilities[cap_id].value = 0;
 		} else {
-			/* disable metadata */
+			/* disable required metadata bits */
 			inst->capabilities[cap_id].value &= ~adjusted_val;
 		}
 	} else {
@@ -526,13 +631,20 @@ int msm_vidc_v4l2_menu_to_hfi(struct msm_vidc_inst *inst,
 			*value = 1;
 			goto set_default;
 		}
-		return 0;
+		break;
+	case INPUT_TX_FENCE_TYPE:
+	case INPUT_RX_FENCE_TYPE:
+	case OUTPUT_TX_FENCE_TYPE:
+	case OUTPUT_RX_FENCE_TYPE:
+		*value = inst->capabilities[cap_id].value;
+		break;
 	default:
 		i_vpr_e(inst,
 			"%s: mapping not specified for ctrl_id: %#x\n",
 			__func__, inst->capabilities[cap_id].v4l2_id);
 		return -EINVAL;
 	}
+	return 0;
 
 set_default:
 	i_vpr_e(inst,

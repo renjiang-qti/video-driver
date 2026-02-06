@@ -218,6 +218,7 @@ enum vpu_version {
 	VPU_VERSION_IRIS33_2P, // IRIS3 2 PIPE
 	VPU_VERSION_IRIS2_2P, // IRIS2 2 PIPE
 	VPU_VERSION_IRIS4_1P, // IRIS4 1 PIPE
+	VPU_VERSION_IRIS2_1P, //IRIS2 1 PIPE
 };
 
 struct msm_vidc_platform_data {
@@ -227,6 +228,7 @@ struct msm_vidc_platform_data {
 	unsigned int regulator_tbl_size;
 	struct pd_table *pd_tbl;
 	unsigned int pd_tbl_size;
+	unsigned int gdsc_hw_ctrl_by_default;
 	const char * const *opp_tbl;
 	unsigned int opp_tbl_size;
 	struct dev_pm_domain_list *opp_pmdomain_tbl;
@@ -342,6 +344,7 @@ static inline bool is_mmrm_supported(struct msm_vidc_core *core)
 }
 
 int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core);
+enum msm_vidc_hw_version msm_vidc_get_hw_version(void);
 int msm_vidc_read_efuse(struct msm_vidc_core *core);
 
 /* control framework support functions */

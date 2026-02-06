@@ -11,6 +11,8 @@
 #ifndef _FIXEDPOINT_H_
 #define _FIXEDPOINT_H_
 
+#include <linux/bits.h>
+
 /*
  * Normally would typedef'ed, but checkpatch doesn't like typedef.
  * Also should be normally typedef'ed to intmax_t but that doesn't seem to be

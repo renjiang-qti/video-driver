@@ -13,6 +13,7 @@ struct msm_vidc_core;
 
 struct vb2_queue *msm_vidc_get_vb2q(struct msm_vidc_inst *inst,
 				    u32 type, const char *func);
+int msm_vb2_mmap(void *dmabuf, struct vm_area_struct *vma);
 int msm_vidc_start_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q);
 int msm_vidc_stop_streaming(struct msm_vidc_inst *inst, struct vb2_queue *q);
 int msm_vidc_core_init_vb2_ops(struct msm_vidc_core *core);

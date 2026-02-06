@@ -1201,21 +1201,43 @@ int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *buf)
 {
 	int rc = 0;
-	enum msm_memory_cache_type cache_type;
+	struct msm_vidc_core *core;
+	enum msm_memory_cache_op_type cache_op_type;
 
 	if (!inst || !buf) {
 		d_vpr_e("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
+	core = inst->core;
 
-	if (is_decode_session(inst) || is_encode_session(inst)) {
+	/* skip cache operations on coherent systems */
+	if (!core->capabilities[CACHE_OPS_REQUIRED].value)
+		return 0;
+
+	if (is_decode_session(inst)) {
 		switch (buf->type) {
 		case MSM_VIDC_BUF_INPUT:
-			cache_type = MSM_MEM_CACHE_CLEAN_INVALIDATE;
+		case MSM_VIDC_BUF_INPUT_META:
+		case MSM_VIDC_BUF_OUTPUT_META:
+			cache_op_type = MSM_MEM_CACHE_CLEAN_INVALIDATE;
+			break;
+		case MSM_VIDC_BUF_OUTPUT:
+			cache_op_type = MSM_MEM_CACHE_INVALIDATE;
+			break;
+		default:
+			i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
+				__func__, buf->type);
+			return -EINVAL;
+		}
+	} else if (is_encode_session(inst)) {
+		switch (buf->type) {
+		case MSM_VIDC_BUF_INPUT:
+		case MSM_VIDC_BUF_INPUT_META:
+			cache_op_type = MSM_MEM_CACHE_CLEAN_INVALIDATE;
 			break;
 		case MSM_VIDC_BUF_OUTPUT:
 		case MSM_VIDC_BUF_OUTPUT_META:
-			cache_type = MSM_MEM_CACHE_INVALIDATE;
+			cache_op_type = MSM_MEM_CACHE_INVALIDATE;
 			break;
 		default:
 			i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
@@ -1227,11 +1249,9 @@ int msm_vidc_qbuf_cache_operation(struct msm_vidc_inst *inst,
 		return -EINVAL;
 	}
 
-	if (buf->dmabuf) {
-		rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
-		if (rc)
-			print_vidc_buffer(VIDC_ERR, "err ", "qbuf cache ops failed", inst, buf);
-	}
+	rc = call_mem_op(core, memory_cache_ops, inst, buf->dmabuf, cache_op_type);
+	if (rc)
+		print_vidc_buffer(VIDC_ERR, "err ", "qbuf cache ops failed", inst, buf);
 
 	return rc;
 }
@@ -1240,13 +1260,19 @@ int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
 	struct msm_vidc_buffer *buf)
 {
 	int rc = 0;
-	enum msm_memory_cache_type cache_type = MSM_MEM_CACHE_INVALIDATE;
+	enum msm_memory_cache_op_type cache_op_type = MSM_MEM_CACHE_INVALIDATE;
 	bool skip = false;
+	struct msm_vidc_core *core;
 
 	if (!inst || !buf) {
 		d_vpr_e("%s: Invalid params\n", __func__);
 		return -EINVAL;
 	}
+	core = inst->core;
+
+	/* skip cache operations on coherent systems */
+	if (!core->capabilities[CACHE_OPS_REQUIRED].value)
+		return 0;
 
 	if (is_decode_session(inst) || is_encode_session(inst)) {
 		switch (buf->type) {
@@ -1254,8 +1280,9 @@ int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
 			skip = true;
 			break;
 		case MSM_VIDC_BUF_OUTPUT:
+		case MSM_VIDC_BUF_INPUT_META:
 		case MSM_VIDC_BUF_OUTPUT_META:
-			cache_type = MSM_MEM_CACHE_INVALIDATE;
+			cache_op_type = MSM_MEM_CACHE_INVALIDATE;
 			break;
 		default:
 			i_vpr_e(inst, "%s: invalid driver buffer type %d\n",
@@ -1271,12 +1298,9 @@ int msm_vidc_dqbuf_cache_operation(struct msm_vidc_inst *inst,
 	if (skip)
 		return 0;
 
-
-	if (buf->dmabuf) {
-		rc = msm_memory_cache_operations(inst, buf->dmabuf, cache_type);
-		if (rc)
-			print_vidc_buffer(VIDC_ERR, "err ", "dqbuf cache ops failed", inst, buf);
-	}
+	rc = call_mem_op(core, memory_cache_ops, inst, buf->dmabuf, cache_op_type);
+	if (rc)
+		print_vidc_buffer(VIDC_ERR, "err ", "dqbuf cache ops failed", inst, buf);
 
 	return rc;
 }
@@ -1349,11 +1373,35 @@ bool msm_vidc_allow_property(struct msm_vidc_inst *inst, u32 hfi_id)
 		else
 			is_allowed = false;
 		break;
-	case HFI_PROP_FENCE_OUTPUT:
+	case HFI_PROP_TX_FENCE_ID_OUTPUT:
 		if (!is_output_tx_fence_enabled(inst)) {
 			i_vpr_h(inst,
 				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
 				__func__, cap_name(META_OUTPUT_TX_FENCE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_RX_FENCE_ID_OUTPUT:
+		if (!is_output_rx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(OUTPUT_RX_FENCE_ENABLE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_TX_FENCE_ID_INPUT:
+		if (!is_input_tx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(INPUT_TX_FENCE_ENABLE));
+			is_allowed = false;
+		}
+		break;
+	case HFI_PROP_RX_FENCE_ID_INPUT:
+		if (!is_input_rx_fence_enabled(inst)) {
+			i_vpr_h(inst,
+				"%s: cap: %24s not enabled, hence not allowed to subscribe\n",
+				__func__, cap_name(INPUT_RX_FENCE_ENABLE));
 			is_allowed = false;
 		}
 		break;
@@ -3153,11 +3201,8 @@ static int msm_vidc_queue_buffer(struct msm_vidc_inst *inst, struct msm_vidc_buf
 	if (rc)
 		return rc;
 
-	if (buf->type == MSM_VIDC_BUF_INPUT || buf->type == MSM_VIDC_BUF_OUTPUT) {
-		rc = msm_vidc_qbuf_cache_operation(inst, buf);
-		if (rc)
-			return rc;
-	}
+	/* if cache ops fails ignore the error */
+	rc = msm_vidc_qbuf_cache_operation(inst, buf);
 
 	if (msm_vidc_is_super_buffer(inst) && is_input_buffer(buf->type))
 		rc = venus_hfi_queue_super_buffer(inst, buf, meta);
@@ -3606,6 +3651,9 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
 	struct vb2_v4l2_buffer *vbuf;
 	bool found;
 
+	/* if cache ops fails ignore the error */
+	msm_vidc_dqbuf_cache_operation(inst, buf);
+
 	type = v4l2_type_from_driver(buf->type, __func__);
 	if (!type)
 		return -EINVAL;
@@ -3653,7 +3701,7 @@ int msm_vidc_vb2_buffer_done(struct msm_vidc_inst *inst,
 	return 0;
 }
 
-int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
+int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst, struct file *filp)
 {
 	struct video_device *vdev = get_video_device(inst);
 	int rc = 0;
@@ -3666,9 +3714,22 @@ int msm_vidc_v4l2_fh_init(struct msm_vidc_inst *inst)
 
 	v4l2_fh_init(&inst->fh, vdev);
 	inst->fh.ctrl_handler = &inst->ctrl_handler;
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+	v4l2_fh_add(&inst->fh, filp);
+#else
 	v4l2_fh_add(&inst->fh);
+#endif
 
 	return rc;
+}
+
+void msm_vidc_v4l2_fh_del(struct msm_vidc_inst *inst, struct file *filp)
+{
+#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+	v4l2_fh_del(&inst->fh, filp);
+#else
+	v4l2_fh_del(&inst->fh);
+#endif
 }
 
 int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
@@ -3681,7 +3742,6 @@ int msm_vidc_v4l2_fh_deinit(struct msm_vidc_inst *inst)
 		return 0;
 	}
 
-	v4l2_fh_del(&inst->fh);
 	inst->fh.ctrl_handler = NULL;
 	v4l2_fh_exit(&inst->fh);
 
@@ -4274,6 +4334,12 @@ static int update_inst_cap_dependency(
 	return 0;
 }
 
+static void msm_vidc_devm_free_inst_caps(void *inst_caps)
+{
+	if (inst_caps)
+		kvfree(inst_caps);
+}
+
 int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 {
 	int rc = 0;
@@ -4315,10 +4381,20 @@ int msm_vidc_init_instance_caps(struct msm_vidc_core *core)
 	core->dec_codecs_count = dec_codecs_count;
 
 	codecs_count = enc_codecs_count + dec_codecs_count;
-	core->inst_caps = devm_kzalloc(&core->pdev->dev,
-		codecs_count * sizeof(struct msm_vidc_inst_capability), GFP_KERNEL);
+	core->inst_caps = kvcalloc(codecs_count,
+			sizeof(struct msm_vidc_inst_capability), GFP_KERNEL);
 	if (!core->inst_caps) {
 		d_vpr_e("%s: failed to alloc memory for instance caps\n", __func__);
+		rc = -ENOMEM;
+		goto error;
+	}
+
+	if (devm_add_action_or_reset(&core->pdev->dev,
+			msm_vidc_devm_free_inst_caps,
+			core->inst_caps)) {
+		d_vpr_e("%s: add action or reset failed for instance caps\n", __func__);
+		kvfree(core->inst_caps);
+		core->inst_caps = NULL;
 		rc = -ENOMEM;
 		goto error;
 	}
@@ -5818,7 +5894,7 @@ int msm_vidc_check_core_mbps(struct msm_vidc_inst *inst)
 		/* reject encoder if all encoders mbps is greater than MAX_MBPS */
 		if (enc_mbps > core->capabilities[MAX_MBPS].value) {
 			i_vpr_e(inst, "%s: Hardware overloaded. needed %llu, max %llu", __func__,
-				mbps, core->capabilities[MAX_MBPS].value);
+				enc_mbps, core->capabilities[MAX_MBPS].value);
 			return -ENOMEM;
 		}
 		/*
@@ -6102,6 +6178,17 @@ static int msm_vidc_check_resolution_supported(struct msm_vidc_inst *inst)
 		max_height = cap[FRAME_HEIGHT].max;
 	}
 
+	/* reject odd resolution session */
+	if (is_encode_session(inst) &&
+		(is_odd(width) || is_odd(height) ||
+		is_odd(inst->compose.width) ||
+		is_odd(inst->compose.height))) {
+		i_vpr_e(inst, "%s: resolution is not even. wxh [%u x %u], compose [%u x %u]\n",
+			__func__, width, height, inst->compose.width,
+			inst->compose.height);
+		return -EINVAL;
+	}
+
 	/* check if input width and height is in supported range */
 	if (is_decode_session(inst) || is_encode_session(inst)) {
 		if (!check_in_range(width, min_width, max_width) ||
@@ -6130,6 +6217,8 @@ static int msm_vidc_check_max_sessions(struct msm_vidc_inst *inst)
 {
 	u32 width = 0, height = 0;
 	u32 num_1080p_sessions = 0, num_4k_sessions = 0, num_8k_sessions = 0;
+	u32 num_mvhevc_secure_sessions = 0;
+	s32 profile = 0;
 	struct msm_vidc_inst *i;
 	struct msm_vidc_core *core;
 
@@ -6175,6 +6264,13 @@ static int msm_vidc_check_max_sessions(struct msm_vidc_inst *inst)
 					       736 + (736 >> 2))) {
 			num_1080p_sessions += 1;
 		}
+		profile = i->capabilities[PROFILE].value;
+		if ((i->codec == MSM_VIDC_HEVC) &&
+			(profile == V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_MULTIVIEW ||
+			profile == V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_MULTIVIEW)) {
+			if (is_secure_session(i))
+				num_mvhevc_secure_sessions += 2;
+		}
 	}
 	core_unlock(core, __func__);
 
@@ -6196,6 +6292,14 @@ static int msm_vidc_check_max_sessions(struct msm_vidc_inst *inst)
 		i_vpr_e(inst, "%s: total 1080p sessions %d, exceeded max limit %lld\n",
 			__func__, num_1080p_sessions,
 			core->capabilities[MAX_NUM_1080P_SESSIONS].value);
+		return -ENOMEM;
+	}
+
+	if (num_mvhevc_secure_sessions >
+		core->capabilities[MAX_SECURE_SESSION_COUNT].value) {
+		i_vpr_e(inst, "%s: total mvhevc secure sessions %d, exceeded max limit %lld\n",
+			__func__, num_mvhevc_secure_sessions,
+			core->capabilities[MAX_SECURE_SESSION_COUNT].value);
 		return -ENOMEM;
 	}
 

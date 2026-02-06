@@ -25,7 +25,6 @@ module_entry(
         "driver/vidc/src/msm_vidc_memory.c",
         "driver/vidc/src/msm_vidc_memory_ext.c",
         "driver/vidc/src/msm_vidc_fence.c",
-        "driver/vidc/src/msm_vidc_synx.c",
         "driver/vidc/src/venus_hfi.c",
         "driver/vidc/src/venus_hfi_queue.c",
         "driver/vidc/src/hfi_packet.c",
@@ -35,6 +34,14 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
+        "CONFIG_MSM_VIDC_HAMOA" : [
+            "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_clock_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_power_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_iris3.c",
+            "driver/platform/hamoa/src/msm_vidc_hamoa.c",
+        ],
         "CONFIG_MSM_VIDC_NIOBE" : [
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
             "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
@@ -51,6 +58,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_iris33.c",
             "driver/platform/pineapple/src/msm_vidc_pineapple.c",
         ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
+            "driver/platform/chora/src/msm_vidc_chora.c",
+        ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/variant/iris35/src/msm_vidc_buffer_iris35.c",
             "driver/variant/iris35/src/msm_vidc_bus_iris35.c",
@@ -64,6 +77,7 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_power_iris33.c",
             "driver/variant/iris33/src/msm_vidc_iris33.c",
             "driver/platform/tuna/src/msm_vidc_tuna.c",
+            "driver/platform/kera/src/msm_vidc_kera.c",
         ],
         "CONFIG_MSM_VIDC_CANOE" : [
             "driver/variant/iris4/src/msm_vidc_buffer_iris4.c",
@@ -82,17 +96,33 @@ module_entry(
             "driver/variant/iris4/src/msm_vidc_iris4.c",
             "driver/platform/seraph/src/msm_vidc_seraph.c",
         ],
+        "CONFIG_MSM_VIDC_NORDAU" : [
+            "driver/variant/iris36/src/msm_vidc_buffer_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_bus_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_clock_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_power_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_iris36.c",
+            "driver/platform/nordau/src/msm_vidc_nordau.c",
+        ],
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",
         ],
+        "CONFIG_MSM_VIDC_SYNX": [
+            "driver/vidc/src/msm_vidc_synx.c",
+        ],
     },
-    deps = [
+    deps = [],
+    config_deps = {
+        "CONFIG_MSM_VIDC_SYNX" : [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+        ],
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )
 
 module_entry(
@@ -122,6 +152,14 @@ module_entry(
         "driver/variant/common/src/msm_vidc_variant.c",
         ],
     config_srcs = {
+        "CONFIG_MSM_VIDC_HAMOA" : [
+            "driver/platform/hamoa/src/hamoa.c",
+            "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_power_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_bus_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_clock_iris3.c",
+            "driver/variant/iris3/src/msm_vidc_iris3.c",
+        ],
         "CONFIG_MSM_VIDC_NIOBE" : [
             "driver/platform/niobe/src/niobe.c",
             "driver/variant/iris3/src/msm_vidc_buffer_iris3.c",
@@ -138,6 +176,12 @@ module_entry(
             "driver/variant/iris33/src/msm_vidc_clock_iris33.c",
             "driver/variant/iris33/src/msm_vidc_iris33.c",
         ],
+        "CONFIG_MSM_VIDC_CHORA" : [
+            "driver/platform/chora/src/chora.c",
+            "driver/variant/iris2/src/msm_vidc_buffer_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_power_iris2.c",
+            "driver/variant/iris2/src/msm_vidc_iris2.c",
+        ],
         "CONFIG_MSM_VIDC_SUN" : [
             "driver/platform/sun/src/sun.c",
             "driver/variant/iris35/src/msm_vidc_buffer_iris35.c",
@@ -146,6 +190,7 @@ module_entry(
             "driver/variant/iris35/src/msm_vidc_clock_iris35.c",
             "driver/variant/iris35/src/msm_vidc_iris35.c",
             "driver/platform/tuna/src/tuna.c",
+            "driver/platform/kera/src/kera.c",
             "driver/variant/iris33/src/msm_vidc_buffer_iris33.c",
             "driver/variant/iris33/src/msm_vidc_bus_iris33.c",
             "driver/variant/iris33/src/msm_vidc_clock_iris33.c",
@@ -169,15 +214,28 @@ module_entry(
             "driver/variant/iris4/src/msm_vidc_clock_iris4.c",
             "driver/variant/iris4/src/msm_vidc_iris4.c",
         ],
+        "CONFIG_MSM_VIDC_NORDAU" : [
+            "driver/platform/nordau/src/nordau.c",
+            "driver/variant/iris36/src/msm_vidc_buffer_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_power_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_bus_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_clock_iris36.c",
+            "driver/variant/iris36/src/msm_vidc_iris36.c",
+        ],
         "CONFIG_MSM_VIDC_MINIDUMP": [
             "driver/vidc/src/msm_vidc_md.c",
         ],
     },
-    deps = [
+    deps = [],
+    config_deps = {
+        "CONFIG_MSM_VIDC_SYNX" : [
             "//vendor/qcom/opensource/mm-drivers:mm_drivers_headers",
             "//vendor/qcom/opensource/synx-kernel:synx_headers",
             "//vendor/qcom/opensource/synx-kernel:%b_modules",
             "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+        ],
+        "CONFIG_MSM_MMRM" : [
             "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
         ],
+    },
 )

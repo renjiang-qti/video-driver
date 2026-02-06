@@ -3,6 +3,7 @@ load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 
 def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps):
     processed_config_srcs = {}
+    processed_config_deps = {}
 
     for config_src_name in config_srcs:
         config_src = config_srcs[config_src_name]
@@ -12,6 +13,14 @@ def _register_module_to_map(module_map, name, path, config_option, srcs, config_
         else:
             processed_config_srcs[config_src_name] = config_src
 
+    for config_dep_name in config_deps:
+        config_dep = config_deps[config_dep_name]
+
+        if type(config_dep) == "list":
+            processed_config_deps[config_dep_name] = {True: config_dep}
+        else:
+            processed_config_deps[config_dep_name] = config_dep
+
     module = struct(
         name = name,
         path = path,
@@ -19,6 +28,7 @@ def _register_module_to_map(module_map, name, path, config_option, srcs, config_
         config_srcs = processed_config_srcs,
         config_option = config_option,
         deps = deps,
+        config_deps = processed_config_deps,
     )
     module_map[name] = module
 
@@ -40,7 +50,8 @@ def _get_kernel_build_module_srcs(module, options, formatter):
     return globbed_srcs
 
 def _get_kernel_build_module_deps(module, options, formatter):
-    return [formatter(dep) for dep in module.deps]
+    deps = module.deps + _get_config_choices(module.config_deps, options)
+    return [formatter(dep) for dep in deps]
 
 def video_module_entry(hdrs = []):
     module_map = {}
@@ -60,7 +71,7 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
 
     deps = []
     all_module_deps = select({
-        "//build/kernel/kleaf:socrepo_true": [
+        "//build/qcom_build_extensions:qtisocrepo_true": [
             "//soc-repo:all_headers",
             "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
             "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
@@ -72,13 +83,13 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             "//soc-repo:{}/drivers/soc/qcom/socinfo".format(kernel_build),
             "//soc-repo:{}/drivers/iommu/msm_dma_iommu_mapping".format(kernel_build),
         ],
-        "//build/kernel/kleaf:socrepo_false": [
+        "//build/qcom_build_extensions:qtisocrepo_false": [
             "//msm-kernel:all_headers",
         ],
     })
     kernel_build_label = select({
-        "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
-        "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
+        "//build/qcom_build_extensions:qtisocrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
+        "//build/qcom_build_extensions:qtisocrepo_false": "//msm-kernel:{}".format(kernel_build),
     })
 
     modules = [registry.get(module_name) for module_name in modules]
@@ -129,7 +140,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 
     deps = []
     all_module_deps = select({
-        "//build/kernel/kleaf:socrepo_true": [
+        "//build/qcom_build_extensions:qtisocrepo_true": [
             "//soc-repo:all_headers",
             "//soc-repo:{}/drivers/firmware/qcom/qcom-scm".format(kernel_build),
             "//soc-repo:{}/drivers/clk/qcom/clk-qcom".format(kernel_build),
@@ -141,34 +152,84 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             "//soc-repo:{}/drivers/soc/qcom/socinfo".format(kernel_build),
             "//soc-repo:{}/drivers/iommu/msm_dma_iommu_mapping".format(kernel_build),
         ],
-        "//build/kernel/kleaf:socrepo_false": [
+        "//build/qcom_build_extensions:qtisocrepo_false": [
             "//msm-kernel:all_headers",
         ],
     })
     kernel_build_label = select({
-        "//build/kernel/kleaf:socrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
-        "//build/kernel/kleaf:socrepo_false": "//msm-kernel:{}".format(kernel_build),
+        "//build/qcom_build_extensions:qtisocrepo_true": "//soc-repo:{}_base_kernel".format(kernel_build),
+        "//build/qcom_build_extensions:qtisocrepo_false": "//msm-kernel:{}".format(kernel_build),
     })
+
+    auto_deps = []
+    headers = registry.hdrs + [":{}_headers".format(target)]
 
     if lunch_target != None:
         kernel_build = "{}_{}_{}".format(target, variant, lunch_target)
         print("kernel_build: " + kernel_build)
+        headers = registry.hdrs + [":{}_headers".format(lunch_target)]
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_LLCC",
             "CONFIG_MSM_VIDC_ANDROID",
             "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING",
             "CONFIG_MSM_VIDC_{}".format(lunch_target.upper()),
+            "CONFIG_MSM_VIDC_SYNX",
         ]
+    elif target == "autogvm":
+        dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
+        print("dist_target_name: " + dist_target_name)
+        config_options = [
+            "CONFIG_MSM_VIDC_ANDROID",
+            "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_NORDAU",
+            "CONFIG_MSM_VIDC_IRIS33_AU",
+            "MSM_VIDC_HW_VIRT",
+            "CONFIG_MSM_VIDC_SYNX",
+        ]
+        auto_deps = [
+            "//vendor/qcom/opensource/virtio-video:{}_msm_virtio_video".format(kernel_build),
+            "//vendor/qcom/opensource/virtio-video:virtio_video_driver_headers",
+        ]
+    elif target == "canoe":
+        lunch_target_chora = "chora"
+        dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
+        headers += [":{}_headers".format(lunch_target_chora)]
+        print("dist_target_name: " + dist_target_name)
+        config_options = [
+            "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_LLCC",
+            "CONFIG_MSM_VIDC_ANDROID",
+            "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            "CONFIG_MSM_VIDC_{}".format(lunch_target_chora.upper()),
+        ]
+        print("  config_options =", config_options)
+    elif target in [ "hamoa" ]:
+        dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
+        print("dist_target_name: " + dist_target_name)
+        config_options = [
+            "CONFIG_MSM_VIDC_LLCC",
+            "CONFIG_MSM_VIDC_ANDROID",
+            "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            ]
+        modules = [m for m in modules if m != "video"]
     else:
         dist_target_name = "{}_video_driver_modules_dist".format(kernel_build)
         print("dist_target_name: " + dist_target_name)
         config_options = [
             "CONFIG_MSM_MMRM",
+            "CONFIG_MSM_VIDC_LLCC",
             "CONFIG_MSM_VIDC_ANDROID",
             "CONFIG_MSM_VIDC_MINIDUMP",
+            "CONFIG_MSM_VIDC_DMA_IOMMU_MAPPING",
             "CONFIG_MSM_VIDC_{}".format(target.upper()),
+            "CONFIG_MSM_VIDC_SYNX",
         ]
+
 
     modules = [registry.get(module_name) for module_name in modules]
 
@@ -178,7 +239,6 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
 
     formatter = lambda s: s.replace("%b", kernel_build).replace("%t", target)
 
-    headers = registry.hdrs + [":{}_headers".format(target)]
     print(headers)
 
     all_module_rules = []
@@ -195,7 +255,7 @@ def define_lunch_target_variant_modules(target, variant, registry, modules, lunc
             name = rule_name,
             srcs = module_srcs,
             out = "{}.ko".format(module.name),
-            deps = headers + all_module_deps + _get_kernel_build_module_deps(module, options, formatter),
+            deps = headers + all_module_deps + auto_deps + _get_kernel_build_module_deps(module, options, formatter),
             kernel_build = kernel_build_label,
             local_defines = options.keys(),
         )
