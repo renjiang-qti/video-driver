@@ -1497,6 +1497,22 @@ static int msm_vdec_read_input_subcr_params(struct msm_vidc_inst *inst)
 	/* decide scaling needs fw_min_count, crop, input port resolution */
 	call_session_op(core, decide_scaling, inst);
 
+	/*
+	 * For hardware without scaling support (e.g., IRIS2), initialize compose
+	 * to match crop values to comply with V4L2 spec:
+	 * - V4L2_SEL_TGT_COMPOSE_DEFAULT should equal V4L2_SEL_TGT_CROP
+	 * - V4L2_SEL_TGT_COMPOSE defaults to V4L2_SEL_TGT_COMPOSE_DEFAULT
+	 */
+	if (!inst->capabilities[SCALE_ENABLE].value) {
+		inst->compose.left = inst->crop.left;
+		inst->compose.top = inst->crop.top;
+		inst->compose.width = inst->crop.width;
+		inst->compose.height = inst->crop.height;
+		i_vpr_h(inst, "%s: compose initialized to crop [%d, %d, %d, %d]\n",
+			__func__, inst->compose.left, inst->compose.top,
+			inst->compose.width, inst->compose.height);
+	}
+
 	output_fmt = v4l2_colorformat_to_driver(inst,
 		inst->fmts[OUTPUT_PORT].fmt.pix_mp.pixelformat, __func__);
 	if (is_dec_scaling_enabled(inst)) {
@@ -2797,6 +2813,12 @@ int msm_vdec_inst_init(struct msm_vidc_inst *inst)
 	inst->crop.left = inst->crop.top = 0;
 	inst->crop.width = f->fmt.pix_mp.width;
 	inst->crop.height = f->fmt.pix_mp.height;
+
+	/* initialize compose to match crop as per V4L2 spec */
+	inst->compose.left = inst->crop.left;
+	inst->compose.top = inst->crop.top;
+	inst->compose.width = inst->crop.width;
+	inst->compose.height = inst->crop.height;
 
 	f = &inst->fmts[INPUT_META_PORT];
 	f->type = INPUT_META_PLANE;
