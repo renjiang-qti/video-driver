@@ -1128,6 +1128,7 @@ static struct msm_vidc_session_ops msm_session_ops = {
 	.decide_work_route = msm_vidc_decide_work_route_iris2,
 	.decide_work_mode = msm_vidc_decide_work_mode_iris2,
 	.decide_quality_mode = msm_vidc_decide_quality_mode_iris2,
+	.decide_slice_max_mb = msm_vidc_encoder_decide_slice_max_mb_iris2,
 };
 
 int msm_vidc_init_iris2(struct msm_vidc_core *core)
