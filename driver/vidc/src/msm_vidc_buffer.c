@@ -282,8 +282,8 @@ u32 msm_vidc_decoder_output_size(struct msm_vidc_inst *inst)
 	f = &inst->fmts[OUTPUT_PORT];
 	colorformat = v4l2_colorformat_to_driver(inst, f->fmt.pix_mp.pixelformat,
 		__func__);
-	size = video_buffer_size(colorformat, f->fmt.pix_mp.width,
-			f->fmt.pix_mp.height, true);
+	size = video_buffer_size(colorformat, f->fmt.pix_mp.width, f->fmt.pix_mp.height,
+				 inst->capabilities[CODED_FRAMES].value == CODED_FRAMES_INTERLACE);
 	return size;
 }
 
@@ -313,12 +313,13 @@ u32 msm_vidc_encoder_input_size(struct msm_vidc_inst *inst)
 	width = f->fmt.pix_mp.width;
 	height = f->fmt.pix_mp.height;
 	colorformat = v4l2_colorformat_to_driver(inst, f->fmt.pix_mp.pixelformat,
-		__func__);
+						 __func__);
 	if (is_image_session(inst)) {
 		width = ALIGN(width, inst->capabilities[GRID_SIZE].value);
 		height = ALIGN(height, inst->capabilities[GRID_SIZE].value);
 	}
-	size = video_buffer_size(colorformat, width, height, true);
+	size = video_buffer_size(colorformat, width, height,
+				 inst->capabilities[CODED_FRAMES].value == CODED_FRAMES_INTERLACE);
 	return size;
 }
 
