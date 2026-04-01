@@ -1868,12 +1868,13 @@ static const struct clk_rst_table lemans_clk_reset_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table lemans_context_bank_table[] = {
-	{"qcom,sa8775p-iris", 0x25800000, 0xba800000, 0, 1,     MSM_VIDC_NON_SECURE |
-								MSM_VIDC_NON_SECURE_BITSTREAM |
-								MSM_VIDC_NON_SECURE_PIXEL,       0},
-	{"qcom,sa8775p-iris", 0x01000000, 0x24800000, 1, 0,     MSM_VIDC_SECURE_NONPIXEL,        0},
+	{"qcom,vidc,cb-ns", 0x25800000, 0xba800000, 0, 1,
+				MSM_VIDC_NON_SECURE | MSM_VIDC_NON_SECURE_BITSTREAM,	0},
+	{"qcom,vidc,cb-ns-pxl", 0x00100000, 0xdff00000, 0, 1,
+				MSM_VIDC_NON_SECURE_PIXEL,				0},
+	{"qcom,vidc,cb-sec-non-pxl", 0x01400000, 0x24400000, 1, 0,
+				MSM_VIDC_SECURE_NONPIXEL,				0},
 };
-
 
 /* register, value, mask */
 static const struct reg_preset_table lemans_reg_preset_table[] = {

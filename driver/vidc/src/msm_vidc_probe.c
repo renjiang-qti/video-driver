@@ -567,8 +567,14 @@ static int msm_vidc_setup_context_bank(struct msm_vidc_core *core,
 	dma_set_max_seg_size(dev, (unsigned int)DMA_BIT_MASK(32));
 	dma_set_seg_boundary(dev, (unsigned long)DMA_BIT_MASK(64));
 
-	iommu_set_fault_handler(cb->domain,
-		msm_vidc_smmu_fault_handler, (void *)core);
+	/*
+	 * Set fault handler only once per domain to avoid kernel warnings.
+	 * Check if handler is NULL before registering to avoid duplicate warnings.
+	 */
+	if (!cb->domain->handler) {
+		iommu_set_fault_handler(cb->domain,
+					msm_vidc_smmu_fault_handler, (void *)core);
+	}
 
 	d_vpr_h(
 		"%s: name %s addr start %x size %x secure %d dma_coherant %d "
@@ -839,7 +845,14 @@ static int msm_vidc_probe_without_context_bank(struct platform_device *pdev,
 				__func__, dev_name(cb->dev));
 			return -EIO;
 		}
-		iommu_set_fault_handler(cb->domain, msm_vidc_smmu_fault_handler, (void *)core);
+		/*
+		 * Set fault handler only once per domain to avoid kernel warnings.
+		 * Check if handler is NULL before registering to avoid duplicate warnings.
+		 */
+		if (!cb->domain->handler) {
+			iommu_set_fault_handler(cb->domain,
+						msm_vidc_smmu_fault_handler, (void *)core);
+		}
 	}
 
 	dma_set_mask_and_coherent(&pdev->dev, DMA_MASK);
