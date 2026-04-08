@@ -5,6 +5,7 @@
  */
 
 #include <linux/of_platform.h>
+#include <linux/of_device.h>
 #include <linux/component.h>
 #include <linux/debugfs.h>
 #include <linux/iommu.h>
@@ -638,6 +639,8 @@ static void msm_vidc_component_unbind(struct device *dev,
 #endif
 }
 
+static void msm_vidc_destroy_cb_devices(struct msm_vidc_core *core);
+
 static int msm_vidc_component_master_bind(struct device *dev)
 {
 	struct msm_vidc_core *core = dev_get_drvdata(dev);
@@ -708,7 +711,8 @@ static void msm_vidc_component_master_unbind(struct device *dev)
 	msm_vidc_deinitialize_media(core);
 	if (core->cb_count)
 		component_unbind_all(dev, core);
-
+	else if (core->cb_virtual_count)
+		msm_vidc_destroy_cb_devices(core);
 
 	d_vpr_h("%s(): successful\n", __func__);
 }
@@ -831,27 +835,123 @@ static struct notifier_block msm_vidc_reboot_nb = {
 };
 #endif
 
+int msm_vidc_create_child_device_and_map(struct msm_vidc_core *core,
+					 struct context_bank_info *cb, u32 fid)
+{
+	struct platform_device *pdev;
+	int ret;
+
+	pdev = platform_device_alloc(cb->name, 0);
+	if (!pdev)
+		return -ENOMEM;
+
+	pdev->dev.parent = &core->pdev->dev;
+
+	ret = platform_device_add(pdev);
+	if (ret) {
+		platform_device_put(pdev);
+		return ret;
+	}
+
+	ret = of_dma_configure_id(&pdev->dev, core->pdev->dev.of_node,
+				  true, &fid);
+	if (ret) {
+		d_vpr_e("%s: of_dma_configure_id failed for %s fid %u ret %d\n",
+			__func__, cb->name, fid, ret);
+		goto error_unregister;
+	}
+
+	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_MASK);
+	if (ret) {
+		d_vpr_e("%s: dma_set_mask_and_coherent failed for %s ret %d\n",
+			__func__, cb->name, ret);
+		goto error_unregister;
+	}
+
+	cb->dev = &pdev->dev;
+	core->cb_virtual_count++;
+
+	d_vpr_h("%s: created child device %s fid %u\n", __func__, cb->name, fid);
+	return 0;
+
+error_unregister:
+	platform_device_unregister(pdev);
+	return ret;
+}
+
+static void msm_vidc_destroy_cb_devices(struct msm_vidc_core *core)
+{
+	struct context_bank_info *cb;
+
+	if (!core->cb_virtual_count)
+		return;
+
+	venus_hfi_for_each_context_bank(core, cb) {
+		if (!cb->dev)
+			continue;
+		platform_device_unregister(to_platform_device(cb->dev));
+		cb->dev = NULL;
+		cb->domain = NULL;
+		if (!--core->cb_virtual_count)
+			break;
+	}
+}
+
 static int msm_vidc_probe_without_context_bank(struct platform_device *pdev,
 					       struct msm_vidc_core *core)
 {
 	int rc = 0;
 	struct context_bank_info *cb = NULL;
 
-	venus_hfi_for_each_context_bank(core, cb) {
-		cb->dev = &pdev->dev;
-		cb->domain = iommu_get_domain_for_dev(cb->dev);
-		if (!cb->domain) {
-			d_vpr_e("%s: Failed to get iommu domain for %s\n",
-				__func__, dev_name(cb->dev));
-			return -EIO;
-		}
+	if (core->platform->data.init_cb_devs &&
+	    of_find_property(pdev->dev.of_node, "iommu-map", NULL)) {
 		/*
-		 * Set fault handler only once per domain to avoid kernel warnings.
-		 * Check if handler is NULL before registering to avoid duplicate warnings.
+		 * iommu-map present: platform provides init_cb_devs to create
+		 * a child platform device for each CB with a valid fid.
 		 */
-		if (!cb->domain->handler) {
-			iommu_set_fault_handler(cb->domain,
-						msm_vidc_smmu_fault_handler, (void *)core);
+		rc = core->platform->data.init_cb_devs(core);
+		if (rc) {
+			d_vpr_e("%s: init_cb_devs failed rc %d\n", __func__, rc);
+			return rc;
+		}
+
+		/* Set up iommu domain and fault handler for each mapped CB */
+		venus_hfi_for_each_context_bank(core, cb) {
+			if (!cb->dev)
+				continue;
+
+			cb->domain = iommu_get_domain_for_dev(cb->dev);
+			if (!cb->domain) {
+				d_vpr_e("%s: Failed to get iommu domain for %s\n",
+					__func__, dev_name(cb->dev));
+				rc = -EIO;
+				break;
+			}
+
+			if (!cb->domain->handler)
+				iommu_set_fault_handler(cb->domain,
+							msm_vidc_smmu_fault_handler,
+							(void *)core);
+		}
+		if (rc) {
+			msm_vidc_destroy_cb_devices(core);
+			return rc;
+		}
+	} else {
+		/* Legacy: map all CBs to the main platform device */
+		venus_hfi_for_each_context_bank(core, cb) {
+			cb->dev = &pdev->dev;
+			cb->domain = iommu_get_domain_for_dev(cb->dev);
+			if (!cb->domain) {
+				d_vpr_e("%s: Failed to get iommu domain for %s\n",
+					__func__, dev_name(cb->dev));
+				return -EIO;
+			}
+			if (!cb->domain->handler) {
+				iommu_set_fault_handler(cb->domain,
+							msm_vidc_smmu_fault_handler,
+							(void *)core);
+			}
 		}
 	}
 
@@ -861,6 +961,7 @@ static int msm_vidc_probe_without_context_bank(struct platform_device *pdev,
 	rc = msm_vidc_component_master_bind(&pdev->dev);
 	if (rc < 0) {
 		d_vpr_e("%s: component master bind failed\n", __func__);
+		msm_vidc_destroy_cb_devices(core);
 		return rc;
 	}
 	d_vpr_h("%s(): successful\n", __func__);
