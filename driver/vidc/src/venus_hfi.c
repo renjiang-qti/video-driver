@@ -828,6 +828,12 @@ static int __load_fw(struct msm_vidc_core *core)
 		goto fail_power;
 	}
 
+	rc = fw_init(core);
+	if (rc) {
+		d_vpr_e("%s: fw_init failed rc=%d\n", __func__, rc);
+		goto fail_fw_init;
+	}
+
 	rc = fw_load(core);
 	if (rc)
 		goto fail_load_fw;
@@ -837,6 +843,8 @@ static int __load_fw(struct msm_vidc_core *core)
 	return rc;
 
 fail_load_fw:
+	fw_deinit(core);
+fail_fw_init:
 	__venus_power_off(core);
 fail_power:
 	trace_msm_v4l2_vidc_fw_load("END");
@@ -852,6 +860,7 @@ static void __unload_fw(struct msm_vidc_core *core)
 	__venus_power_off(core);
 	fw_unload(core);
 
+	fw_deinit(core);
 	/* clear all substates */
 	msm_vidc_change_core_sub_state(core, CORE_SUBSTATE_MAX - 1, 0, __func__);
 

@@ -145,6 +145,11 @@ struct msm_vidc_core {
 	u32                                    packet_id;
 	u32                                    sys_init_id;
 	struct msm_vidc_synx_fence_data        synx_fence_data;
+	struct video_firmware {
+		struct device *dev;
+		struct qcom_scm_pas_context *ctx;
+		struct iommu_domain *iommu_domain;
+	} fw;
 	/* hw_version: distinguish chip versions: v1, v2 */
 	enum msm_vidc_hw_version               hw_version;
 	int                                    cb_count;
