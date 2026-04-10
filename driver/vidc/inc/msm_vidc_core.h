@@ -148,6 +148,7 @@ struct msm_vidc_core {
 	/* hw_version: distinguish chip versions: v1, v2 */
 	enum msm_vidc_hw_version               hw_version;
 	int                                    cb_count;
+	int                                    cb_virtual_count;
 };
 
 #endif // _MSM_VIDC_CORE_H_
