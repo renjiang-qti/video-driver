@@ -17,6 +17,8 @@
 #include "hfi_property.h"
 #include "hfi_command.h"
 #include "venus_hfi.h"
+#include "msm_vidc_driver.h"
+#include "resources.h"
 
 #define DEFAULT_VIDEO_CONCEAL_COLOR_BLACK 0x8020010
 #define MAX_BASE_LAYER_PRIORITY_ID 63
@@ -1901,12 +1903,12 @@ static const struct clk_rst_table hamoa_clk_reset_table[] = {
 
 /* name, start, size, secure, dma_coherant, region, dma_mask */
 const struct context_bank_table hamoa_context_bank_table[] = {
-	{"qcom,x1e80100-iris",          0x25800000, 0xba800000, 0, 1,
-								MSM_VIDC_NON_SECURE |
-								MSM_VIDC_NON_SECURE_BITSTREAM |
-								MSM_VIDC_NON_SECURE_PIXEL,     0 },
-	{"qcom,x1e80100-iris",		0x01400000, 0x24400000, 1, 0,
-								MSM_VIDC_SECURE_NONPIXEL,      0 },
+	{"qcom,vidc,cb-ns",     0x25800000, 0xba800000, 0, 1,
+		MSM_VIDC_NON_SECURE | MSM_VIDC_NON_SECURE_BITSTREAM,	0},
+	{"qcom,vidc,cb-ns-pxl", 0x00100000, 0xdff00000, 0, 1,
+		MSM_VIDC_NON_SECURE_PIXEL,				0},
+	{"qcom,vidc,cb-sec-non-pxl", 0x01400000, 0x24400000, 1, 0,
+		MSM_VIDC_SECURE_NONPIXEL,				0},
 };
 
 
@@ -2017,6 +2019,46 @@ static const u32 hamoa_msm_vidc_ssr_type[] = {
 	HFI_SSR_TYPE_SW_ERR_FATAL,
 };
 
+/*
+ * msm_vidc_hamoa_init_cb_devs - hamoa-specific iommu-map CB initializer.
+ *
+ * Creates a child platform device for each non-secure context bank and
+ * configures it with the hardcoded fid from the iommu-map DT property:
+ *   qcom,vidc,cb-ns     (NON_SECURE | NON_SECURE_BITSTREAM) -> fid 0
+ *   qcom,vidc,cb-ns-pxl (NON_SECURE_PIXEL)                  -> fid 1
+ */
+static int msm_vidc_hamoa_init_cb_devs(struct msm_vidc_core *core)
+{
+	/* Hardcoded fid per CB name for hamoa iommu-map */
+	static const struct {
+		const char *cb_name;
+		u32 fid;
+	} hamoa_cb_fid[] = {
+		{ "qcom,vidc,cb-ns",     0 },
+		{ "qcom,vidc,cb-ns-pxl", 1 },
+	};
+	struct context_bank_info *cb;
+	int i, rc;
+
+	venus_hfi_for_each_context_bank(core, cb) {
+		for (i = 0; i < ARRAY_SIZE(hamoa_cb_fid); i++) {
+			if (strcmp(cb->name, hamoa_cb_fid[i].cb_name))
+				continue;
+
+			rc = msm_vidc_create_child_device_and_map(core, cb,
+								  hamoa_cb_fid[i].fid);
+			if (rc) {
+				d_vpr_e("%s: failed to create child device for %s rc %d\n",
+					__func__, cb->name, rc);
+				return rc;
+			}
+			break;
+		}
+	}
+
+	return 0;
+}
+
 static const struct msm_vidc_platform_data hamoa_data = {
 	/* resources dependent on other module */
 	.bw_tbl = hamoa_bw_table,
@@ -2082,6 +2124,7 @@ static const struct msm_vidc_platform_data hamoa_data = {
 	.dec_output_prop_size_av1 = ARRAY_SIZE(hamoa_vdec_output_properties_av1),
 	.msm_vidc_ssr_type = hamoa_msm_vidc_ssr_type,
 	.msm_vidc_ssr_type_size = ARRAY_SIZE(hamoa_msm_vidc_ssr_type),
+	.init_cb_devs = msm_vidc_hamoa_init_cb_devs,
 };
 
 static int msm_vidc_hamoa_check_ddr_type(void)
