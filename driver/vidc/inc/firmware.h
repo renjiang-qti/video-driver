@@ -14,5 +14,7 @@ int fw_unload(struct msm_vidc_core *core);
 int fw_suspend(struct msm_vidc_core *core);
 int fw_resume(struct msm_vidc_core *core);
 void fw_coredump(struct msm_vidc_core *core);
+int fw_init(struct msm_vidc_core *core);
+void fw_deinit(struct msm_vidc_core *core);
 
 #endif
