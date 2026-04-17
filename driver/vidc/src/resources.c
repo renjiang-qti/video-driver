@@ -7,6 +7,7 @@
 #include <linux/sort.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/devfreq.h>
 #include <linux/delay.h>
 #include <linux/pm_runtime.h>
 #include <linux/pm_domain.h>
@@ -163,6 +164,16 @@ static int devm_opp_dl_get(struct device *dev, struct device *supplier)
 
 static int __opp_set_rate(struct msm_vidc_core *core, u64 freq)
 {
+#if (KERNEL_VERSION(6, 13, 0) <= LINUX_VERSION_CODE)
+	struct dev_pm_opp *opp __free(put_opp);
+	unsigned long opp_freq = freq;
+
+	opp = devfreq_recommended_opp(&core->pdev->dev, &opp_freq, 0);
+	if (IS_ERR(opp))
+		return PTR_ERR(opp);
+
+	return dev_pm_opp_set_opp(&core->pdev->dev, opp);
+#else
 	unsigned long opp_freq = 0;
 	struct dev_pm_opp *opp;
 	int rc = 0;
@@ -192,6 +203,7 @@ static int __opp_set_rate(struct msm_vidc_core *core, u64 freq)
 	}
 
 	return rc;
+#endif
 }
 
 static int __init_register_base(struct msm_vidc_core *core)
@@ -413,6 +425,17 @@ static int __init_power_domains(struct msm_vidc_core *core)
 				&core->platform->data.opp_pmdomain_tbl);
 	if (rc < 0)
 		return rc;
+
+	if (core->platform->data.opp_clk_tbl) {
+		struct dev_pm_opp_config opp_clk_data = {
+			.clk_names = core->platform->data.opp_clk_tbl,
+			.config_clks = dev_pm_opp_config_clks_simple,
+		};
+
+		rc = devm_pm_opp_set_config(&core->pdev->dev, &opp_clk_data);
+		if (rc < 0)
+			return rc;
+	}
 #else
 	/* populate opp power domains(for rails) */
 	rc = devm_pm_opp_attach_genpd(&core->pdev->dev, opp_tbl, &opp_vdevs);
