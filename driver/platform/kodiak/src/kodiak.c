@@ -283,8 +283,8 @@ static const struct msm_platform_core_capability core_data_kodiak_v0[] = {
 	{ENC_CODECS, H264 | HEVC | HEIC},
 	{DEC_CODECS, H264 | HEVC | VP9 | HEIC},
 	{MAX_SESSION_COUNT, 16},
-	{MAX_NUM_720P_SESSIONS, 8},
-	{MAX_NUM_1080P_SESSIONS, 4},
+	{MAX_NUM_720P_SESSIONS, 16},
+	{MAX_NUM_1080P_SESSIONS, 8},
 	{MAX_NUM_4K_SESSIONS, 2},
 	{MAX_SECURE_SESSION_COUNT, 3},
 	{MAX_RT_MBPF, 69362}, /* ((4096x2176)/256) x 2 */
@@ -317,13 +317,14 @@ static const struct msm_platform_core_capability core_data_kodiak_v0[] = {
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_META_CAPTURE | V4L2_CAP_STREAMING},
 	{PAGEFAULT_NON_FATAL, 1},
 	{PAGETABLE_CACHING, 0},
-	{DCVS, 1},
-	{DECODE_BATCH, 1},
+	{DCVS, 0},
+	{DECODE_BATCH, 0},
 	{DECODE_BATCH_TIMEOUT, 200},
 	{STATS_TIMEOUT_MS, 2000},
 	{AV_SYNC_WINDOW_SIZE, 40},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 0},
+	{SKIP_DELAYED_UNMAP, 1},
 	};
 
 static struct msm_platform_inst_capability instance_cap_data_kodiak_v0[] = {
@@ -2384,11 +2385,12 @@ static const char * const kodiak_opp_pd_table[] = { "cx", NULL };
 
 /* name, clock id, scaling */
 static const struct clk_table kodiak_clk_table[] = {
-	{ "bus",			VIDEO_CC_MVSC_CTL_AXI_CLK,	0},
-	{ "vcodec_bus",			VIDEO_CC_MVS0_AXI_CLK,		0},
-	{ "core",			VIDEO_CC_MVS0_CORE_CLK,		0},
-	{ "vcodec_core",		VIDEO_CC_MVS0_CORE_CLK,		0},
-	{ "iface",			VIDEO_CC_VENUS_AHB_CLK,		0},
+	{ "bus",			VIDEO_CC_MVSC_CTL_AXI_CLK,		0},
+	{ "vcodec_bus",			VIDEO_CC_MVS0_AXI_CLK,			0},
+	{ "iface",			VIDEO_CC_VENUS_AHB_CLK,			0},
+	{ "core",			VIDEO_CC_MVSC_CORE_CLK,			0},
+	{ "vcodec_core",		VIDEO_CC_MVS0_CORE_CLK,			1,
+	  (u64[]) {460000048, 424000000, 335000000, 240000000, 133330000},      5},
 };
 
 const struct context_bank_table kodiak_context_bank_table[] = {
