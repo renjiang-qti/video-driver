@@ -248,14 +248,15 @@ static const struct msm_platform_core_capability core_data_lemans[] = {
 	{HW_RESPONSE_TIMEOUT, HW_RESPONSE_TIMEOUT_VALUE}, /* 1000 ms */
 	{SW_PC_DELAY,         SW_PC_DELAY_VALUE        }, /* 1500 ms (>HW_RESPONSE_TIMEOUT)*/
 	{FW_UNLOAD_DELAY,     FW_UNLOAD_DELAY_VALUE    }, /* 3000 ms (>SW_PC_DELAY)*/
-	{DCVS, 1},
-	{DECODE_BATCH, 1},
+	{DCVS, 0},
+	{DECODE_BATCH, 0},
 	{DECODE_BATCH_TIMEOUT, 200},
 	{STATS_TIMEOUT_MS, 2000},
 	{NON_FATAL_FAULTS, 1},
 	{ENC_AUTO_FRAMERATE, 1},
 	{DEVICE_CAPS, V4L2_CAP_VIDEO_M2M_MPLANE | V4L2_CAP_STREAMING},
 	{SUPPORTS_REQUESTS, 0},
+	{SKIP_DELAYED_UNMAP, 1},
 };
 
 static struct msm_platform_inst_capability instance_cap_data_lemans[] = {
