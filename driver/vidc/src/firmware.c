@@ -34,6 +34,118 @@ enum tzbsp_video_state {
 	TZBSP_VIDEO_STATE_RESTORE_THRESHOLD = 2,
 };
 
+#if defined(HAVE_QCOM_MDT_LOAD)
+static int fw_pas_load(struct msm_vidc_core *core,
+			const struct firmware *firmware,
+			const char *fw_name,
+			phys_addr_t phys, size_t res_size)
+{
+	int pas_id = core->platform->data.pas_id;
+	int rc = 0;
+	void *virt = NULL;
+
+	virt = memremap(phys, res_size, MEMREMAP_WC);
+	if (!virt) {
+		d_vpr_e("%s: failed to remap fw memory phys %pa[p]\n",
+			__func__, &phys);
+		return -ENOMEM;
+	}
+
+	rc = qcom_mdt_load(&core->pdev->dev, firmware, fw_name,
+			   pas_id, virt, phys, res_size, NULL);
+	if (rc) {
+		d_vpr_e("%s: error %d loading fw \"%s\"\n",
+			__func__, rc, fw_name);
+		memunmap(virt);
+		return rc;
+	}
+
+	rc = qcom_scm_pas_auth_and_reset(pas_id);
+	if (rc) {
+		d_vpr_e("%s: error %d authenticating fw \"%s\"\n",
+			__func__, rc, fw_name);
+		memunmap(virt);
+		return rc;
+	}
+
+	memunmap(virt);
+	return 0;
+}
+
+static inline void fw_pas_cleanup(struct msm_vidc_core *core)
+{
+
+}
+
+#elif defined(HAVE_QCOM_MDT_PAS_LOAD_MEM)
+static int fw_pas_load(struct msm_vidc_core *core,
+			const struct firmware *firmware,
+			const char *fw_name,
+			phys_addr_t phys, size_t res_size)
+{
+	struct device *dev = core->fw.dev ?: &core->pdev->dev;
+	int pas_id = core->platform->data.pas_id;
+	struct qcom_scm_pas_context *ctx;
+	void *mem_virt = NULL;
+	int rc = 0;
+
+	ctx = devm_qcom_scm_pas_context_alloc(dev, pas_id, phys, res_size);
+	if (IS_ERR(ctx)) {
+		d_vpr_e("%s: failed to initialize PAS context\n", __func__);
+		return PTR_ERR(ctx);
+	}
+
+	ctx->use_tzmem = core->fw.dev;
+
+	mem_virt = memremap(phys, res_size, MEMREMAP_WC);
+	if (!mem_virt) {
+		d_vpr_e("%s: failed to remap fw memory\n", __func__);
+		return -ENOMEM;
+	}
+
+	rc = qcom_mdt_pas_load(ctx, firmware, fw_name, mem_virt, NULL);
+	if (rc) {
+		d_vpr_e("%s: error %d pas-load fw \"%s\"\n", __func__, rc, fw_name);
+		goto unmap_virt;
+	}
+
+	if (core->fw.iommu_domain) {
+		rc = iommu_map(core->fw.iommu_domain, 0, phys, res_size,
+				IOMMU_READ | IOMMU_WRITE | IOMMU_PRIV, GFP_KERNEL);
+		if (rc) {
+			d_vpr_e("%s: iommu_map failed rc=%d\n", __func__, rc);
+			goto unmap_virt;
+		}
+	}
+
+	rc = qcom_scm_pas_prepare_and_auth_reset(ctx);
+	if (rc) {
+		d_vpr_e("%s: auth+reset failed rc=%d fw \"%s\"\n", __func__, rc, fw_name);
+		goto err_iommu_unmap;
+	}
+
+	qcom_scm_pas_metadata_release(ctx);
+	memunmap(mem_virt);
+	core->fw.ctx = ctx;
+	return 0;
+
+err_iommu_unmap:
+	if (core->fw.iommu_domain)
+		iommu_unmap(core->fw.iommu_domain, 0, res_size);
+unmap_virt:
+	qcom_scm_pas_metadata_release(ctx);
+	memunmap(mem_virt);
+	return rc;
+}
+
+static inline void fw_pas_cleanup(struct msm_vidc_core *core)
+{
+	if (core->fw.iommu_domain && core->fw.ctx)
+		iommu_unmap(core->fw.iommu_domain, 0, core->fw.ctx->mem_size);
+	core->fw.ctx = NULL;
+}
+
+#else
 static int fw_pas_load(struct msm_vidc_core *core,
 			const struct firmware *firmware,
 			const char *fw_name,
@@ -74,7 +186,6 @@ static int fw_pas_load(struct msm_vidc_core *core,
 
 	qcom_scm_pas_metadata_release(ctx);
 	core->fw.ctx = ctx;
-	d_vpr_h("%s: PAS setup completed successfully\n", __func__);
 	return 0;
 
 err_iommu_unmap:
@@ -84,6 +195,15 @@ metadata_release:
 	qcom_scm_pas_metadata_release(ctx);
 	return rc;
 }
+
+static inline void fw_pas_cleanup(struct msm_vidc_core *core)
+{
+	if (core->fw.iommu_domain && core->fw.ctx)
+		iommu_unmap(core->fw.iommu_domain, 0, core->fw.ctx->mem_size);
+	core->fw.ctx = NULL;
+}
+
+#endif
 
 static int __load_fw_to_memory(struct platform_device *pdev,
 			const char *firmware_name)
@@ -204,9 +324,7 @@ int fw_load(struct msm_vidc_core *core)
 fail_scm_mem_protect:
 	if (core->resource->fw_cookie)
 		qcom_scm_pas_shutdown(core->resource->fw_cookie);
-	if (core->fw.iommu_domain && core->fw.ctx)
-		iommu_unmap(core->fw.iommu_domain, 0, core->fw.ctx->mem_size);
-	core->fw.ctx = NULL;
+	fw_pas_cleanup(core);
 	core->resource->fw_cookie = 0;
 	return rc;
 }
@@ -220,9 +338,7 @@ int fw_unload(struct msm_vidc_core *core)
 
 	d_vpr_h("%s: unloading video firmware\n", __func__);
 	ret = qcom_scm_pas_shutdown(core->resource->fw_cookie);
-	if (core->fw.iommu_domain && core->fw.ctx)
-		iommu_unmap(core->fw.iommu_domain, 0, core->fw.ctx->mem_size);
-	core->fw.ctx = NULL;
+	fw_pas_cleanup(core);
 	if (ret)
 		d_vpr_e("Firmware unload failed rc=%d\n", ret);
 
