@@ -399,6 +399,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 {
 	int rc = 0;
 	u32 payload = 0;
+	u32 swizzle = 0;
 	u32 synx_client_data[2];
 
 	rc = hfi_create_header(pkt, pkt_size,
@@ -425,7 +426,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 		goto err_sys_init;
 
 	/* HFI_PROP_UBWC_MAX_CHANNELS */
-	payload = core->platform->data.ubwc_config->max_channels;
+	payload = qcom_ubwc_macrotile_mode(core->platform->data.ubwc_config) ? 8 : 4;
 	d_vpr_h("%s: ubwc max channels %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_MAX_CHANNELS,
@@ -439,7 +440,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 		goto err_sys_init;
 
 	/* HFI_PROP_UBWC_MAL_LENGTH */
-	payload = core->platform->data.ubwc_config->mal_length;
+	payload = qcom_ubwc_min_acc_length_64b(core->platform->data.ubwc_config) ? 64 : 32;
 	d_vpr_h("%s: ubwc mal length %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_MAL_LENGTH,
@@ -454,7 +455,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 
 	/* HFI_PROP_UBWC_HBB */
 	payload = core->platform->data.ubwc_config->highest_bank_bit;
-	d_vpr_h("%s: ubwc hbb %d\n", __func__, payload);
+	d_vpr_h("%s: ubwc hbb %u\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_HBB,
 			       HFI_HOST_FLAGS_NONE,
@@ -466,8 +467,10 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 	if (rc)
 		goto err_sys_init;
 
+	swizzle = qcom_ubwc_swizzle(core->platform->data.ubwc_config);
+
 	/* HFI_PROP_UBWC_BANK_SWZL_LEVEL1 */
-	payload = core->platform->data.ubwc_config->bank_swzl_level;
+	payload = !!(swizzle & UBWC_SWIZZLE_ENABLE_LVL1);
 	d_vpr_h("%s: ubwc swzl1 %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 				   HFI_PROP_UBWC_BANK_SWZL_LEVEL1,
@@ -481,7 +484,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 		goto err_sys_init;
 
 	/* HFI_PROP_UBWC_BANK_SWZL_LEVEL2 */
-	payload = core->platform->data.ubwc_config->bank_swz2_level;
+	payload = !!(swizzle & UBWC_SWIZZLE_ENABLE_LVL2);
 	d_vpr_h("%s: ubwc swzl2 %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_BANK_SWZL_LEVEL2,
@@ -495,7 +498,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 		goto err_sys_init;
 
 	/* HFI_PROP_UBWC_BANK_SWZL_LEVEL3 */
-	payload = core->platform->data.ubwc_config->bank_swz3_level;
+	payload = !!(swizzle & UBWC_SWIZZLE_ENABLE_LVL3);
 	d_vpr_h("%s: ubwc swzl3 %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_BANK_SWZL_LEVEL3,
@@ -509,7 +512,7 @@ int hfi_packet_sys_init(struct msm_vidc_core *core,
 		goto err_sys_init;
 
 	/* HFI_PROP_UBWC_BANK_SPREADING */
-	payload = core->platform->data.ubwc_config->bank_spreading;
+	payload = qcom_ubwc_bank_spread(core->platform->data.ubwc_config);
 	d_vpr_h("%s: ubwc bank spreading %d\n", __func__, payload);
 	rc = hfi_create_packet(pkt, pkt_size,
 			       HFI_PROP_UBWC_BANK_SPREADING,

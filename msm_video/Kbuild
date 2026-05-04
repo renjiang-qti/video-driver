@@ -194,6 +194,7 @@ msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/nordau/src/msm_vidc_nordau.o
 endif
 
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform.o \
+                  $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_ubwc.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform_ext.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/common/src/msm_vidc_variant.o \
                   $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_v4l2.o \

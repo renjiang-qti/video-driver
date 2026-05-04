@@ -1822,11 +1822,6 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_lema
 		NULL},
 };
 
-/* Default UBWC config for LPDDR5 */
-static struct msm_vidc_ubwc_config_data ubwc_config_lemans[] = {
-	UBWC_CONFIG(8, 32, 13, 0, 0, 1, 1),
-};
-
 static struct msm_vidc_format_capability format_data_lemans = {
 	.codec_info = codec_data_lemans,
 	.codec_info_size = ARRAY_SIZE(codec_data_lemans),
@@ -2059,7 +2054,6 @@ static const struct msm_vidc_platform_data lemans_data = {
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_lemans,
 	.format_data = &format_data_lemans,
 
 	/* decoder properties related*/
