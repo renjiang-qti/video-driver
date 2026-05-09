@@ -21,7 +21,8 @@ static int get_clock_corner_index(struct msm_vidc_core *core, u64 freq)
 		 * keep checking from lowest to highest rate until
 		 * table rate >= requested rate
 		 */
-		if (freq && !strcmp(cl->name, "video_cc_iris_clk_src")) {
+		if (freq && (!strcmp(cl->name, "video_cc_iris_clk_src") ||
+			     (!strcmp(cl->name, "vcodec_core") && cl->has_scaling))) {
 			for (idx = cl->freq_count - 1; idx >= 0; idx--) {
 				rate = cl->freq[idx];
 				if (rate >= freq)
@@ -520,7 +521,10 @@ int msm_vidc_scale_clocks_iris2(struct msm_vidc_inst *inst)
 	    is_sub_state(inst, MSM_VIDC_DRC) ||
 	    is_sub_state(inst, MSM_VIDC_DRAIN)) {
 		inst->power.min_freq =
-			get_clock_freq(core, "video_cc_iris_clk_src", get_max_clock_index(core));
+			max(get_clock_freq(core,
+					   "video_cc_iris_clk_src", get_max_clock_index(core)),
+			    get_clock_freq(core,
+					   "vcodec_core", get_max_clock_index(core)));
 		inst->power.dcvs_flags = 0;
 	} else if (msm_vidc_clock_voting) {
 		inst->power.min_freq = msm_vidc_clock_voting;
