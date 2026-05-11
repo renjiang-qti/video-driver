@@ -3,6 +3,19 @@
 VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/video/driver
 VIDEO_DRIVER_REL_PATH := ../video/driver
 
+MDT_LOADER_H := $(KERNEL_SRC)/include/linux/soc/qcom/mdt_loader.h
+
+HAS_MDT_PAS_LOAD := $(shell grep -qs 'qcom_mdt_pas_load' $(MDT_LOADER_H) && echo yes || echo no)
+HAS_MDT_PAS_LOAD_MEM := $(shell grep -qs 'mem_region.*reloc_base' $(MDT_LOADER_H) && echo yes || echo no)
+
+ifeq ($(HAS_MDT_PAS_LOAD),no)
+  ccflags-y += -DHAVE_QCOM_MDT_LOAD
+else ifeq ($(HAS_MDT_PAS_LOAD_MEM),yes)
+  ccflags-y += -DHAVE_QCOM_MDT_PAS_LOAD_MEM
+else
+  ccflags-y += -DHAVE_QCOM_MDT_PAS_LOAD
+endif
+
 ifeq ($(CONFIG_ARCH_NIOBE), y)
 include $(VIDEO_ROOT)/config/niobe_video.conf
 LINUXINCLUDE   += -include $(VIDEO_ROOT)/config/niobe_video.h
