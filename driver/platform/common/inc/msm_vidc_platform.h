@@ -8,6 +8,92 @@
 #define _MSM_VIDC_PLATFORM_H_
 
 #include <linux/pm_domain.h>
+#include <linux/version.h>
+
+#ifndef MSM_VIDC_HAS_QCOM_UBWC_HEADER
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+#define MSM_VIDC_HAS_QCOM_UBWC_HEADER 1
+#else
+#define MSM_VIDC_HAS_QCOM_UBWC_HEADER 0
+#endif
+#endif
+
+/*
+ * Helper functions (qcom_ubwc_min_acc_length_64b, qcom_ubwc_macrotile_mode,
+ * qcom_ubwc_bank_spread, qcom_ubwc_swizzle) were added to the kernel header
+ * in v7.1.  Provide compat implementations for older kernels.
+ */
+#ifndef MSM_VIDC_HAS_QCOM_UBWC_HELPERS
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
+#define MSM_VIDC_HAS_QCOM_UBWC_HELPERS 1
+#else
+#define MSM_VIDC_HAS_QCOM_UBWC_HELPERS 0
+#endif
+#endif
+
+#if MSM_VIDC_HAS_QCOM_UBWC_HEADER
+#include <linux/soc/qcom/ubwc.h>
+#else
+/*
+ * Compat definitions for kernels that do not yet provide
+ * <linux/soc/qcom/ubwc.h>.  Once support for those kernels is dropped,
+ * this entire #else block can be removed.
+ */
+enum ubwc_version {
+	UBWC_1_0 = 0x10,
+	UBWC_2_0 = 0x20,
+	UBWC_3_0 = 0x30,
+	UBWC_4_0 = 0x40,
+};
+
+#define UBWC_SWIZZLE_ENABLE_LVL1	BIT(0)
+#define UBWC_SWIZZLE_ENABLE_LVL2	BIT(1)
+#define UBWC_SWIZZLE_ENABLE_LVL3	BIT(2)
+
+struct qcom_ubwc_cfg_data {
+	u32	ubwc_enc_version;
+	u32	ubwc_dec_version;
+	u32	ubwc_swizzle;
+	int	highest_bank_bit;
+	bool	ubwc_bank_spread;
+	bool	macrotile_mode;
+};
+
+static inline const struct qcom_ubwc_cfg_data *qcom_ubwc_config_get_data(void)
+{
+	return ERR_PTR(-ENODEV);
+}
+#endif /* MSM_VIDC_HAS_QCOM_UBWC_HEADER */
+
+#if !MSM_VIDC_HAS_QCOM_UBWC_HELPERS
+/*
+ * Compat helper functions for kernels < v7.1 that have
+ * <linux/soc/qcom/ubwc.h> but not the inline helpers.
+ * Once v7.1 is the minimum supported kernel these can be removed.
+ */
+static inline bool qcom_ubwc_min_acc_length_64b(const struct qcom_ubwc_cfg_data *cfg)
+{
+	return cfg->ubwc_enc_version == UBWC_1_0 &&
+		(cfg->ubwc_dec_version == UBWC_2_0 ||
+		 cfg->ubwc_dec_version == UBWC_3_0);
+}
+
+static inline bool qcom_ubwc_macrotile_mode(const struct qcom_ubwc_cfg_data *cfg)
+{
+	return cfg->macrotile_mode;
+}
+
+static inline bool qcom_ubwc_bank_spread(const struct qcom_ubwc_cfg_data *cfg)
+{
+	return cfg->ubwc_bank_spread;
+}
+
+static inline u32 qcom_ubwc_swizzle(const struct qcom_ubwc_cfg_data *cfg)
+{
+	return cfg->ubwc_swizzle;
+}
+#endif /* !MSM_VIDC_HAS_QCOM_UBWC_HELPERS */
+
 #include "msm_vidc_internal.h"
 #include "msm_vidc_core.h"
 
@@ -15,17 +101,6 @@
 #define DDR_TYPE_LPDDR4X  0x7
 #define DDR_TYPE_LPDDR5   0x8
 #define DDR_TYPE_LPDDR5X  0x9
-
-#define UBWC_CONFIG(mc, ml, hbb, bs1, bs2, bs3, bsp) \
-{	                                                 \
-	.max_channels = mc,                              \
-	.mal_length = ml,                                \
-	.highest_bank_bit = hbb,                         \
-	.bank_swzl_level = bs1,                          \
-	.bank_swz2_level = bs2,                          \
-	.bank_swz3_level = bs3,                          \
-	.bank_spreading = bsp,                           \
-}
 
 #define EFUSE_ENTRY(sa, s, m, sh, p) \
 {	                                 \
@@ -113,16 +188,6 @@ struct device_region_table {
 	u32              size;
 	u32              dev_addr;
 	u32              region;
-};
-
-struct msm_vidc_ubwc_config_data {
-	u32              max_channels;
-	u32              mal_length;
-	u32              highest_bank_bit;
-	u32              bank_swzl_level;
-	u32              bank_swz2_level;
-	u32              bank_swz3_level;
-	u32              bank_spreading;
 };
 
 struct codec_info {
@@ -245,7 +310,7 @@ struct msm_vidc_platform_data {
 	unsigned int reg_prst_tbl_size;
 	const struct device_region_table *dev_reg_tbl;
 	unsigned int dev_reg_tbl_size;
-	struct msm_vidc_ubwc_config_data *ubwc_config;
+	const struct qcom_ubwc_cfg_data *ubwc_config;
 	u32 clock_source_scaling_ratio;
 	const char *fwname;
 	u32 pas_id;
@@ -344,6 +409,7 @@ static inline bool is_mmrm_supported(struct msm_vidc_core *core)
 }
 
 int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core);
+int msm_vidc_update_ubwc_config(struct msm_vidc_core *core);
 enum msm_vidc_hw_version msm_vidc_get_hw_version(void);
 int msm_vidc_read_efuse(struct msm_vidc_core *core);
 

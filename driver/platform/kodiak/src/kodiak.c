@@ -2291,8 +2291,13 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_kodi
 };
 
 /* Default UBWC config for LPDDR4 */
-static struct msm_vidc_ubwc_config_data ubwc_config_kodiak[] = {
-	UBWC_CONFIG(8, 32, 14, 0, 1, 1, 1),
+static const struct qcom_ubwc_cfg_data ubwc_config_kodiak = {
+	.ubwc_enc_version = UBWC_3_0,
+	.ubwc_dec_version = UBWC_4_0,
+	.ubwc_swizzle     = UBWC_SWIZZLE_ENABLE_LVL2 | UBWC_SWIZZLE_ENABLE_LVL3,
+	.highest_bank_bit = 14,
+	.ubwc_bank_spread = true,
+	.macrotile_mode   = true,
 };
 
 static struct msm_vidc_format_capability format_data_kodiak = {
@@ -2461,7 +2466,7 @@ static const struct msm_vidc_platform_data kodiak_data_v0 = {
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_kodiak,
+	.ubwc_config = &ubwc_config_kodiak,
 	.format_data = &format_data_kodiak,
 
 	/* decoder properties related*/

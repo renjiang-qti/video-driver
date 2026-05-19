@@ -219,6 +219,7 @@ iris_vpu-objs +=  $(VIDEO_DRIVER_REL_PATH)/platform/lemans/src/lemans.o \
 endif
 
 iris_vpu-objs +=  $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_platform.o \
+                  $(VIDEO_DRIVER_REL_PATH)/platform/common/src/msm_vidc_ubwc.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/common/src/msm_vidc_variant.o \
                   $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_v4l2.o \
                   $(VIDEO_DRIVER_REL_PATH)/vidc/src/msm_vidc_vb2.o \

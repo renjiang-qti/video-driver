@@ -1811,8 +1811,13 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_mona
 };
 
 /* Default UBWC config for LPDDR5 */
-static struct msm_vidc_ubwc_config_data ubwc_config_monaco[] = {
-	UBWC_CONFIG(8, 32, 13, 0, 0, 1, 1),
+static const struct qcom_ubwc_cfg_data ubwc_config_monaco = {
+	.ubwc_enc_version = UBWC_4_0,
+	.ubwc_dec_version = UBWC_4_0,
+	.ubwc_swizzle     = UBWC_SWIZZLE_ENABLE_LVL2 | UBWC_SWIZZLE_ENABLE_LVL3,
+	.highest_bank_bit = 16,
+	.ubwc_bank_spread = true,
+	.macrotile_mode   = true,
 };
 
 static struct msm_vidc_format_capability format_data_monaco = {
@@ -2005,7 +2010,7 @@ static const struct msm_vidc_platform_data monaco_data = {
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
-	.ubwc_config = ubwc_config_monaco,
+	.ubwc_config = &ubwc_config_monaco,
 	.format_data = &format_data_monaco,
 
 	/* decoder properties related*/

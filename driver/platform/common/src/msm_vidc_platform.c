@@ -433,6 +433,10 @@ int msm_vidc_init_platform_capabilities(struct msm_vidc_core *core)
 	if (rc)
 		return rc;
 
+	rc = msm_vidc_update_ubwc_config(core);
+	if (rc)
+		return rc;
+
 	rc = msm_vidc_init_vpu(core);
 
 	return rc;
