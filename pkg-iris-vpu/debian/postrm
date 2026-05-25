@@ -1,0 +1,42 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+# postrm script for iris-vpu-dkms
+# This script runs after the package is removed
+
+set -e
+
+case "$1" in
+    remove|purge)
+        echo "Completing iris-vpu-dkms removal..."
+
+        # 1. Rebuild initramfs so the qcom_iris blacklist (removed with the package)
+        # and iris_vpu.ko are no longer included.
+        if command -v update-initramfs > /dev/null 2>&1; then
+            update-initramfs -u -k all || true
+        fi
+
+        depmod -a || true
+
+        # 2. Try to restore qcom_iris module
+        echo "Attempting to restore qcom_iris module..."
+        if modprobe qcom_iris 2>/dev/null; then
+            echo "SUCCESS: qcom_iris module loaded successfully"
+            echo "Original video driver has been restored"
+        else
+            echo "Note: qcom_iris module could not be loaded automatically"
+            echo "A reboot may be required to fully restore the original driver"
+        fi
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#

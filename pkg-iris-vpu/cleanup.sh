@@ -6,9 +6,15 @@
 
 set -e
 
-SCRIPT_DIR="$(dirname "$0")"
-PACKAGE_NAME="video-driver"
-PACKAGE_VERSION="1.0.0"
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+PACKAGE_NAME="iris-vpu"
+
+# Resolve package version from git tag (single source of truth)
+GIT_TAG=$(git -C "$(dirname "$SCRIPT_DIR")" describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+if [ -z "$GIT_TAG" ]; then
+    GIT_TAG=$(grep 'PACKAGE_VERSION=' "$SCRIPT_DIR/dkms.conf" 2>/dev/null | cut -d'"' -f2)
+fi
+PACKAGE_VERSION="${GIT_TAG:-1.0.0}"
 
 show_help() {
     cat << EOF
@@ -17,7 +23,7 @@ Video Driver DKMS Cleanup and Uninstall Tool
 Usage: $0 [OPTIONS]
 
 OPTIONS:
-    --clean-build       Clean build artifacts (pkg-video-driver/build directory)
+    --clean-build       Clean build artifacts (pkg-iris-vpu/build directory)
     --uninstall-dkms    Uninstall DKMS package and modules
     --clean-all         Perform complete cleanup (build artifacts + DKMS uninstall)
     --status            Show current DKMS status
@@ -36,7 +42,7 @@ EOF
 clean_build() {
     echo "Cleaning build artifacts..."
 
-    # Clean pkg-video-driver/build directory
+    # Clean pkg-iris-vpu/build directory
     if [ -d "$SCRIPT_DIR/build" ]; then
         echo "Removing $SCRIPT_DIR/build directory..."
         rm -rf "$SCRIPT_DIR/build"
@@ -84,15 +90,15 @@ uninstall_dkms() {
     echo "Uninstalling DKMS package and modules..."
 
     # Check if DKMS package is installed
-    if dpkg -l | grep -q "video-driver-dkms"; then
-        echo "Found installed video-driver-dkms package, uninstalling..."
+    if dpkg -l | grep -q "iris-vpu-dkms"; then
+        echo "Found installed iris-vpu-dkms package, uninstalling..."
 
         # Uninstall debian package
-        sudo dpkg -r video-driver-dkms || true
+        sudo dpkg -r iris-vpu-dkms || true
 
         echo "Debian package uninstall completed"
     else
-        echo "No installed video-driver-dkms package found"
+        echo "No installed iris-vpu-dkms package found"
     fi
 
     # Check DKMS status and cleanup
@@ -139,10 +145,10 @@ show_status() {
 
     # Check debian package status
     echo "Debian package status:"
-    if dpkg -l | grep -q "video-driver-dkms"; then
-        dpkg -l | grep "video-driver-dkms"
+    if dpkg -l | grep -q "iris-vpu-dkms"; then
+        dpkg -l | grep "iris-vpu-dkms"
     else
-        echo "  video-driver-dkms package not installed"
+        echo "  iris-vpu-dkms package not installed"
     fi
     echo
 
