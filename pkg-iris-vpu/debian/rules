@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+include /usr/share/dpkg/pkg-info.mk
+
+%:
+	dh $@
+
+override_dh_install:
+	sed "s/@VERSION@/$(DEB_VERSION_UPSTREAM)/g" \
+		debian/iris-vpu-dkms.install.in > debian/iris-vpu-dkms.install
+	dh_install
+	# Install dkms.conf with correct version (dh_dkms cannot reliably replace #MODULE_VERSION#)
+	sed "s/PACKAGE_VERSION=\"[^\"]*\"/PACKAGE_VERSION=\"$(DEB_VERSION_UPSTREAM)\"/" \
+		dkms.conf > debian/iris-vpu-dkms/usr/src/iris-vpu-$(DEB_VERSION_UPSTREAM)/dkms.conf
+	# Install modprobe blacklist to /usr/lib/modprobe.d/ (package-managed, included in initramfs)
+	mkdir -p debian/iris-vpu-dkms/usr/lib/modprobe.d
+	install -m 644 debian/modprobe.d/iris-vpu-dkms.conf debian/iris-vpu-dkms/usr/lib/modprobe.d/iris-vpu-dkms.conf
+	# Install load script (service file handled by dh_installsystemd)
+	mkdir -p debian/iris-vpu-dkms/usr/lib/iris-vpu-dkms
+	install -m 755 debian/iris-vpu-load.sh debian/iris-vpu-dkms/usr/lib/iris-vpu-dkms/iris-vpu-load.sh
+
+override_dh_clean:
+	rm -f debian/iris-vpu-dkms.install
+	dh_clean
+
+override_dh_dkms:
+	# Suppress dh_dkms: DKMS is managed manually in postinst/prerm/postrm.
+	# dh_dkms (injected via dh-sequence-dkms in Build-Depends) would install
+	# a .dkms trigger file with a literal #MODULE_VERSION# placeholder.
+
+override_dh_auto_clean override_dh_auto_build override_dh_auto_test override_dh_auto_install:

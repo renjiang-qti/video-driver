@@ -1,0 +1,150 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+# postinst script for iris-vpu-dkms
+# This script runs after the package is installed
+
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+    configure)
+        echo "Configuring iris-vpu-dkms..."
+
+        KERNEL_VERSION=$(uname -r)
+        MODULE_NAME="iris-vpu"
+        DRIVER_VERSION=$(dpkg-query -W -f='${Version}' iris-vpu-dkms 2>/dev/null | sed 's/-.*//')
+        BLACKLIST_FILE="/etc/modprobe.d/blacklist-video.conf"
+
+        # 1. Clean up any leftover #MODULE_VERSION# entries from previous buggy installations
+        if dkms status 2>/dev/null | grep -q 'iris-vpu/#MODULE_VERSION#'; then
+            dkms remove -m iris-vpu -v '#MODULE_VERSION#' --all 2>/dev/null || true
+            rm -rf '/var/lib/dkms/iris-vpu/#MODULE_VERSION#' 2>/dev/null || true
+        fi
+
+        # 2. Register module source with DKMS
+        echo "Registering iris-vpu module source with DKMS..."
+        dkms add -m "$MODULE_NAME" -v "$DRIVER_VERSION" 2>/dev/null || true
+
+        # 3. Build the iris-vpu module via DKMS
+        echo "Building iris-vpu module via DKMS..."
+        DKMS_BUILD_SUCCESS=true
+        if ! dkms build -m "$MODULE_NAME" -v "$DRIVER_VERSION" -k "$KERNEL_VERSION"; then
+            echo "DKMS build failed, attempting automatic recovery..."
+            DKMS_BUILD_SUCCESS=false
+
+            # Check if module was actually built despite DKMS error
+            MODULE_PATH="/var/lib/dkms/iris-vpu/$DRIVER_VERSION/build/video/iris_vpu.ko"
+            if [ -f "$MODULE_PATH" ]; then
+                echo "Module file found, proceeding with manual installation..."
+
+                TARGET_DIR="/lib/modules/$KERNEL_VERSION/extra/dkms"
+                TARGET_FILE="$TARGET_DIR/iris_vpu.ko"
+                if [ ! -d "$TARGET_DIR" ]; then
+                    mkdir -p "$TARGET_DIR" || { echo "Failed to create module directory"; exit 0; }
+                fi
+
+                cp "$MODULE_PATH" "$TARGET_FILE" || { echo "Failed to copy module file"; exit 0; }
+                depmod -a || { echo "Failed to update module dependencies"; exit 0; }
+
+                if modprobe iris_vpu; then
+                    modprobe -r iris_vpu 2>/dev/null || true
+                    DKMS_BUILD_SUCCESS=true
+                else
+                    echo "Failed to load module after manual installation"
+                    exit 0
+                fi
+
+                touch "/var/lib/dkms/iris-vpu-overlay.flag"
+            else
+                echo "ERROR: Module file not found at $MODULE_PATH"
+                echo "Build completely failed. Please check: dkms status"
+                exit 0
+            fi
+        fi
+
+        # 4. Install the DKMS module (skip if manual recovery was used)
+        DKMS_TARGET_FILE="/lib/modules/$KERNEL_VERSION/extra/dkms/iris_vpu.ko"
+        if [ "$DKMS_BUILD_SUCCESS" = true ] && [ ! -f "$DKMS_TARGET_FILE" ]; then
+            echo "Installing iris-vpu module via DKMS..."
+            if ! dkms install -m "$MODULE_NAME" -v "$DRIVER_VERSION" -k "$KERNEL_VERSION"; then
+                echo "ERROR: Failed to install iris-vpu module"
+                exit 0
+            fi
+        fi
+
+        echo "SUCCESS: iris-vpu module built and installed successfully!"
+
+        # 5. Save current qcom_iris state for potential rollback
+        QCOM_IRIS_WAS_LOADED=false
+        if lsmod | grep -q "qcom_iris"; then
+            QCOM_IRIS_WAS_LOADED=true
+        fi
+
+        # 6. Unload qcom_iris module to free hardware resources
+        if [ "$QCOM_IRIS_WAS_LOADED" = true ]; then
+            echo "Unloading qcom_iris module..."
+            modprobe -r qcom_iris 2>/dev/null || true
+        fi
+
+        # 7. Add qcom_iris to blacklist to prevent auto-loading
+        echo "Adding qcom_iris to module blacklist..."
+        if [ -f "$BLACKLIST_FILE" ]; then
+            if ! grep -q "blacklist qcom_iris" "$BLACKLIST_FILE"; then
+                echo "" >> "$BLACKLIST_FILE"
+                echo "# Added by iris-vpu-dkms package" >> "$BLACKLIST_FILE"
+                echo "blacklist qcom_iris" >> "$BLACKLIST_FILE"
+                echo "install qcom_iris /bin/true" >> "$BLACKLIST_FILE"
+            fi
+        else
+            mkdir -p /etc/modprobe.d
+            echo "# Blacklist for iris-vpu-dkms package" > "$BLACKLIST_FILE"
+            echo "blacklist qcom_iris" >> "$BLACKLIST_FILE"
+            echo "install qcom_iris /bin/true" >> "$BLACKLIST_FILE"
+        fi
+
+        # 8. Try to load iris-vpu module
+        echo "Loading iris-vpu module..."
+        if modprobe iris_vpu 2>/dev/null; then
+            if lsmod | grep -q "^iris_vpu "; then
+                echo "SUCCESS: iris-vpu module loaded and working!"
+
+                echo "iris_vpu" > /etc/modules-load.d/iris-vpu.conf
+                sed -i '/^iris_vpu$/d' /etc/modules 2>/dev/null || true
+
+                if [ -f /etc/initramfs-tools/modules ]; then
+                    if ! grep -q "^iris_vpu$" /etc/initramfs-tools/modules; then
+                        echo "iris_vpu" >> /etc/initramfs-tools/modules
+                    fi
+                fi
+
+                update-initramfs -u -k all 2>/dev/null || true
+
+                echo "iris-vpu-dkms configuration completed successfully!"
+            else
+                echo "ERROR: iris_vpu loaded but not detected in lsmod — rolling back..."
+                modprobe -r iris_vpu 2>/dev/null || true
+                if [ -f "$BLACKLIST_FILE" ]; then
+                    grep -v "blacklist qcom_iris" "$BLACKLIST_FILE" | \
+                    grep -v "install qcom_iris /bin/true" | \
+                    grep -v "# Added by iris-vpu-dkms package" > "${BLACKLIST_FILE}.tmp"
+                    mv "${BLACKLIST_FILE}.tmp" "$BLACKLIST_FILE"
+                fi
+                [ "$QCOM_IRIS_WAS_LOADED" = true ] && modprobe qcom_iris 2>/dev/null || true
+            fi
+        else
+            echo "Warning: Failed to load iris-vpu module immediately."
+            echo "iris_vpu will be loaded automatically on next boot."
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac

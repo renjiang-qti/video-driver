@@ -1,0 +1,93 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+# prerm script for iris-vpu-dkms
+# This script runs before the package is removed
+
+# Note: no 'set -e' to handle errors gracefully without script termination
+
+case "$1" in
+    remove|purge|upgrade|deconfigure)
+        echo "Preparing to remove iris-vpu-dkms..."
+
+        KERNEL_VERSION=$(uname -r)
+        DRIVER_VERSION=$(dpkg-query -W -f='${Version}' iris-vpu-dkms 2>/dev/null | sed 's/-.*//')
+        MODULE_NAME="iris-vpu"
+
+        # 1. Unload iris_vpu module if loaded
+        if lsmod | grep -q "^iris_vpu "; then
+            echo "Unloading iris_vpu module..."
+            modprobe -r iris_vpu 2>/dev/null || {
+                echo "Warning: Failed to unload iris_vpu module"
+                echo "You may need to reboot to complete the removal"
+            }
+        fi
+
+        # 2. Clean up any leftover #MODULE_VERSION# entries from previous buggy installations
+        if dkms status 2>/dev/null | grep -q 'iris-vpu/#MODULE_VERSION#'; then
+            dkms remove -m iris-vpu -v '#MODULE_VERSION#' --all 2>/dev/null || true
+            rm -rf '/var/lib/dkms/iris-vpu/#MODULE_VERSION#' 2>/dev/null || true
+        fi
+
+        # 3. Remove DKMS module
+        if dkms status | grep -q "$MODULE_NAME.*$DRIVER_VERSION"; then
+            echo "Removing iris-vpu DKMS module..."
+            dkms remove -m "$MODULE_NAME" -v "$DRIVER_VERSION" --all 2>/dev/null || {
+                echo "Warning: Failed to remove DKMS module"
+            }
+        fi
+
+        # 4. Check for overlay installation and clean up manually installed files
+        OVERLAY_FLAG="/var/lib/dkms/iris-vpu-overlay.flag"
+        if [ -f "$OVERLAY_FLAG" ]; then
+            echo "Detected overlay installation, cleaning up manually installed files..."
+            MANUAL_MODULE_FILE="/lib/modules/$KERNEL_VERSION/extra/dkms/iris_vpu.ko"
+            if [ -f "$MANUAL_MODULE_FILE" ]; then
+                if rm -f "$MANUAL_MODULE_FILE" 2>/dev/null; then
+                    echo "Manually installed module file removed"
+                else
+                    echo "Warning: Failed to remove manually installed module file"
+                fi
+            fi
+
+            if rm -f "$OVERLAY_FLAG" 2>/dev/null; then
+                echo "Overlay installation flag removed"
+            else
+                echo "Warning: Failed to remove overlay flag"
+            fi
+
+            DKMS_DIR="/lib/modules/$KERNEL_VERSION/extra/dkms"
+            if [ -d "$DKMS_DIR" ] && [ -z "$(ls -A "$DKMS_DIR" 2>/dev/null)" ]; then
+                rmdir "$DKMS_DIR" 2>/dev/null || true
+            fi
+        fi
+
+        # 5. Remove iris_vpu from /etc/initramfs-tools/modules
+        INITRAMFS_MODULES=/etc/initramfs-tools/modules
+        if [ -f "$INITRAMFS_MODULES" ]; then
+            sed -i '/^iris_vpu$/d' "$INITRAMFS_MODULES"
+        fi
+
+        # 6. Remove /etc/modules-load.d/ entry if present
+        rm -f /etc/modules-load.d/iris-vpu.conf || true
+
+        # 7. Remove legacy /etc/modules entry if present
+        sed -i '/^iris_vpu$/d' /etc/modules 2>/dev/null || true
+
+        # 8. Remove legacy /etc/modprobe.d/ blacklist if present
+        rm -f /etc/modprobe.d/blacklist-video.conf || true
+
+        echo "iris-vpu-dkms pre-removal completed."
+        ;;
+
+    failed-upgrade)
+        ;;
+
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
