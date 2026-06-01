@@ -719,3 +719,31 @@ int msm_buffer_extra_count_iris2(struct msm_vidc_inst *inst,
 	i_vpr_l(inst, "extra_count: type: %11s, count: %9u\n", buf_name(buffer_type), count);
 	return count;
 }
+
+int msm_vidc_encoder_decide_slice_max_mb_iris2(struct msm_vidc_inst *inst)
+{
+	struct v4l2_format *f = &inst->fmts[INPUT_PORT];
+	u32 slice_val, output_height, output_width, mbpf = 0;
+
+	if (is_decode_session(inst) || inst->capabilities[SLICE_MODE].value !=
+			V4L2_MPEG_VIDEO_MULTI_SLICE_MODE_MAX_MB)
+		return 0;
+
+	/**
+	 * In case of slice mode SLICE_MAX_MB, adjust SLICE_MAX_MB cap
+	 * w.r.to minimum and maximum possible slice MB's based on
+	 * the resolution and codec.
+	 */
+	output_width = f->fmt.pix_mp.width;
+	output_height = f->fmt.pix_mp.height;
+	slice_val = inst->capabilities[SLICE_MAX_MB].value;
+
+	if (inst->codec == MSM_VIDC_HEVC)
+		mbpf = NUM_MBS_PER_FRAME_HEVC(output_height, output_width);
+	else
+		mbpf = NUM_MBS_PER_FRAME(output_height, output_width);
+
+	slice_val = max(slice_val, mbpf / MAX_SLICES_PER_FRAME);
+
+	return slice_val;
+}
