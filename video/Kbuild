@@ -110,6 +110,7 @@ LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/lemans/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/hamoa/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/monaco/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/platform/kodiak/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/platform/purwa/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris3/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris2/inc
 endif
@@ -208,6 +209,7 @@ iris_vpu-objs +=  $(VIDEO_DRIVER_REL_PATH)/platform/lemans/src/lemans.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/hamoa/src/hamoa.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/monaco/src/monaco.o \
                   $(VIDEO_DRIVER_REL_PATH)/platform/kodiak/src/kodiak.o \
+                  $(VIDEO_DRIVER_REL_PATH)/platform/purwa/src/purwa.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_buffer_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_power_iris3.o \
                   $(VIDEO_DRIVER_REL_PATH)/variant/iris3/src/msm_vidc_bus_iris3.o \
