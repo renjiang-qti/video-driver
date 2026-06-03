@@ -3,6 +3,12 @@
 VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/video/driver
 VIDEO_DRIVER_REL_PATH := ../video/driver
 
+UBWC_H := $(KERNEL_SRC)/include/linux/soc/qcom/ubwc.h
+HAS_UBWC_HELPERS := $(shell grep -qs 'qcom_ubwc_min_acc_length_64b' $(UBWC_H) && echo yes || echo no)
+ifeq ($(HAS_UBWC_HELPERS),yes)
+  ccflags-y += -DMSM_VIDC_HAS_QCOM_UBWC_HELPERS=1
+endif
+
 MDT_LOADER_H := $(KERNEL_SRC)/include/linux/soc/qcom/mdt_loader.h
 
 HAS_MDT_PAS_LOAD := $(shell grep -qs 'qcom_mdt_pas_load' $(MDT_LOADER_H) && echo yes || echo no)
