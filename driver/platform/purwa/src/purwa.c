@@ -1778,6 +1778,11 @@ static struct msm_platform_inst_cap_dependency instance_cap_dependency_data_purw
 		NULL},
 };
 
+/* Default UBWC config for LPDDR5 */
+static struct msm_vidc_ubwc_config_data ubwc_config_purwa[] = {
+	UBWC_CONFIG(8, 32, 17, 0, 1, 1, 1),
+};
+
 static struct msm_vidc_format_capability format_data_purwa = {
 	.codec_info = codec_data_purwa,
 	.codec_info_size = ARRAY_SIZE(codec_data_purwa),
@@ -2019,6 +2024,7 @@ static const struct msm_vidc_platform_data purwa_data = {
 	.csc_data.vpe_csc_custom_bias_coeff = vpe_csc_custom_bias_coeff,
 	.csc_data.vpe_csc_custom_matrix_coeff = vpe_csc_custom_matrix_coeff,
 	.csc_data.vpe_csc_custom_limit_coeff = vpe_csc_custom_limit_coeff,
+	.ubwc_config = ubwc_config_purwa,
 	.format_data = &format_data_purwa,
 
 	/* decoder properties related*/
