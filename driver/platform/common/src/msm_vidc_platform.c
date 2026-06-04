@@ -71,7 +71,6 @@
 #include "msm_vidc_lemans.h"
 #include "msm_vidc_monaco.h"
 #include "msm_vidc_kodiak.h"
-#include "msm_vidc_purwa.h"
 #include "msm_vidc_iris3.h"
 #include "msm_vidc_iris2.h"
 #endif
@@ -201,12 +200,6 @@ static const struct msm_vidc_compat_handle compat_handle[] = {
 		.get_platform_data          = msm_vidc_get_platform_data_kodiak,
 		.init_platform              = msm_vidc_init_platform_kodiak,
 		.init_iris                  = msm_vidc_init_iris2,
-	},
-	{
-		.compat                     = "qcom,x1p42100-iris",
-		.get_platform_data          = msm_vidc_get_platform_data_purwa,
-		.init_platform              = msm_vidc_init_platform_purwa,
-		.init_iris                  = msm_vidc_init_iris3,
 	},
 #endif
 #if defined(CONFIG_MSM_VIDC_LEMANS)

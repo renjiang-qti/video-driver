@@ -299,8 +299,6 @@ struct msm_vidc_platform_data {
 	struct dev_pm_domain_list *opp_pmdomain_tbl;
 	const struct clk_table *clk_tbl;
 	unsigned int clk_tbl_size;
-	const char * const *opp_clk_tbl;
-	unsigned int opp_clk_tbl_size;
 	const int *clk_corner_idx_tbl;
 	const struct clk_rst_table *clk_rst_tbl;
 	unsigned int clk_rst_tbl_size;
